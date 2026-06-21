@@ -268,6 +268,337 @@ class DonationDialog(QDialog):
 
 
 # ─────────────────────────────────────────
+# 서비스별 회원가입 안내 정보
+# ─────────────────────────────────────────
+SIGNUP_INFO = {
+    "anthropic": {
+        "signup_url": "https://console.anthropic.com",
+        "google_ok": True,
+        "card_required": False,
+        "free_credit": "$5 무료 크레딧 제공",
+        "steps": [
+            "우측 상단 'Sign up' 버튼 클릭",
+            "Google 계정으로 가입 클릭 (추천) 또는 이메일 입력",
+            "비밀번호 설정 (영문+숫자+특수문자 8자 이상)",
+            "이메일 인증 링크 클릭 (받은 편지함 확인)",
+            "이름 / 사용 목적 선택 후 완료",
+        ],
+        "warnings": [
+            "카드 정보 불필요 — 무료로 가입 가능합니다",
+            "가입 즉시 $5 무료 크레딧 자동 제공됩니다",
+            "Google 계정으로 가입하면 1분 이내 완료됩니다",
+        ],
+    },
+    "openai": {
+        "signup_url": "https://platform.openai.com/signup",
+        "google_ok": True,
+        "card_required": True,
+        "free_credit": "$5 무료 크레딧 제공",
+        "steps": [
+            "'Sign up' 버튼 클릭",
+            "Google 계정으로 가입 클릭 (추천) 또는 이메일 입력",
+            "이메일 인증 링크 클릭 (받은 편지함 확인)",
+            "이름 / 생년월일 입력",
+            "신용카드 등록 (API 사용을 위해 필수)",
+        ],
+        "warnings": [
+            "카드 등록이 필요합니다 (즉시 청구되지 않습니다)",
+            "가입 후 $5 무료 크레딧이 자동 지급됩니다",
+            "카드 등록 없이는 API Key 발급이 불가합니다",
+            "Google 계정으로 가입하면 이메일 인증이 생략됩니다",
+        ],
+    },
+    "gemini": {
+        "signup_url": "https://aistudio.google.com",
+        "google_ok": True,
+        "card_required": False,
+        "free_credit": "무료 사용 가능 (분당 요청 제한)",
+        "steps": [
+            "Google 계정으로 자동 로그인 (별도 가입 불필요)",
+            "'Sign in with Google' 클릭",
+            "사용할 Google 계정 선택",
+            "서비스 이용 약관 동의 후 완료",
+        ],
+        "warnings": [
+            "Google 계정만 있으면 별도 가입 없이 즉시 사용 가능합니다",
+            "카드 정보 불필요 — 완전 무료입니다",
+            "분당 요청 수 제한이 있지만 개인 사용에는 충분합니다",
+        ],
+    },
+    "github": {
+        "signup_url": "https://github.com/signup",
+        "google_ok": True,
+        "card_required": False,
+        "free_credit": "무료 계정 제공",
+        "steps": [
+            "이메일 주소 입력",
+            "비밀번호 설정",
+            "사용자 이름(닉네임) 설정",
+            "이메일 수신 여부 선택",
+            "CAPTCHA 풀기 (퍼즐 형태)",
+            "이메일 인증 코드 입력 (받은 편지함 확인)",
+        ],
+        "warnings": [
+            "카드 정보 불필요 — 완전 무료입니다",
+            "사용자 이름은 나중에 변경하기 어려우니 신중히 정하세요",
+            "이메일 인증 코드가 스팸함에 있을 수 있습니다",
+        ],
+    },
+    "aws": {
+        "signup_url": "https://aws.amazon.com/free",
+        "google_ok": False,
+        "card_required": True,
+        "free_credit": "12개월 무료 티어 제공",
+        "steps": [
+            "'무료로 시작' 버튼 클릭",
+            "이메일 주소 및 계정 이름 입력",
+            "비밀번호 설정",
+            "연락처 정보 입력 (이름, 주소, 전화번호)",
+            "신용카드 정보 입력 (즉시 청구 안 됨, $1 임시 확인만)",
+            "전화번호 인증 (문자 또는 전화 선택)",
+            "지원 플랜 선택 — '기본 지원 무료' 선택",
+        ],
+        "warnings": [
+            "카드 등록 필수 — $1 임시 인증 후 즉시 취소됩니다",
+            "무료 티어 한도 초과 시 요금이 발생할 수 있습니다",
+            "가입 완료까지 5~10분 소요됩니다",
+            "Google 계정 가입을 지원하지 않습니다",
+            "지원 플랜은 반드시 '기본 지원 무료'를 선택하세요",
+        ],
+    },
+}
+
+
+# ─────────────────────────────────────────
+# 가입 안내 다이얼로그
+# ─────────────────────────────────────────
+class SignupGuideDialog(QDialog):
+    """서비스별 회원가입 단계 안내 다이얼로그"""
+
+    def __init__(self, services: List[str], parent=None):
+        super().__init__(parent)
+        self.services = services
+        self._idx = 0
+        self.setWindowTitle("서비스 회원가입 안내")
+        self.setModal(True)
+        self.setFixedSize(680, 560)
+        self._build_ui()
+        self._show_service(0)
+
+    def _build_ui(self):
+        root = QHBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        # ── 왼쪽: 서비스 진행 목록
+        left = QWidget()
+        left.setFixedWidth(170)
+        left.setStyleSheet("background:#0d1117; border-right:1px solid #21262d;")
+        left_lay = QVBoxLayout(left)
+        left_lay.setContentsMargins(12, 20, 12, 20)
+        left_lay.setSpacing(6)
+
+        lbl = QLabel("진행 현황")
+        lbl.setStyleSheet("color:#8b949e; font-size:11px; font-weight:700;")
+        left_lay.addWidget(lbl)
+
+        self._step_labels: List[QLabel] = []
+        for sid in self.services:
+            info = SERVICES[sid]
+            lbl = QLabel(f"{info['icon']}  {info['name']}")
+            lbl.setWordWrap(True)
+            lbl.setStyleSheet("color:#484f58; font-size:12px; padding:6px 4px; border-radius:4px;")
+            left_lay.addWidget(lbl)
+            self._step_labels.append(lbl)
+
+        left_lay.addStretch()
+        root.addWidget(left)
+
+        # ── 오른쪽: 안내 내용
+        right = QWidget()
+        right.setStyleSheet("background:#161b22;")
+        right_lay = QVBoxLayout(right)
+        right_lay.setContentsMargins(24, 24, 24, 20)
+        right_lay.setSpacing(12)
+
+        # 서비스 이름 + 진행 표시
+        top_row = QHBoxLayout()
+        self.lbl_service = QLabel()
+        self.lbl_service.setFont(QFont("Segoe UI", 15, QFont.Weight.Bold))
+        self.lbl_service.setStyleSheet("color:#e6edf3;")
+        top_row.addWidget(self.lbl_service)
+        top_row.addStretch()
+        self.lbl_progress = QLabel()
+        self.lbl_progress.setStyleSheet("color:#8b949e; font-size:12px;")
+        top_row.addWidget(self.lbl_progress)
+        right_lay.addLayout(top_row)
+
+        # Google 가입 추천 뱃지
+        self.lbl_google = QLabel("✅  Google 계정으로 1클릭 가입 가능 — 가장 빠릅니다")
+        self.lbl_google.setStyleSheet("""
+            background:#0d2230; color:#58a6ff;
+            border:1px solid #1f6feb; border-radius:6px;
+            padding:6px 10px; font-size:12px;
+        """)
+        right_lay.addWidget(self.lbl_google)
+
+        # 단계별 안내
+        steps_lbl = QLabel("📝  입력 순서")
+        steps_lbl.setStyleSheet("color:#8b949e; font-size:11px; font-weight:700; margin-top:4px;")
+        right_lay.addWidget(steps_lbl)
+
+        self.lbl_steps = QLabel()
+        self.lbl_steps.setWordWrap(True)
+        self.lbl_steps.setTextFormat(Qt.TextFormat.RichText)
+        self.lbl_steps.setStyleSheet("""
+            background:#0d1117; color:#e6edf3;
+            border:1px solid #21262d; border-radius:6px;
+            padding:10px 14px; font-size:13px; line-height:1.6;
+        """)
+        right_lay.addWidget(self.lbl_steps)
+
+        # 주의사항
+        warn_lbl = QLabel("⚠️  주의사항")
+        warn_lbl.setStyleSheet("color:#8b949e; font-size:11px; font-weight:700; margin-top:4px;")
+        right_lay.addWidget(warn_lbl)
+
+        self.lbl_warnings = QLabel()
+        self.lbl_warnings.setWordWrap(True)
+        self.lbl_warnings.setTextFormat(Qt.TextFormat.RichText)
+        self.lbl_warnings.setStyleSheet("""
+            background:#1c1107; color:#e3b341;
+            border:1px solid #3d2b00; border-radius:6px;
+            padding:10px 14px; font-size:12px; line-height:1.6;
+        """)
+        right_lay.addWidget(self.lbl_warnings)
+
+        right_lay.addStretch()
+
+        # 버튼 영역
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(10)
+
+        self.btn_browser = QPushButton("🌐  브라우저 다시 열기")
+        self.btn_browser.setFixedHeight(36)
+        self.btn_browser.setStyleSheet("""
+            QPushButton { background:#21262d; color:#e6edf3;
+                          border:1px solid #30363d; border-radius:6px; font-size:13px; }
+            QPushButton:hover { background:#30363d; }
+        """)
+        self.btn_browser.clicked.connect(self._open_browser)
+        btn_row.addWidget(self.btn_browser)
+
+        btn_row.addStretch()
+
+        self.btn_skip = QPushButton("건너뛰기")
+        self.btn_skip.setFixedHeight(36)
+        self.btn_skip.setFixedWidth(90)
+        self.btn_skip.setStyleSheet("""
+            QPushButton { background:transparent; color:#8b949e;
+                          border:1px solid #30363d; border-radius:6px; font-size:12px; }
+            QPushButton:hover { color:#e6edf3; }
+        """)
+        self.btn_skip.clicked.connect(self._next)
+        btn_row.addWidget(self.btn_skip)
+
+        self.btn_next = QPushButton("✅  가입 완료 — 다음으로")
+        self.btn_next.setFixedHeight(36)
+        self.btn_next.setStyleSheet("""
+            QPushButton { background:#238636; color:white;
+                          border-radius:6px; font-size:13px; font-weight:700; border:none; }
+            QPushButton:hover { background:#2ea043; }
+        """)
+        self.btn_next.clicked.connect(self._next)
+        btn_row.addWidget(self.btn_next)
+
+        right_lay.addLayout(btn_row)
+        root.addWidget(right)
+
+    def _show_service(self, idx: int):
+        if idx >= len(self.services):
+            self._finish()
+            return
+
+        sid = self.services[idx]
+        info = SERVICES[sid]
+        guide = SIGNUP_INFO[sid]
+
+        # 진행 목록 업데이트
+        for i, lbl in enumerate(self._step_labels):
+            if i < idx:
+                lbl.setStyleSheet("color:#3fb950; font-size:12px; padding:6px 4px;")
+            elif i == idx:
+                lbl.setStyleSheet(
+                    "color:#e6edf3; font-size:12px; font-weight:700; "
+                    "padding:6px 4px; background:#21262d; border-radius:4px;"
+                )
+            else:
+                lbl.setStyleSheet("color:#484f58; font-size:12px; padding:6px 4px;")
+
+        # 서비스 이름
+        self.lbl_service.setText(f"{info['icon']}  {info['name']}")
+        self.lbl_progress.setText(f"{idx + 1} / {len(self.services)}")
+
+        # Google 가입 뱃지
+        if guide["google_ok"]:
+            self.lbl_google.setText("✅  Google 계정으로 1클릭 가입 가능 — 가장 빠릅니다")
+            self.lbl_google.setStyleSheet("""
+                background:#0d2230; color:#58a6ff;
+                border:1px solid #1f6feb; border-radius:6px;
+                padding:6px 10px; font-size:12px;
+            """)
+        else:
+            self.lbl_google.setText("ℹ️  Google 계정 가입을 지원하지 않습니다 — 이메일로 가입하세요")
+            self.lbl_google.setStyleSheet("""
+                background:#1c1107; color:#e3b341;
+                border:1px solid #3d2b00; border-radius:6px;
+                padding:6px 10px; font-size:12px;
+            """)
+
+        # 단계 안내
+        steps_html = "".join(
+            f"<p style='margin:2px 0;'><b style='color:#58a6ff;'>{i+1}.</b>  {s}</p>"
+            for i, s in enumerate(guide["steps"])
+        )
+        if guide.get("free_credit"):
+            steps_html += f"<p style='margin:6px 0 0 0; color:#3fb950;'>🎁  {guide['free_credit']}</p>"
+        self.lbl_steps.setText(steps_html)
+
+        # 주의사항
+        warn_html = "".join(
+            f"<p style='margin:2px 0;'>•  {w}</p>"
+            for w in guide["warnings"]
+        )
+        self.lbl_warnings.setText(warn_html)
+
+        # 마지막 서비스면 버튼 문구 변경
+        if idx == len(self.services) - 1:
+            self.btn_next.setText("✅  가입 완료 — 닫기")
+        else:
+            self.btn_next.setText("✅  가입 완료 — 다음으로")
+
+        # 브라우저 자동 오픈
+        self._open_browser()
+
+    def _open_browser(self):
+        sid = self.services[self._idx]
+        webbrowser.open(SIGNUP_INFO[sid]["signup_url"])
+
+    def _next(self):
+        self._idx += 1
+        self._show_service(self._idx)
+
+    def _finish(self):
+        QMessageBox.information(
+            self,
+            "가입 안내 완료",
+            "모든 서비스 가입 안내가 완료되었습니다.\n"
+            "이제 서비스를 선택하고 '▶ 자동화 시작'을 눌러 API 키를 발급받으세요.",
+        )
+        self.accept()
+
+
+# ─────────────────────────────────────────
 # 서비스 정의
 # ─────────────────────────────────────────
 SERVICES = {
@@ -520,6 +851,34 @@ class MainWindow(QMainWindow):
 
         layout.addStretch()
 
+        # 가입 안내 버튼
+        self.btn_signup = QPushButton("🆕  서비스 가입 안내")
+        self.btn_signup.setObjectName("btnSignup")
+        self.btn_signup.setFixedHeight(38)
+        self.btn_signup.setToolTip("선택한 서비스의 회원가입을 단계별로 안내합니다")
+        self.btn_signup.clicked.connect(self._on_signup_guide)
+        self.btn_signup.setStyleSheet("""
+            QPushButton#btnSignup {
+                background: #1c2b3a;
+                color: #58a6ff;
+                border: 1px solid #1f6feb;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            QPushButton#btnSignup:hover {
+                background: #1f6feb;
+                color: white;
+            }
+        """)
+        layout.addWidget(self.btn_signup)
+
+        # 구분선
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setStyleSheet("color: #21262d; background: #21262d; border: none; max-height: 1px;")
+        layout.addWidget(sep)
+
         # 시작 / 중단 버튼
         self.btn_start = QPushButton("▶  자동화 시작")
         self.btn_start.setObjectName("btnStart")
@@ -649,6 +1008,19 @@ class MainWindow(QMainWindow):
     # ─────────────────────────────────────────
     # 슬롯 / 이벤트
     # ─────────────────────────────────────────
+    def _on_signup_guide(self):
+        """선택한 서비스의 회원가입 단계 안내 다이얼로그 실행"""
+        selected = [sid for sid, card in self._cards.items() if card.is_checked()]
+        if not selected:
+            QMessageBox.information(
+                self,
+                "서비스 미선택",
+                "가입 안내를 받을 서비스를 먼저 체크해주세요.\n"
+                "왼쪽 사이드패널에서 원하는 서비스를 선택하세요.",
+            )
+            return
+        SignupGuideDialog(selected, self).exec()
+
     def _on_start(self):
         selected = [sid for sid, card in self._cards.items() if card.is_checked()]
         if not selected:
