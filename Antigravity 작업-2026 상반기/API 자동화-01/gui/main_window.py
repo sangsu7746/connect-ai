@@ -421,6 +421,20 @@ class SignupGuideDialog(QDialog):
         right_lay.setContentsMargins(24, 24, 24, 20)
         right_lay.setSpacing(12)
 
+        # 구글 계정 공통 추천 안내 (항상 표시)
+        lbl_recommend = QLabel(
+            "💡  <b>Google 계정 이메일로 가입을 추천합니다</b> — "
+            "별도 비밀번호 없이 기존 구글 계정 하나로 대부분의 서비스에 빠르게 가입할 수 있습니다."
+        )
+        lbl_recommend.setWordWrap(True)
+        lbl_recommend.setTextFormat(Qt.TextFormat.RichText)
+        lbl_recommend.setStyleSheet("""
+            background:#1a2332; color:#c9d1d9;
+            border:1px solid #2d5a8e; border-radius:6px;
+            padding:8px 12px; font-size:12px;
+        """)
+        right_lay.addWidget(lbl_recommend)
+
         # 서비스 이름 + 진행 표시
         top_row = QHBoxLayout()
         self.lbl_service = QLabel()
@@ -433,7 +447,7 @@ class SignupGuideDialog(QDialog):
         top_row.addWidget(self.lbl_progress)
         right_lay.addLayout(top_row)
 
-        # Google 가입 추천 뱃지
+        # 서비스별 Google 가입 가능 여부 뱃지
         self.lbl_google = QLabel("✅  Google 계정으로 1클릭 가입 가능 — 가장 빠릅니다")
         self.lbl_google.setStyleSheet("""
             background:#0d2230; color:#58a6ff;
