@@ -8,14 +8,16 @@ MainWindow - API Key 자동화 프로그램 메인 창
   - 하단: 상태바
 """
 
+import json
 import sys
+import urllib.request
 import webbrowser
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 from urllib.parse import quote, unquote
 
-from PyQt6.QtCore import Qt, QSize, QUrl, QTimer, pyqtSlot
+from PyQt6.QtCore import Qt, QSize, QUrl, QTimer, QThread, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import (
     QFont, QIcon, QTextCursor, QColor,
     QPalette, QPixmap, QPainter,
@@ -34,6 +36,114 @@ from gui.worker import WorkerThread
 from security.key_vault import KeyVault
 from security.env_manager import EnvManager
 from core.session_manager import SessionManager
+
+
+# ─────────────────────────────────────────
+# 버전 정보
+# ─────────────────────────────────────────
+APP_VERSION = "1.0.0"
+GITHUB_REPO  = "sangsu7746/-APIKeyManager"
+
+
+# ─────────────────────────────────────────
+# 업데이트 확인 스레드
+# ─────────────────────────────────────────
+class UpdateCheckerThread(QThread):
+    """앱 시작 시 GitHub Releases API로 최신 버전 조회 (백그라운드)"""
+    update_available = pyqtSignal(str, str)   # (latest_version, release_url)
+
+    def run(self):
+        try:
+            api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+            req = urllib.request.Request(
+                api_url,
+                headers={"User-Agent": f"APIKeyManager/{APP_VERSION}"},
+            )
+            with urllib.request.urlopen(req, timeout=6) as resp:
+                data = json.loads(resp.read().decode())
+            latest = data.get("tag_name", "").lstrip("v")
+            release_url = data.get("html_url", "")
+            if latest and self._is_newer(latest):
+                self.update_available.emit(latest, release_url)
+        except Exception:
+            pass  # 네트워크 오류 시 조용히 무시
+
+    def _is_newer(self, latest: str) -> bool:
+        try:
+            cur = tuple(int(x) for x in APP_VERSION.split("."))
+            new = tuple(int(x) for x in latest.split("."))
+            return new > cur
+        except Exception:
+            return False
+
+
+# ─────────────────────────────────────────
+# 업데이트 알림 다이얼로그
+# ─────────────────────────────────────────
+class UpdateDialog(QDialog):
+    """새 버전 발견 시 표시되는 업데이트 알림 창"""
+
+    def __init__(self, latest: str, url: str, parent=None):
+        super().__init__(parent)
+        self._url = url
+        self.setWindowTitle("업데이트 알림")
+        self.setModal(True)
+        self.setFixedSize(420, 220)
+        self._build_ui(latest)
+
+    def _build_ui(self, latest: str):
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(28, 24, 28, 20)
+        lay.setSpacing(12)
+
+        title = QLabel("🎉  새 버전이 출시되었습니다!")
+        title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title.setStyleSheet("color:#e6edf3;")
+        lay.addWidget(title)
+
+        info = QLabel(
+            f"<p style='color:#8b949e; font-size:13px; margin:0;'>"
+            f"현재 버전: <b style='color:#e6edf3;'>v{APP_VERSION}</b>&nbsp;&nbsp;→&nbsp;&nbsp;"
+            f"최신 버전: <b style='color:#3fb950;'>v{latest}</b></p>"
+        )
+        info.setTextFormat(Qt.TextFormat.RichText)
+        lay.addWidget(info)
+
+        desc = QLabel("GitHub Releases에서 최신 버전을 다운로드하세요.")
+        desc.setStyleSheet("color:#8b949e; font-size:12px;")
+        desc.setWordWrap(True)
+        lay.addWidget(desc)
+
+        lay.addStretch()
+
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(10)
+
+        btn_later = QPushButton("나중에")
+        btn_later.setFixedHeight(36)
+        btn_later.setStyleSheet("""
+            QPushButton { background:transparent; color:#8b949e;
+                          border:1px solid #30363d; border-radius:6px; font-size:13px; }
+            QPushButton:hover { color:#e6edf3; }
+        """)
+        btn_later.clicked.connect(self.reject)
+        btn_row.addWidget(btn_later)
+
+        btn_download = QPushButton("⬇  지금 다운로드")
+        btn_download.setFixedHeight(36)
+        btn_download.setStyleSheet("""
+            QPushButton { background:#238636; color:white;
+                          border-radius:6px; font-size:13px; font-weight:700; border:none; }
+            QPushButton:hover { background:#2ea043; }
+        """)
+        btn_download.clicked.connect(self._download)
+        btn_row.addWidget(btn_download)
+
+        lay.addLayout(btn_row)
+
+    def _download(self):
+        webbrowser.open(self._url)
+        self.accept()
 
 
 # ─────────────────────────────────────────
@@ -771,6 +881,9 @@ class MainWindow(QMainWindow):
         if FirstRunDialog.should_show():
             FirstRunDialog(self).exec()
 
+        # 업데이트 확인 (백그라운드, 5초 후 시작)
+        QTimer.singleShot(5000, self._check_update)
+
     # ─────────────────────────────────────────
     # 윈도우 설정
     # ─────────────────────────────────────────
@@ -1022,6 +1135,14 @@ class MainWindow(QMainWindow):
     # ─────────────────────────────────────────
     # 슬롯 / 이벤트
     # ─────────────────────────────────────────
+    def _check_update(self):
+        self._updater = UpdateCheckerThread()
+        self._updater.update_available.connect(self._on_update_available)
+        self._updater.start()
+
+    def _on_update_available(self, version: str, url: str):
+        UpdateDialog(version, url, self).exec()
+
     def _on_signup_guide(self):
         """선택한 서비스의 회원가입 단계 안내 다이얼로그 실행"""
         selected = [sid for sid, card in self._cards.items() if card.is_checked()]
