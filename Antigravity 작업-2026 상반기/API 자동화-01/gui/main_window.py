@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import (
     QPushButton, QTextEdit, QTextBrowser, QProgressBar,
     QFrame, QCheckBox, QSizePolicy,
     QTabWidget, QScrollArea, QGridLayout,
-    QSpacerItem, QInputDialog, QMessageBox, QDialog,
+    QSpacerItem, QInputDialog, QLineEdit, QMessageBox, QDialog,
 )
 
 from gui.styles import DARK_THEME, LOG_COLORS
@@ -476,7 +476,129 @@ SIGNUP_INFO = {
             "지원 플랜은 반드시 '기본 지원 무료'를 선택하세요",
         ],
     },
+    "youtube": {
+        "signup_url": "https://console.cloud.google.com",
+        "google_ok": True,
+        "card_required": False,
+        "free_credit": "YouTube Data API 무료 (10,000 단위/일)",
+        "steps": [
+            "Google Cloud Console 접속 (console.cloud.google.com)",
+            "새 프로젝트 생성 (왼쪽 상단 프로젝트 선택 → 새 프로젝트)",
+            "API 라이브러리 → YouTube Data API v3 검색 → 사용(Enable) 클릭",
+            "OAuth 동의 화면 → 외부 선택 → 앱 이름 / 이메일 입력",
+            "테스트 사용자에 본인 Google 이메일 추가",
+            "자격 증명 → OAuth 클라이언트 ID → 데스크톱 앱 선택 → 만들기",
+            "JSON 다운로드 → vault/youtube_client_secrets.json 으로 저장",
+            "앱에서 자동화 시작 → 브라우저 OAuth 인증 완료",
+        ],
+        "warnings": [
+            "카드 정보 불필요 — Google 계정만 있으면 무료로 사용 가능합니다",
+            "자동화 실행 전 vault/youtube_client_secrets.json 파일이 필요합니다",
+            "OAuth 동의 화면에서 본인 이메일을 테스트 사용자로 추가해야 합니다",
+            "하루 10,000 단위 무료 제공 (동영상 업로드 약 6회 분량)",
+        ],
+    },
 }
+
+
+# ─────────────────────────────────────────
+# YouTube 설정 입력 다이얼로그
+# ─────────────────────────────────────────
+class YouTubeSetupDialog(QDialog):
+    """YouTube 자동화 시작 전 GCP 프로젝트명 / 앱 이름 / 이메일 입력"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("YouTube Data API 설정")
+        self.setModal(True)
+        self.setFixedSize(480, 320)
+        self._build_ui()
+
+    def _build_ui(self):
+        from datetime import datetime
+        ts = datetime.now().strftime("%Y%m%d")
+
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(28, 24, 28, 20)
+        lay.setSpacing(10)
+
+        title = QLabel("▶️  YouTube Data API 자동 설정")
+        title.setFont(QFont("Segoe UI", 13, QFont.Weight.Bold))
+        title.setStyleSheet("color:#e6edf3;")
+        lay.addWidget(title)
+
+        desc = QLabel("아래 항목을 입력하거나 비워두면 자동 생성됩니다.")
+        desc.setStyleSheet("color:#8b949e; font-size:12px;")
+        lay.addWidget(desc)
+
+        def make_row(label_text, placeholder, default=""):
+            row = QVBoxLayout()
+            lbl = QLabel(label_text)
+            lbl.setStyleSheet("color:#8b949e; font-size:11px; font-weight:700;")
+            row.addWidget(lbl)
+            edit = QLineEdit()
+            edit.setPlaceholderText(placeholder)
+            edit.setText(default)
+            edit.setFixedHeight(34)
+            edit.setStyleSheet("""
+                QLineEdit {
+                    background:#0d1117; color:#e6edf3;
+                    border:1px solid #30363d; border-radius:6px;
+                    padding:0 10px; font-size:13px;
+                }
+                QLineEdit:focus { border-color:#58a6ff; }
+            """)
+            row.addWidget(edit)
+            return row, edit
+
+        r1, self.edit_project = make_row(
+            "GCP 프로젝트 이름",
+            f"예: APIKeyManager-YT-{ts} (비우면 자동 생성)",
+        )
+        lay.addLayout(r1)
+
+        r2, self.edit_app = make_row(
+            "OAuth 앱 이름",
+            "예: APIKeyManager (비우면 자동 생성)",
+        )
+        lay.addLayout(r2)
+
+        r3, self.edit_email = make_row(
+            "Google 이메일 (테스트 사용자 / 개발자 연락처)",
+            "예: yourname@gmail.com",
+        )
+        lay.addLayout(r3)
+
+        lay.addStretch()
+
+        btn_row = QHBoxLayout()
+        btn_cancel = QPushButton("취소")
+        btn_cancel.setFixedHeight(36)
+        btn_cancel.setStyleSheet("""
+            QPushButton { background:transparent; color:#8b949e;
+                          border:1px solid #30363d; border-radius:6px; }
+            QPushButton:hover { color:#e6edf3; }
+        """)
+        btn_cancel.clicked.connect(self.reject)
+        btn_row.addWidget(btn_cancel)
+
+        btn_ok = QPushButton("▶  자동화 시작")
+        btn_ok.setFixedHeight(36)
+        btn_ok.setStyleSheet("""
+            QPushButton { background:#238636; color:white;
+                          border-radius:6px; font-size:13px; font-weight:700; border:none; }
+            QPushButton:hover { background:#2ea043; }
+        """)
+        btn_ok.clicked.connect(self.accept)
+        btn_row.addWidget(btn_ok)
+        lay.addLayout(btn_row)
+
+    def get_params(self) -> dict:
+        return {
+            "gcp_project_name": self.edit_project.text().strip(),
+            "oauth_app_name":   self.edit_app.text().strip(),
+            "user_email":       self.edit_email.text().strip(),
+        }
 
 
 # ─────────────────────────────────────────
@@ -760,6 +882,13 @@ SERVICES = {
         "color":   "#ff9900",
         "desc":    "console.aws.amazon.com",
         "env_key": "AWS_ACCESS_KEY_ID",
+    },
+    "youtube": {
+        "name":    "YouTube Data API",
+        "icon":    "▶️",
+        "color":   "#ff0000",
+        "desc":    "console.cloud.google.com",
+        "env_key": "YOUTUBE_REFRESH_TOKEN",
     },
 }
 
@@ -1183,8 +1312,22 @@ class MainWindow(QMainWindow):
             f"▶ 자동화 시작: {', '.join(s.upper() for s in selected)}  |  프로젝트: {label}", "INFO"
         )
 
+        # YouTube 선택 시 추가 설정 다이얼로그
+        youtube_params = {}
+        if "youtube" in selected:
+            yt_dlg = YouTubeSetupDialog(self)
+            if yt_dlg.exec() != QDialog.DialogCode.Accepted:
+                self.btn_start.setEnabled(True)
+                self.btn_stop.setEnabled(False)
+                return
+            youtube_params = yt_dlg.get_params()
+            self._append_log(
+                f"▶️ YouTube 설정: 프로젝트={youtube_params.get('gcp_project_name') or '자동'} "
+                f"/ 앱={youtube_params.get('oauth_app_name') or '자동'}", "INFO"
+            )
+
         # 워커 스레드 실행
-        self._worker = WorkerThread(selected, project_name=project_name)
+        self._worker = WorkerThread(selected, project_name=project_name, youtube_params=youtube_params)
         self._worker.log_message.connect(self._append_log)
         self._worker.progress.connect(self._on_progress)
         self._worker.service_done.connect(self._on_service_done)

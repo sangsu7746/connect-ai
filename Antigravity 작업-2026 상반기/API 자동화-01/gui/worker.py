@@ -27,10 +27,16 @@ class WorkerThread(QThread):
     service_done  = pyqtSignal(str, bool)
     all_done      = pyqtSignal()
 
-    def __init__(self, services: List[str], project_name: str = ""):
+    def __init__(
+        self,
+        services: List[str],
+        project_name: str = "",
+        youtube_params: dict = None,
+    ):
         super().__init__()
         self.services = services
         self.project_name = project_name
+        self.youtube_params = youtube_params or {}
         self._stop_flag = False
 
     def run(self):
@@ -53,6 +59,7 @@ class WorkerThread(QThread):
             "openai":    ("plugins.openai_plugin",    "OpenAIPlugin"),
             "github":    ("plugins.github_plugin",    "GitHubPlugin"),
             "aws":       ("plugins.aws_plugin",       "AWSPlugin"),
+            "youtube":   ("plugins.youtube_plugin",   "YouTubePlugin"),
         }
 
         for service in self.services:
@@ -79,7 +86,14 @@ class WorkerThread(QThread):
                     self.log_message.emit(f"[{svc.upper()}] {msg}", level)
                 return cb
 
-            plugin = plugin_class(progress_callback=make_callback(service), project_name=self.project_name)
+            if service == "youtube":
+                plugin = plugin_class(
+                    progress_callback=make_callback(service),
+                    project_name=self.project_name,
+                    **self.youtube_params,
+                )
+            else:
+                plugin = plugin_class(progress_callback=make_callback(service), project_name=self.project_name)
 
             self.log_message.emit(f"🚀 [{service.upper()}] 자동화 시작...", "INFO")
             result = await plugin.run()
