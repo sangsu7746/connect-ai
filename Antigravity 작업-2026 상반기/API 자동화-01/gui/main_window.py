@@ -1079,11 +1079,38 @@ class MainWindow(QMainWindow):
         sec_lbl.setObjectName("sectionLabel")
         layout.addWidget(sec_lbl)
 
-        # 서비스 카드들
+        # 서비스 카드 스크롤 영역
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFixedHeight(280)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setStyleSheet("""
+            QScrollArea { border: none; background: transparent; }
+            QScrollBar:vertical {
+                background: #161b22; width: 6px; border-radius: 3px;
+            }
+            QScrollBar::handle:vertical {
+                background: #30363d; border-radius: 3px; min-height: 20px;
+            }
+            QScrollBar::handle:vertical:hover { background: #58a6ff; }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+        """)
+
+        card_container = QWidget()
+        card_container.setStyleSheet("background: transparent;")
+        card_layout = QVBoxLayout(card_container)
+        card_layout.setContentsMargins(0, 0, 6, 0)
+        card_layout.setSpacing(8)
+
         for sid, info in SERVICES.items():
             card = ServiceCard(sid, info)
             self._cards[sid] = card
-            layout.addWidget(card)
+            card_layout.addWidget(card)
+
+        card_layout.addStretch()
+        scroll.setWidget(card_container)
+        layout.addWidget(scroll)
 
         # 구분선
         line = QFrame()
