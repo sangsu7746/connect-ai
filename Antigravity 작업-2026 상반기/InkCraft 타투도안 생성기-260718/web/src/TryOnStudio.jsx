@@ -151,7 +151,7 @@ export default function TryOnStudio({ design, onResult, onError, beforeManual, a
         <label className="upload-box">
           <input type="file" accept="image/*" onChange={onUpload} hidden />
           📷 Upload a photo of your {part.label.toLowerCase()} ({part.ko})
-          <small>Your tattoo design will be placed onto it — nothing is stored on our servers</small>
+          <small>Photo is never stored</small>
         </label>
       ) : (
         <>
@@ -189,10 +189,7 @@ export default function TryOnStudio({ design, onResult, onError, beforeManual, a
               </button>
               <button className="cta secondary" onClick={() => setPhoto(null)}>🗑️ Change photo</button>
             </div>
-            <p className="hint">
-              Click the photo to position the tattoo · AI Apply follows your skin's
-              curves and lighting for a realistic tattoo (Gemini)
-            </p>
+            <p className="hint">Click to position · ✨ AI Apply renders it realistically</p>
           </div>
         </>
       )}

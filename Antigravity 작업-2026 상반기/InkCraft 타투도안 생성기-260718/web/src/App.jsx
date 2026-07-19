@@ -254,27 +254,24 @@ export default function App() {
           Your idea, inked as a <em>tattoo design.</em>
         </h1>
         <p className="hero-sub">
-          Type any subject — a snake and dagger, a phoenix, your zodiac sign — pick a style
-          from old school to fine line, and get <b>stencil-ready black-ink designs in seconds</b>.
-          No subscription. Generate a few variations, keep the one that feels right,
-          and bring it to your artist.
+          Type an idea, pick a style — <b>stencil-ready designs in seconds</b>. No subscription.
         </p>
         <button className="cta hero-cta" onClick={scrollToStudio}>🖋️ Design My Tattoo — Free</button>
         <div className="hero-features">
           <div className="feature">
             <span>⚓</span>
-            <h3>Six real styles</h3>
-            <p>Old school, fine line, minimal, geometric, tribal and irezumi — each tuned with its own prompt craft.</p>
+            <h3>14 styles</h3>
+            <p>Old school to anime — black &amp; grey or color.</p>
           </div>
           <div className="feature">
-            <span>🎲</span>
-            <h3>Variations, not one shot</h3>
-            <p>Generate 1, 2 or 4 takes on the same idea and compare side by side before you commit to skin.</p>
+            <span>🧍</span>
+            <h3>Try it on</h3>
+            <p>Your photo or a 360° AI model, before/after.</p>
           </div>
           <div className="feature">
             <span>📄</span>
-            <h3>Flash sheet PDF</h3>
-            <p>Collect your favorites into a clean A4 flash sheet — perfect to print and show your tattoo artist.</p>
+            <h3>Flash sheet</h3>
+            <p>Print-ready A4 PDF for your artist.</p>
           </div>
         </div>
       </section>
@@ -282,7 +279,7 @@ export default function App() {
       <main className="layout" id="studio">
         {/* 좌측: 입력 패널 */}
         <section className="panel controls">
-          <h2>1. What do you want inked?</h2>
+          <h2>1. Idea</h2>
           <div className="prompt-row">
             <textarea
               value={subject}
@@ -326,7 +323,7 @@ export default function App() {
             ))}
           </div>
 
-          <h2>4. How many variations?</h2>
+          <h2>4. Variations</h2>
           <div className="seg">
             {[1, 2, 4].map((n) => (
               <button key={n} className={count === n ? 'active' : ''} onClick={() => setCount(n)}>
@@ -339,8 +336,8 @@ export default function App() {
             <input type="checkbox" checked={premium} onChange={(e) => setPremium(e.target.checked)} />
             <span className="pt-slider" aria-hidden="true" />
             <span className="pt-text">
-              <b>✨ Premium quality</b>
-              <small>Cleaner linework &amp; composition{firebaseEnabled ? ' · 150 coins/design' : ''}</small>
+              <b>✨ Premium</b>
+              <small>Cleaner lines{firebaseEnabled ? ' · 150 coins' : ''}</small>
             </span>
           </label>
 
@@ -369,8 +366,7 @@ export default function App() {
           <div className="preview-stage">
             {!current && !loading && (
               <div className="placeholder">
-                <p>👈 Describe a subject and hit Create.</p>
-                <p className="hint">Your designs collect below — check the ones you love and export a flash sheet.</p>
+                <p>👈 Create a design to see it here.</p>
               </div>
             )}
             {loading && <div className="spinner" aria-label="loading" />}
@@ -503,7 +499,7 @@ export default function App() {
                 <input
                   type="text"
                   maxLength={40}
-                  placeholder="Sheet title (e.g. Snake & Dagger Ideas)"
+                  placeholder="Sheet title (optional)"
                   value={sheetTitle}
                   onChange={(e) => setSheetTitle(e.target.value)}
                 />
@@ -524,8 +520,7 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        Designs generated with FLUX.1 [schnell] (Apache 2.0) — reference art for you and your tattoo artist.
-        Final linework and stencil are always up to your artist.
+        FLUX.1 [schnell] · reference art — final stencil by your artist.
       </footer>
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}

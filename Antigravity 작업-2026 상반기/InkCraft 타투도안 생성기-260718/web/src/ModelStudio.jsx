@@ -276,7 +276,7 @@ export default function ModelStudio({ design, model, setModel, onError, aiView, 
               <img src={userPhoto} alt="my photo" />
               <div className="upr-text">
                 <b>📷 Using your photo</b>
-                <small>Face &amp; body shape will be preserved · photo is never stored</small>
+                <small>Face &amp; build preserved · never stored</small>
                 <button className="link-btn" onClick={() => setUserPhoto(null)}>✕ Remove photo</button>
               </div>
             </div>
@@ -284,7 +284,7 @@ export default function ModelStudio({ design, model, setModel, onError, aiView, 
             <label className="upload-box">
               <input type="file" accept="image/*" onChange={onUserPhotoUpload} hidden />
               📷 (Optional) Use my full-body photo
-              <small>같은 얼굴·체형의 모델이 생성됩니다 — 본인 또는 동의받은 사진만 업로드하세요</small>
+              <small>같은 얼굴·체형으로 생성 · 본인 사진만</small>
             </label>
           )}
 
@@ -293,11 +293,7 @@ export default function ModelStudio({ design, model, setModel, onError, aiView, 
               ? `${busy.label}… ${busy.done + 1}/${busy.total}`
               : `🧍 Create ${userPhoto ? 'My ' : ''}360° Model${showCosts ? ` · ${VIEW_COST * N}🪙` : ''}`}
           </button>
-          <p className="hint">
-            {userPhoto
-              ? `Your look in athletic sportswear, generated in ${N} views — drag to spin and try tattoos from every angle.`
-              : `A fictional AI model in athletic underwear is generated in ${N} views — drag to spin, place your tattoo with Manual place, and see it from every angle.`}
-          </p>
+          <p className="hint">{N} views · drag to spin · try tattoos from every angle</p>
         </>
       )}
 
@@ -373,10 +369,7 @@ export default function ModelStudio({ design, model, setModel, onError, aiView, 
                 </button>
                 <button className="cta secondary" onClick={() => setManual(false)}>✖ Cancel</button>
               </div>
-              <p className="hint">
-                Background removed automatically — click to position, slider to resize, ◀ ▶ to pick the angle.
-                ✨ AI Apply spreads this exact placement to all {N} angles, then opens Before/After compare.
-              </p>
+              <p className="hint">Click to position · ✨ AI Apply spreads it to all {N} angles</p>
             </div>
           )}
 
@@ -420,9 +413,7 @@ export default function ModelStudio({ design, model, setModel, onError, aiView, 
           )}
           {!manual && (
             <p className="hint">
-              {compare
-                ? 'Drag the slider to compare before/after · use ◀ ▶ to change the angle'
-                : 'Drag the photo left/right (or use ◀ ▶) to spin the model 360°'}
+              {compare ? 'Drag to compare · ◀ ▶ angle' : 'Drag or ◀ ▶ to spin 360°'}
             </p>
           )}
         </>
