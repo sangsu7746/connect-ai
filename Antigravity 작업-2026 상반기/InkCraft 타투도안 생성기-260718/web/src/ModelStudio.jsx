@@ -1,22 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { MODEL_ANGLES, MODEL_PARTS, MODEL_GENDERS } from './presets.js';
+import { MODEL_ANGLES, MODEL_GENDERS } from './presets.js';
 import CompareSlider from './CompareSlider.jsx';
 import { loadImage, removeWhiteBg, fileToDataUrl } from './ink.js';
 
 const N = MODEL_ANGLES.length; // 8방향
 const VIEW_COST = 100;  // 프레임당 (functions와 일치)
 const APPLY_COST = 100;
-
-// 부위가 기하학적으로 완전히 가려지는 각도 — AI 호출을 건너뛰고 원본 프레임 재사용
-// (Gemini가 "가려지면 그대로 반환" 지시를 무시하고 반대편에 넣는 실패를 원천 차단 + 과금 절약)
-const OCCLUDED_ANGLES = {
-  leftarm: [2],        // 우측면에서 왼팔은 몸 뒤에 가려짐
-  rightarm: [6],       // 좌측면에서 오른팔 가려짐
-  chest: [3, 4, 5],    // 후면 계열에서 가슴 가려짐
-  back: [7, 0, 1],     // 정면 계열에서 등 가려짐
-  leftleg: [2],
-  rightleg: [6],
-};
 
 // 수동 배치 좌표(앵커 각도 + x)로 가려지는 각도를 추정해 스킵한다.
 // 좌/우: 정면 계열에서 이미지 오른쪽 = 모델의 왼쪽 (후면 계열은 반전) → 반대쪽 측면 뷰 스킵.
@@ -40,14 +29,13 @@ function occludedForPlacement(anchorAngle, x) {
 
 /**
  * AI 가상 모델 스튜디오 — 속옷(스포츠웨어) 차림의 실사 모델을 8방향으로 생성해
- * 드래그로 360° 회전시키고, 부위를 골라 도안을 전 각도에 적용한 뒤
+ * 드래그로 360° 회전시키고, 수동 배치(위치·크기) 기준으로 도안을 전 각도에 적용한 뒤
  * Before/After 슬라이더로 비교한다.
  * model 상태는 App이 보관(디자인을 바꿔도 모델 유지, 재생성 비용 절약).
  */
 export default function ModelStudio({ design, model, setModel, onError, aiView, aiApply, beforeManual, showCosts }) {
   const { gender, frames, applied } = model;
   const [angleIdx, setAngleIdx] = useState(0);
-  const [part, setPart] = useState('leftarm');
   const [busy, setBusy] = useState(null); // null | {label, done, total}
   const [compare, setCompare] = useState(false);
   const dragRef = useRef(null); // {startX, startIdx}
@@ -242,32 +230,6 @@ export default function ModelStudio({ design, model, setModel, onError, aiView, 
     }
   };
 
-  // ── 타투 360° 적용: 전 프레임에 부위 지정 합성 (가려지는 각도는 원본 재사용·무과금) ──
-  const applyTattoo = async () => {
-    if (busy || !frames || frames.some((f) => !f)) return;
-    setBusy({ label: 'Inking 360°', done: 0, total: N });
-    try {
-      const skip = OCCLUDED_ANGLES[part] || [];
-      const next = new Array(N).fill(null);
-      for (let i = 0; i < N; i++) {
-        setBusy({ label: 'Inking 360°', done: i, total: N });
-        if (skip.includes(i)) {
-          next[i] = frames[i];
-        } else {
-          const r = await aiApply({ photo: frames[i], design, part, angle: i });
-          next[i] = r.image;
-        }
-        setModel((m) => ({ ...m, applied: [...next] }));
-      }
-      setCompare(true);
-      setAngleIdx(0);
-    } catch (e) {
-      onError?.(e);
-    } finally {
-      setBusy(null);
-    }
-  };
-
   // ── 드래그 회전 (비교 모드에서는 슬라이더와 충돌하므로 버튼만) ──
   const onPointerDown = (e) => {
     if (compare) return;
@@ -334,7 +296,7 @@ export default function ModelStudio({ design, model, setModel, onError, aiView, 
           <p className="hint">
             {userPhoto
               ? `Your look in athletic sportswear, generated in ${N} views — drag to spin and try tattoos from every angle.`
-              : `A fictional AI model in athletic underwear is generated in ${N} views — drag to spin, pick a body part, and see your tattoo from every angle.`}
+              : `A fictional AI model in athletic underwear is generated in ${N} views — drag to spin, place your tattoo with Manual place, and see it from every angle.`}
           </p>
         </>
       )}
@@ -418,31 +380,16 @@ export default function ModelStudio({ design, model, setModel, onError, aiView, 
             </div>
           )}
 
-          {/* 부위 선택 + 적용 */}
-          {!manual && (
-          <div className="part-grid">
-            {MODEL_PARTS.map((p) => (
-              <button
-                key={p.id}
-                className={`part-chip ${part === p.id ? 'active' : ''}`}
-                onClick={() => setPart(p.id)}
-                title={p.ko}
-              >
-                {p.emoji} {p.label}
-              </button>
-            ))}
-          </div>
-          )}
-
+          {/* 적용은 🎯 Manual place → ✨ AI Apply 360° 흐름으로 일원화 */}
           {!manual && (
           <div className="btn-row">
-            <button className="cta" onClick={applyTattoo} disabled={!!busy || !modelReady}>
-              {busy?.label === 'Inking 360°'
-                ? `Inking… ${busy.done + 1}/${busy.total}`
-                : `🖋️ Apply Tattoo 360°${showCosts ? ` · ${APPLY_COST * (N - (OCCLUDED_ANGLES[part]?.length || 0))}🪙` : ''}`}
-            </button>
+            {busy && (
+              <button className="cta" disabled>
+                {`${busy.label}… ${busy.done + 1}/${busy.total}`}
+              </button>
+            )}
             <button
-              className="cta secondary"
+              className="cta"
               onClick={() => { setManual(true); setCompare(false); }}
               disabled={!!busy || !frames?.[angleIdx] || !designNoBg}
               title="배경 제거된 도안을 원하는 위치·크기로 직접 배치 — 현재 각도 프레임만 있으면 사용 가능"
