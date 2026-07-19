@@ -520,7 +520,7 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        FLUX.1 [schnell] · reference art — final stencil by your artist.
+        final stencil by your artist.
       </footer>
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
