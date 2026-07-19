@@ -2,6 +2,7 @@
 // 브라우저에 API 키가 노출되지 않도록 서버에서 대신 호출한다. (과금 없음, IP 일일한도만)
 import 'dotenv/config';
 import express from 'express';
+import sharp from 'sharp';
 
 const { CF_ACCOUNT_ID, CF_API_TOKEN, GEMINI_API_KEY } = process.env;
 const PORT = Number(process.env.PORT || 8789);
@@ -168,7 +169,7 @@ const MODEL_ANGLE_HINTS = {
 };
 const MODEL_GENDER_PROMPTS = {
   female: 'a fictional AI-generated young woman wearing a simple grey sports bra and grey athletic shorts',
-  male: 'a fictional AI-generated young man wearing simple grey athletic trunks',
+  male: 'a fictional AI-generated young man, shirtless, wearing grey athletic running shorts with a 3-inch inseam so most of the thigh is visible',
 };
 const MODEL_PART_LABELS = {
   leftarm: 'left arm (forearm and upper arm)',
@@ -183,7 +184,8 @@ function modelFrontInstruction(gender) {
   return (
     `Photorealistic full-body studio photograph of ${MODEL_GENDER_PROMPTS[gender] || MODEL_GENDER_PROMPTS.female}, ` +
     'standing straight facing the camera in a relaxed A-pose with arms slightly away from the body, hair tied back in a neat low bun, ' +
-    'entire body visible from head to feet, centered, plain light grey seamless studio background, soft even lighting, ' +
+    'entire body visible from head to feet, centered. The FULL body including the top of the head and both feet must be completely inside the frame with generous empty margin above the head and below the feet — never crop any part of the body. ' +
+    'Plain light grey seamless studio background, soft even lighting, ' +
     'no tattoos on the skin, natural skin texture. Output only the photo.'
   );
 }
@@ -192,22 +194,42 @@ function modelViewInstruction(angleHint) {
     'The attached image is a full-body studio photo of a fictional AI-generated model. ' +
     'Generate the exact same person — same face, same hair, same body, same outfit, same relaxed A-pose, ' +
     `same plain light grey studio background and lighting — photographed ${angleHint}. ` +
-    'Entire body visible from head to feet, centered. Output only the photo.'
+    'Entire body visible from head to feet, centered. The FULL body including the top of the head and both feet must be completely inside the frame with generous empty margin above the head and below the feet — never crop any part of the body. Output only the photo.'
   );
 }
-// 사용자 전신사진 → 같은 인물(얼굴·헤어·체형 유지)의 스튜디오 정면 모델
-function modelFromPhotoInstruction() {
+// 사진 기반 모델 3단계 파이프라인 (검증된 방식):
+// ① 신원 이식 → ② 쇼츠 단축·줌아웃 편집 → ③ 패딩 후 발 아웃페인팅
+// 템플릿 이미지를 함께 넣으면 인물이 템플릿에 잡아먹히므로 텍스트 편집만 사용한다.
+function modelPhotoStep1Instruction() {
   return (
-    'The attached image is a full-body photo of a person. ' +
+    'The attached image is a photo of a person (it may be cropped or partially framed). ' +
     'Generate a photorealistic full-body studio photograph of the EXACT SAME person — same face, same hairstyle, ' +
-    'same body shape, build and proportions — now dressed for a tattoo fitting session: ' +
-    'a man wears only simple grey athletic trunks with a bare torso, a woman wears a grey sports bra and fitted athletic shorts. ' +
-    'The person is ' +
-    'standing straight facing the camera in a relaxed A-pose with arms slightly away from the body, ' +
-    'entire body visible from head to feet, centered, plain light grey seamless studio background, soft even lighting, ' +
-    'no tattoos on the skin, natural skin texture. Output only the photo.'
+    'glasses if any, same body shape, build and proportions — now dressed for a tattoo fitting session: ' +
+    'a man is shirtless wearing grey athletic running shorts, a woman wears a grey sports bra and short athletic shorts. ' +
+    'Standing straight facing the camera in a relaxed A-pose, entire body visible from head to feet, centered, ' +
+    'plain light grey seamless studio background, soft even lighting, no tattoos on the skin. Output only the photo.'
   );
 }
+function modelPhotoStep2Instruction() {
+  return (
+    'Edit this photo with exactly two changes and nothing else: ' +
+    '(1) shorten the shorts into very short athletic running shorts — the hem must end high on the upper thigh ' +
+    'so most of the thigh is bare (for a woman keep the sports bra and make the shorts short and fitted); ' +
+    '(2) zoom out slightly so the entire body is in frame with both feet fully visible. ' +
+    'Keep the SAME person — same face, glasses, hair and body build — same pose, background and lighting. ' +
+    'Output only the edited photo.'
+  );
+}
+function modelPhotoStep3Instruction() {
+  return (
+    'This photo has been extended with blank grey space at the top and bottom. ' +
+    'Fill in the blank areas naturally and seamlessly: continue the studio background, and complete the model body — ' +
+    'finish the lower legs, ankles and BOTH FEET standing naturally on the studio floor inside the frame. ' +
+    'Do not change anything about the person, outfit, pose or lighting in the existing part of the photo. ' +
+    'Output only the completed photo.'
+  );
+}
+
 // 수동 배치 정제: 얹어둔 도안 그래픽을 그 자리·그 크기 그대로 실제 타투처럼 다듬는다
 function modelRefineInstruction() {
   return (
@@ -283,7 +305,25 @@ app.post('/api/model-view', async (req, res) => {
       // 사용자 전신사진 기반 정면 뷰 (얼굴·체형 유지, 사진은 저장하지 않음)
       const mUser = IMG_RE.exec(userPhoto);
       if (!mUser) return res.status(400).json({ error: 'userPhoto must be an image data URL.' });
-      image = await callGeminiParts([{ text: modelFromPhotoInstruction() }, toInline(mUser)]);
+      // ① 신원 이식
+      const s1 = await callGeminiParts([{ text: modelPhotoStep1Instruction() }, toInline(mUser)]);
+      // ② 쇼츠 단축 + 줌아웃 (텍스트 편집 — 템플릿 이미지를 넣으면 인물이 바뀌므로 금지)
+      const s2 = await callGeminiParts([{ text: modelPhotoStep2Instruction() }, toInline(IMG_RE.exec(s1))]);
+      // ③ 위·아래 패딩 후 발/여백 아웃페인팅 (발 잘림 방지 확정 처리)
+      const buf = Buffer.from(IMG_RE.exec(s2)[2], 'base64');
+      const meta = await sharp(buf).metadata();
+      const padded = await sharp(buf)
+        .extend({
+          top: Math.round(meta.height * 0.06),
+          bottom: Math.round(meta.height * 0.18),
+          background: { r: 224, g: 224, b: 224 },
+        })
+        .jpeg({ quality: 92 })
+        .toBuffer();
+      image = await callGeminiParts([
+        { text: modelPhotoStep3Instruction() },
+        { inline_data: { mime_type: 'image/jpeg', data: padded.toString('base64') } },
+      ]);
     } else if (Number(angle) === 0) {
       image = await callGeminiParts([{ text: modelFrontInstruction(gender) }]);
     } else {

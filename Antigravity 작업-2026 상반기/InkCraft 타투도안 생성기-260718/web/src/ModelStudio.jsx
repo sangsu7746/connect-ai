@@ -301,15 +301,13 @@ export default function ModelStudio({ design, model, setModel, onError, aiView, 
       {/* 모델이 없을 때: 생성 화면 — 가상 모델 또는 내 전신사진 기반 */}
       {!frames && (
         <>
-          {!userPhoto && (
-            <div className="seg">
-              {MODEL_GENDERS.map((g) => (
-                <button key={g.id} className={gender === g.id ? 'active' : ''} onClick={() => setGender(g.id)}>
-                  {g.emoji} {g.label}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="seg">
+            {MODEL_GENDERS.map((g) => (
+              <button key={g.id} className={gender === g.id ? 'active' : ''} onClick={() => setGender(g.id)}>
+                {g.emoji} {g.label}
+              </button>
+            ))}
+          </div>
 
           {userPhoto ? (
             <div className="user-photo-row">
