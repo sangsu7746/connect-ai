@@ -11,6 +11,7 @@ import AuthModal from './AuthModal.jsx';
 import TopupModal from './TopupModal.jsx';
 import TryOnStudio from './TryOnStudio.jsx';
 import ModelStudio from './ModelStudio.jsx';
+import Lightbox from './Lightbox.jsx';
 import { removeWhiteBg } from './ink.js';
 
 const SHEET_COST = 300; // 무료 1시트/일 소진 후 (functions와 일치)
@@ -37,6 +38,9 @@ export default function App() {
   const [coins, setCoins] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [showTopup, setShowTopup] = useState(false);
+
+  // 이미지 라이트박스 (도안·모델 확대 보기)
+  const [lightboxSrc, setLightboxSrc] = useState(null);
 
   // 시착 탭: photo(내 사진) / model(AI 가상 모델 — 프레임은 App이 보관해 도안 바꿔도 유지)
   const [tryOnTab, setTryOnTab] = useState('photo');
@@ -371,7 +375,13 @@ export default function App() {
             )}
             {loading && <div className="spinner" aria-label="loading" />}
             {current && !loading && (
-              <img className="page-view" src={current.image} alt={current.subject} />
+              <img
+                className="page-view"
+                src={current.image}
+                alt={current.subject}
+                title="클릭하면 크게 보기"
+                onClick={() => setLightboxSrc(current.image)}
+              />
             )}
           </div>
           {current && (
@@ -414,6 +424,7 @@ export default function App() {
               setModel={setModel}
               onError={handleChargeError}
               showCosts={firebaseEnabled}
+              onZoom={setLightboxSrc}
               beforeManual={firebaseEnabled ? () => chargeFeature('manual_apply') : null}
               aiView={async (payload) => {
                 if (firebaseEnabled) {
@@ -523,6 +534,7 @@ export default function App() {
         final stencil by your artist.
       </footer>
 
+      {lightboxSrc && <Lightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showTopup && user && (
         <TopupModal user={user} onClose={() => setShowTopup(false)} onNotice={setNotice} />

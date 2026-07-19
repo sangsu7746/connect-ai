@@ -633,6 +633,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Art-print framing — white tattoo images look intentional */
 .page-view {
+  cursor: zoom-in;
   max-width: 100%;
   max-height: 460px;
   display: block;
@@ -762,7 +763,25 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .model-studio { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
 .model-studio .cta { margin-top: 0; }
 
-.model-viewer { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.model-viewer { display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; }
+
+/* 뷰어 프레임 우상단 확대 버튼 */
+.zoom-btn {
+  position: absolute;
+  top: 10px;
+  right: calc((100% - min(100%, 480px)) / 2 + 10px);
+  z-index: 5;
+  width: 34px; height: 34px;
+  border-radius: var(--r-sm);
+  background: rgba(12,12,15,0.72);
+  border: 1px solid var(--border-hi);
+  color: var(--text);
+  font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.zoom-btn:hover { border-color: var(--gold); color: var(--gold-bright); background: rgba(12,12,15,0.9); }
 
 .model-frame {
   /* contain: 생성 이미지 비율이 각기 달라도 머리·발이 잘려 보이지 않게 전체 표시 */
@@ -972,6 +991,42 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   box-shadow: 0 3px 14px rgba(0,100,255,0.35);
 }
 .toss-btn:hover { filter: brightness(1.1); }
+
+/* ═══════════════════════════════════════════════
+   LIGHTBOX (이미지 확대 보기)
+   ═══════════════════════════════════════════════ */
+.lightbox-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  cursor: zoom-out;
+  animation: fadeIn 0.16s ease;
+}
+.lightbox-img {
+  max-width: 92vw;
+  max-height: 92vh;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--frame-bg);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 24px 80px rgba(0,0,0,0.8);
+  cursor: default;
+  animation: modalIn 0.2s ease;
+}
+.lightbox-close {
+  position: fixed; top: 18px; right: 20px;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(19,19,24,0.8);
+  border: 1px solid var(--border-hi);
+  color: var(--text);
+  font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 201;
+  transition: border-color 0.15s, color 0.15s;
+}
+.lightbox-close:hover { border-color: var(--gold); color: var(--gold-bright); }
 
 /* ═══════════════════════════════════════════════
    RESPONSIVE

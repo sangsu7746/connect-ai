@@ -33,7 +33,7 @@ function occludedForPlacement(anchorAngle, x) {
  * Before/After 슬라이더로 비교한다.
  * model 상태는 App이 보관(디자인을 바꿔도 모델 유지, 재생성 비용 절약).
  */
-export default function ModelStudio({ design, model, setModel, onError, aiView, aiApply, beforeManual, showCosts }) {
+export default function ModelStudio({ design, model, setModel, onError, aiView, aiApply, beforeManual, showCosts, onZoom }) {
   const { gender, frames, applied } = model;
   const [angleIdx, setAngleIdx] = useState(0);
   const [busy, setBusy] = useState(null); // null | {label, done, total}
@@ -301,6 +301,17 @@ export default function ModelStudio({ design, model, setModel, onError, aiView, 
       {frames && (
         <>
           <div className="model-viewer">
+            {/* 현재 각도 확대 보기 (수동 배치 중엔 숨김) */}
+            {!manual && shownFrame && onZoom && (
+              <button
+                className="zoom-btn"
+                onClick={() => onZoom(shownFrame)}
+                title="크게 보기"
+                aria-label="Zoom"
+              >
+                ⛶
+              </button>
+            )}
             {manual ? (
               <canvas
                 ref={manualCanvasRef}
