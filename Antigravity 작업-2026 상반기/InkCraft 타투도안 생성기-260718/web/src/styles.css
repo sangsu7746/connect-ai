@@ -765,7 +765,8 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 .model-viewer { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
 .model-frame {
-  width: min(100%, 480px); aspect-ratio: 1; object-fit: cover;
+  /* contain: 생성 이미지 비율이 각기 달라도 머리·발이 잘려 보이지 않게 전체 표시 */
+  width: min(100%, 480px); aspect-ratio: 1; object-fit: contain;
   border-radius: var(--r-md); border: 1px solid var(--border);
   background: var(--panel-2);
   cursor: grab; user-select: none; touch-action: pan-y; display: block;
@@ -824,7 +825,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   user-select: none; touch-action: none;
   cursor: ew-resize; background: var(--panel-2);
 }
-.cs-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cs-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .cs-after { position: absolute; inset: 0; }
 
 .cs-label {
