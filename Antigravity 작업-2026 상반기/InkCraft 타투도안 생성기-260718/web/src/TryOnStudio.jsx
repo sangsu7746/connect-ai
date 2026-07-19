@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { BODY_PARTS } from './presets.js';
 
 const MAX_PHOTO = 1280; // 업로드 사진 최대 변 (비용·용량 절약)
 
@@ -32,13 +31,12 @@ function loadImage(src) {
 }
 
 /**
- * 타투 시착 스튜디오 — 내 사진(팔/다리/상체/온몸)에 도안을 얹어본다.
+ * 타투 시착 스튜디오 — 내 사진에 도안을 얹어본다.
  * ① 수동 배치: 클릭 위치 + 크기 + 잉크 블렌딩(멀티플라이), 무료 게이트는 App에서 주입
- * ② AI 적용: Gemini가 피부 굴곡·조명에 맞춰 실제 타투처럼 합성 (프리미엄)
+ * ② AI 적용: Gemini가 사진 속 부위를 인식해 피부 굴곡·조명에 맞춰 합성 (프리미엄)
  * 결과는 original=원본 사진과 함께 App으로 전달된다.
  */
 export default function TryOnStudio({ design, onResult, onError, beforeManual, aiApply, showCosts }) {
-  const [bodyPart, setBodyPart] = useState('arm');
   const [photo, setPhoto] = useState(null);
   const [pos, setPos] = useState({ x: 0.5, y: 0.45 });
   const [scale, setScale] = useState(30); // 사진 너비 대비 %
@@ -108,7 +106,7 @@ export default function TryOnStudio({ design, onResult, onError, beforeManual, a
     try {
       // Firebase 모드: 무료 3회/일 → 초과 30코인 (게이트는 App에서 주입)
       if (beforeManual) await beforeManual();
-      onResult({ image: canvas.toDataURL('image/jpeg', 0.92), original: photo, method: 'manual', bodyPart });
+      onResult({ image: canvas.toDataURL('image/jpeg', 0.92), original: photo, method: 'manual' });
       setPhoto(null); // 적용 후 스튜디오 초기화 (결과물을 도안으로 재사용하는 재귀 방지)
     } catch (e) {
       onError?.(e);
@@ -120,8 +118,8 @@ export default function TryOnStudio({ design, onResult, onError, beforeManual, a
     setAiBusy(true);
     try {
       // Firebase 모드면 ikApplyTattooAI(150코인), 로컬 모드면 로컬 프록시 — App에서 주입
-      const data = await aiApply({ photo, design, bodyPart });
-      onResult({ image: data.image, original: photo, method: 'ai', bodyPart });
+      const data = await aiApply({ photo, design });
+      onResult({ image: data.image, original: photo, method: 'ai' });
       setPhoto(null); // 적용 후 스튜디오 초기화
     } catch (e) {
       onError?.(e);
@@ -130,27 +128,13 @@ export default function TryOnStudio({ design, onResult, onError, beforeManual, a
     }
   };
 
-  const part = BODY_PARTS.find((p) => p.id === bodyPart);
-
   return (
     <div className="mockup-studio">
       <h2>Try it on your skin</h2>
-      <div className="seg part-seg">
-        {BODY_PARTS.map((p) => (
-          <button
-            key={p.id}
-            className={bodyPart === p.id ? 'active' : ''}
-            onClick={() => setBodyPart(p.id)}
-            title={p.ko}
-          >
-            {p.emoji} {p.label}
-          </button>
-        ))}
-      </div>
       {!photo ? (
         <label className="upload-box">
           <input type="file" accept="image/*" onChange={onUpload} hidden />
-          📷 Upload a photo of your {part.label.toLowerCase()} ({part.ko})
+          📷 Upload a photo
           <small>Photo is never stored</small>
         </label>
       ) : (

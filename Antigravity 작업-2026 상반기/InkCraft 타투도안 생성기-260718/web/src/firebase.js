@@ -86,9 +86,9 @@ export async function generateDesignViaFirebase({ subject, style, engine, color 
 }
 
 /** AI 시착 — 내 사진에 도안을 실제 타투처럼 합성 (150코인, 실패 시 환불) */
-export async function applyTattooViaFirebase({ photo, design, bodyPart }) {
+export async function applyTattooViaFirebase({ photo, design }) {
   const fn = httpsCallable(functions, 'ikApplyTattooAI');
-  const { data } = await fn({ photo, design, bodyPart });
+  const { data } = await fn({ photo, design });
   return data; // {image, charged}
 }
 

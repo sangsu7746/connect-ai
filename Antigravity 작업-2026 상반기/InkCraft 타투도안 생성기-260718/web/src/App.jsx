@@ -451,22 +451,22 @@ export default function App() {
               onError={handleChargeError}
               showCosts={firebaseEnabled}
               beforeManual={firebaseEnabled ? () => chargeFeature('manual_apply') : null}
-              aiApply={async ({ photo, design, bodyPart }) => {
-                if (firebaseEnabled) return applyTattooViaFirebase({ photo, design, bodyPart });
+              aiApply={async ({ photo, design }) => {
+                if (firebaseEnabled) return applyTattooViaFirebase({ photo, design });
                 const res = await fetch('/api/apply-tattoo', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ photo, design, bodyPart }),
+                  body: JSON.stringify({ photo, design }),
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
                 return data;
               }}
-              onResult={({ image, method, bodyPart }) => {
+              onResult={({ image, method }) => {
                 const item = {
                   id: Date.now(),
                   image,
-                  subject: `${current.subject} → on my ${bodyPart} (${method === 'ai' ? 'AI' : 'manual'})`,
+                  subject: `${current.subject} → try-on (${method === 'ai' ? 'AI' : 'manual'})`,
                   style: current.style,
                   engine: method === 'ai' ? 'premium' : current.engine,
                   translatedPrompt: null,
