@@ -246,20 +246,25 @@ function modelRefineInstruction() {
 }
 
 // 기준 각도에 적용된 타투를 다른 각도 프레임에 같은 위치·크기로 전파
+// 3이미지 참조: ①대상 프레임 ②앵커 적용본(위치·크기 기준) ③원본 도안(디자인 충실도 기준)
+// — 체인 전파의 변형 증폭을 막기 위해 항상 앵커+원본을 직접 참조한다.
 function modelFollowInstruction(angleHint, refAngleHint) {
   return (
     `The first image is a full-body studio photo of a fictional model photographed ${angleHint}. ` +
-    `The second image is the SAME model photographed ${refAngleHint}, with a tattoo on the skin. ` +
-    'Apply the exact same tattoo onto the first image: same design, same colors, same anatomical body location, ' +
-    'same size relative to the body. Render it realistically — follow the curvature of the body part, ' +
-    'ink as pigment settled under the skin with natural saturation and subtle sheen, matching the lighting. ' +
-    'Never paste the design flat like a sticker: warp it onto the 3D surface of the body with correct perspective ' +
-    'and foreshortening for this camera angle — if the body location is seen at an oblique angle, the tattoo must ' +
-    'appear correspondingly narrowed and wrapped around the form, possibly only partially visible. ' +
-    'The ink must stay strictly within the silhouette of the skin: never draw any part of the tattoo outside the body outline, ' +
-    'over the background, or over clothing — trim the design at the edge of the body part if needed. ' +
-    "If that body location is not visible from the first image's camera angle (turned away or occluded), " +
-    'output the first image exactly as it is with no tattoo anywhere — adding the tattoo to a different spot is a failure. ' +
+    `The second image is the SAME model photographed ${refAngleHint}, showing the model's ONLY tattoo. ` +
+    'The third image is the exact tattoo artwork on white paper. ' +
+    'Task: apply that exact tattoo onto the first image, at the same anatomical body location and the same ' +
+    'size relative to the body as shown in the second image. ' +
+    'Reproduce the artwork of the third image faithfully — same design, same colors. Do NOT redesign it, ' +
+    'do NOT enlarge it, do NOT add any extra decorative elements. The model has exactly ONE tattoo. ' +
+    'The second image is already oriented to match this camera direction: place the tattoo on the SAME SIDE ' +
+    'of the image and at the same height on the body as shown in the second image. ' +
+    'Render it realistically: warp it onto the 3D curvature of the body with correct perspective and ' +
+    'foreshortening for this camera angle, ink as pigment settled under the skin with natural saturation, ' +
+    'matching the lighting. Never paste it flat like a sticker. ' +
+    'The ink must stay strictly within the silhouette of the skin — never over background or clothing. ' +
+    "If the tattoo's body location is turned away or occluded at this camera angle, output the first image " +
+    'exactly as it is with no tattoo anywhere — adding the tattoo to a different spot is a failure. ' +
     'Keep the person, pose, outfit, background and everything else completely unchanged. Output only the edited photo.'
   );
 }
@@ -359,7 +364,20 @@ app.post('/api/model-apply', async (req, res) => {
       const mRef = IMG_RE.exec(reference || '');
       if (!hint || !refHint) return res.status(400).json({ error: 'Unknown angle.' });
       if (!mRef) return res.status(400).json({ error: 'reference must be an image data URL.' });
-      parts = [{ text: modelFollowInstruction(hint, refHint) }, toInline(mPhoto), toInline(mRef)];
+      const mDesignF = IMG_RE.exec(design || '');
+      if (!mDesignF) return res.status(400).json({ error: 'design must be an image data URL.' });
+      // 정면↔후면 계열 간 전파: 참조를 좌우 반전 — Gemini의 '2D 위치 복사' 습성이 해부학적으로 맞아떨어지게 한다
+      const FRONTISH = [7, 0, 1];
+      const BACKISH = [3, 4, 5];
+      const needFlip =
+        (FRONTISH.includes(Number(refAngle)) && BACKISH.includes(Number(angle))) ||
+        (BACKISH.includes(Number(refAngle)) && FRONTISH.includes(Number(angle)));
+      let refInline = toInline(mRef);
+      if (needFlip) {
+        const flipped = await sharp(Buffer.from(mRef[2], 'base64')).flop().jpeg({ quality: 92 }).toBuffer();
+        refInline = { inline_data: { mime_type: 'image/jpeg', data: flipped.toString('base64') } };
+      }
+      parts = [{ text: modelFollowInstruction(hint, refHint) }, toInline(mPhoto), refInline, toInline(mDesignF)];
     } else {
       const hint = MODEL_ANGLE_HINTS[Number(angle)];
       const partLabel = MODEL_PART_LABELS[part];

@@ -121,28 +121,17 @@ export default function ModelStudio({ design, model, setModel, onError, aiView, 
       next[anchor] = r0.image;
       setModel((m) => ({ ...m, applied: [...next] }));
 
-      // 앵커에서 양방향으로 인접 각도 체인 전파 — 각 프레임은 바로 옆 각도의 결과를 참조
-      // (시점 차이가 45°라 평면 복사·엉뚱한 위치 오류가 크게 줄어든다)
-      const order = [];
-      for (let d = 1; d <= N / 2; d++) {
-        for (const dir of [1, -1]) {
-          const i = (((anchor + dir * d) % N) + N) % N;
-          if (i !== anchor && !order.some((o) => o.i === i)) order.push({ i, dir });
-        }
-      }
+      // 전 프레임이 항상 '앵커 적용본(위치·크기) + 원본 도안(디자인)'을 직접 참조 —
+      // 체인 전파는 한 프레임의 오류가 증폭되므로(도안 변형·확대·소실) 사용하지 않는다.
       let done = 1;
-      for (const { i, dir } of order) {
+      for (let i = 0; i < N; i++) {
+        if (i === anchor) continue;
         setBusy({ label: 'Inking 360°', done, total: N });
         if (skip.includes(i)) {
           next[i] = frames[i]; // 가려지는 뷰는 원본 재사용 (무과금)
         } else {
-          // 앵커 방향으로 가장 가까운 '타투가 보이는' 적용본을 참조로 사용
-          let refIdx = (((i - dir) % N) + N) % N;
-          while (refIdx !== anchor && (!next[refIdx] || skip.includes(refIdx))) {
-            refIdx = (((refIdx - dir) % N) + N) % N;
-          }
           const r = await aiApply({
-            mode: 'follow', photo: frames[i], reference: next[refIdx], angle: i, refAngle: refIdx,
+            mode: 'follow', photo: frames[i], reference: next[anchor], design, angle: i, refAngle: anchor,
           });
           next[i] = r.image;
         }
