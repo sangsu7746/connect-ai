@@ -7,22 +7,23 @@ const N = MODEL_ANGLES.length; // 8방향
 const VIEW_COST = 100;  // 프레임당 (functions와 일치)
 const APPLY_COST = 100;
 
-// 수동 배치 좌표(앵커 각도 + x)로 가려지는 각도를 추정해 스킵한다.
-// 좌/우: 정면 계열에서 이미지 오른쪽 = 모델의 왼쪽 (후면 계열은 반전) → 반대쪽 측면 뷰 스킵.
-// 앞/뒤: 몸통 중앙(x 0.45~0.55)에 배치했다면 반대편(앞↔뒤) 뷰 3개도 보이지 않으므로 스킵.
+// 수동 배치 좌표(앵커 각도 + x)로 "기하학적으로 100% 확실히" 가려지는 각도만 스킵한다.
+// 오직 앵커가 정면(0)·후면(4) 정샷일 때만 x좌표가 좌우 위치와 신뢰성 있게 대응하므로,
+// 그 경우의 반대쪽 완전 측면(2/6)만 스킵 — 몸의 반대쪽 측면에서는 절대 보이지 않기 때문.
+// 나머지는 전부 AI가 각도별로 직접 판단(안 보이면 원본 그대로 반환하도록 프롬프트에 명시됨).
+//
+// (과거엔 "몸통 중앙(x 0.45~0.55) 배치 → 반대편 3개 각도 통째 스킵" 규칙이 있었으나,
+//  대부분의 중앙 배치 도안이 이 조건에 걸려 AI에게 그려볼 기회조차 주지 않고 스킵해버리는
+//  오탐이 심각했다. 45°/315° 같은 비스듬한 앵커에서는 x좌표가 실제 좌우 위치와도 잘 안 맞았다.)
 function occludedForPlacement(anchorAngle, x) {
   const skip = new Set();
-  const frontish = [0, 1, 7].includes(anchorAngle);
-  const backish = [3, 4, 5].includes(anchorAngle);
-  let side = 0; // +1 = 모델 왼쪽, -1 = 오른쪽
-  if (frontish) side = x > 0.55 ? 1 : x < 0.45 ? -1 : 0;
-  else if (backish) side = x < 0.45 ? 1 : x > 0.55 ? -1 : 0;
-  else if (anchorAngle === 2) side = -1; // 우측면에 직접 배치 = 오른쪽 부위
-  else if (anchorAngle === 6) side = 1;
-  if (side === 1) skip.add(2);  // 왼쪽 부위는 우측면에서 가려짐
-  if (side === -1) skip.add(6);
-  if (frontish && side === 0) [3, 4, 5].forEach((a) => skip.add(a)); // 가슴/배 중앙 → 후면 스킵
-  if (backish && side === 0) [7, 0, 1].forEach((a) => skip.add(a)); // 등 중앙 → 정면 스킵
+  if (anchorAngle === 0) { // 정면
+    if (x > 0.55) skip.add(2);       // 모델 왼쪽 부위 → 우측면에서 가려짐
+    else if (x < 0.45) skip.add(6);  // 모델 오른쪽 부위 → 좌측면에서 가려짐
+  } else if (anchorAngle === 4) { // 후면
+    if (x < 0.45) skip.add(2);
+    else if (x > 0.55) skip.add(6);
+  }
   skip.delete(anchorAngle);
   return [...skip];
 }

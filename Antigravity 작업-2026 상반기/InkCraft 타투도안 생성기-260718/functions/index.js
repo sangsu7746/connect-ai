@@ -382,8 +382,14 @@ function modelFollowInstruction(angleHint, refAngleHint) {
     'foreshortening for this camera angle, ink as pigment settled under the skin with natural saturation, ' +
     'matching the lighting. Never paste it flat like a sticker. ' +
     'The ink must stay strictly within the silhouette of the skin — never over background or clothing. ' +
-    "If the tattoo's body location is turned away or occluded at this camera angle, output the first image " +
-    'exactly as it is with no tattoo anywhere — adding the tattoo to a different spot is a failure. ' +
+    'Judge honestly, based on real human anatomy, how much of that exact body location can actually be seen from ' +
+    "this camera angle: (a) if it is fully visible, render the complete tattoo; (b) if the body has rotated so " +
+    'only part of that location remains toward the camera (e.g. the near edge of a shoulder or side torso at a ' +
+    'three-quarter angle), render ONLY that naturally visible sliver, correctly foreshortened by the curvature — ' +
+    'do not stretch it to look complete; (c) if that location is entirely on the far side of the body from this ' +
+    'angle (for example a front-of-shoulder or front-of-chest placement viewed from directly behind), it is fully ' +
+    'occluded — in this case output the first image completely unchanged, with no tattoo drawn anywhere on it, ' +
+    'and leave that skin bare. Drawing the tattoo somewhere it cannot actually be seen from this angle is a failure. ' +
     'Keep the person, pose, outfit, background and everything else completely unchanged. Output only the edited photo.'
   );
 }
