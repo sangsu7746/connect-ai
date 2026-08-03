@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoAd 운영 대시보드</title>
+<style>
+  :root{
+    --ink:#16202A; --muted:#566672; --faint:#8494a0; --line:#e1e7e8;
+    --paper:#f4f7f7; --surface:#fff; --surface2:#eef2f2;
+    --accent:#0C7C74; --accent-strong:#095F59; --accent-soft:#ddedeb;
+    --ok:#2f7d5a; --ok-soft:#e0efe7; --warn:#b07a22; --warn-soft:#f6ecd6;
+    --crit:#b24336; --crit-soft:#f5e1de; --signal:#b26e12; --signal-soft:#f6e9d4;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);line-height:1.6;
+    font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
+  header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);
+    padding:13px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  header h1{font-size:1.1rem;margin:0;font-weight:800}
+  .brand{color:var(--muted);font-size:.85rem}
+  .spacer{flex:1}
+  .pill{font-size:.7rem;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.03em}
+  .pill-dry{background:var(--signal-soft);color:var(--signal)}
+  .pill-live{background:var(--crit-soft);color:var(--crit)}
+  .pill-info{background:var(--surface2);color:var(--muted)}
+  a.btn,button{font-family:inherit;cursor:pointer;border:1px solid var(--line);border-radius:9px;
+    background:var(--surface);color:var(--ink);padding:7px 13px;font-weight:700;font-size:.85rem;
+    text-decoration:none;display:inline-block}
+  a.btn:hover,button:hover{border-color:var(--accent);color:var(--accent-strong)}
+  main{max-width:1080px;margin:0 auto;padding:20px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px 16px}
+  .card .k{font-size:.75rem;color:var(--faint);font-weight:700;letter-spacing:.03em}
+  .card .v{font-size:1.75rem;font-weight:800;letter-spacing:-.02em;margin-top:2px;
+    font-variant-numeric:tabular-nums}
+  .card .s{font-size:.78rem;color:var(--muted)}
+  .card.act{border-color:var(--accent);background:linear-gradient(180deg,var(--accent-soft),var(--surface) 70%)}
+  .card.act .v{color:var(--accent-strong)}
+
+  h2{font-size:1rem;font-weight:750;margin:26px 0 10px;display:flex;align-items:center;gap:9px}
+  h2 .sub{font-size:.78rem;color:var(--faint);font-weight:600}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .tablewrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;min-width:560px;font-size:.88rem}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{background:var(--surface2);font-size:.72rem;letter-spacing:.05em;color:var(--muted);font-weight:700}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:var(--surface2)}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .tag{font-size:.68rem;font-weight:800;padding:2px 7px;border-radius:6px}
+  .t-band{background:#e8f0e8;color:#2f6b3f} .t-facebook{background:#e6ecf7;color:#2f4f8f}
+  .t-kakao{background:#f8f0d8;color:#8a6a10} .t-cafe{background:#eee8f5;color:#5a3f8f}
+  .t-on{background:var(--ok-soft);color:var(--ok)} .t-off{background:var(--surface2);color:var(--faint)}
+  .t-consumer{background:var(--accent-soft);color:var(--accent-strong)}
+  .t-business{background:var(--warn-soft);color:var(--warn)}
+  .t-posted{background:var(--ok-soft);color:var(--ok)} .t-dry{background:var(--signal-soft);color:var(--signal)}
+  .t-failed{background:var(--crit-soft);color:var(--crit)} .t-queued{background:var(--surface2);color:var(--muted)}
+  .t-blocked{background:var(--surface2);color:var(--muted)}
+  .empty{padding:26px;text-align:center;color:var(--faint);font-size:.9rem}
+  .note{font-size:.78rem;color:var(--muted);margin:8px 2px 0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){.two{grid-template-columns:1fr}}
+  .bar{height:6px;border-radius:999px;background:var(--surface2);overflow:hidden;min-width:52px;display:inline-block;vertical-align:middle}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  /* 준비 상태 */
+  .rbar{height:8px;border-radius:999px;background:var(--surface2);overflow:hidden;margin-bottom:14px}
+  .rbar i{display:block;height:100%;background:var(--accent);transition:width .4s}
+  .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+  .ritem{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-radius:10px;background:var(--surface2)}
+  .ritem .ic{font-weight:800;flex:none;width:18px;text-align:center;line-height:1.4}
+  .ritem.ok .ic{color:var(--ok)} .ritem.warn .ic{color:var(--warn)} .ritem.todo .ic{color:var(--crit)}
+  .ritem.ok{background:var(--ok-soft)} .ritem.warn{background:var(--warn-soft)} .ritem.todo{background:var(--crit-soft)}
+  .ritem .nm{font-weight:750;font-size:.88rem}
+  .ritem .dt{font-size:.78rem;color:var(--muted);word-break:break-all}
+  .ritem .td{font-size:.76rem;color:var(--crit);margin-top:2px}
+  .ritem.warn .td{color:var(--warn)}
+</style>
+</head>
+<body>
+  <header>
+    <h1>AutoAd 운영 대시보드</h1>
+    <span class="brand" id="brand">·</span>
+    <span class="pill" id="mode">·</span>
+    <span class="pill pill-info" id="provider">·</span>
+    <div class="spacer"></div>
+    <span id="updated" style="font-size:.78rem;color:var(--faint)"></span>
+    <a class="btn" href="/approvals">승인 콘솔</a>
+    <button onclick="load()">↻ 새로고침</button>
+  </header>
+
+  <div id="stale" style="display:none;background:var(--crit-soft);color:var(--crit);
+    padding:10px 20px;font-size:.88rem;font-weight:700;border-bottom:1px solid var(--crit)"></div>
+
+  <main>
+    <h2 style="margin-top:4px">준비 상태 <span class="sub" id="readysub"></span></h2>
+    <div class="panel" style="padding:16px 18px;margin-bottom:8px">
+      <div class="rbar"><i id="rfill"></i></div>
+      <div class="rgrid" id="ready"></div>
+    </div>
+    <p class="note" id="nextstep"></p>
+
+    <div class="cards" id="cards"></div>
+
+    <h2>채널별 성과 <span class="sub" id="rangelbl"></span></h2>
+    <div class="panel"><div class="tablewrap"><table id="chtbl">
+      <thead><tr>
+        <th>채널</th><th>플랫폼</th><th>성향</th><th>상태</th>
+        <th style="text-align:right">발행</th><th style="text-align:right">모의</th>
+        <th style="text-align:right">접수</th><th>전환</th>
+      </tr></thead><tbody></tbody>
+    </table></div><div class="empty" id="chempty" style="display:none">채널이 없습니다 — register_channels.py 로 등록하세요.</div></div>
+    <p class="note" id="attrnote"></p>
+
+    <div class="two">
+      <div>
+        <h2>최근 접수 <span class="sub">연락처 일부 가림</span></h2>
+        <div class="panel"><div class="tablewrap"><table id="leadtbl">
+          <thead><tr><th>이름</th><th>연락처</th><th>희망금액</th><th>유입</th><th>시각</th></tr></thead>
+          <tbody></tbody></table></div>
+          <div class="empty" id="leadempty" style="display:none">아직 접수가 없습니다.</div></div>
+      </div>
+      <div>
+        <h2>최근 발행</h2>
+        <div class="panel"><div class="tablewrap"><table id="posttbl">
+          <thead><tr><th>채널</th><th>상태</th><th>시각</th></tr></thead>
+          <tbody></tbody></table></div>
+          <div class="empty" id="postempty" style="display:none">아직 발행 이력이 없습니다.</div></div>
+      </div>
+    </div>
+  </main>
+
+<script>
+const $ = s => document.querySelector(s);
+// 따옴표까지 escape — 값이 속성 안에 들어가는 경로가 있어 <>만으로는 부족하다.
+// (접수 폼의 ?channel= 값은 외부인이 정하므로 DB를 거쳐 여기까지 도달한다)
+const esc = s => String(s == null ? '' : s)
+  .replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+// class 는 알려진 값만 허용(화이트리스트) — DB 값을 그대로 속성에 넣지 않는다.
+const KNOWN_TAGS = new Set([
+  't-band','t-facebook','t-kakao','t-cafe','t-on','t-off',
+  't-consumer','t-business','t-mixed','t-posted','t-dry','t-failed','t-queued','t-blocked'
+]);
+const tag = (cls, txt) => {
+  const safe = KNOWN_TAGS.has(cls) ? cls : '';
+  return `<span class="tag ${safe}">${esc(txt)}</span>`;
+};
+
+function card(k, v, s, act) {
+  return `<div class="card${act ? ' act' : ''}"><div class="k">${esc(k)}</div>`
+       + `<div class="v">${esc(v)}</div><div class="s">${esc(s || '')}</div></div>`;
+}
+
+let lastOk = null;   // 마지막으로 성공한 갱신 시각
+
+function markStale(msg) {
+  // 갱신에 실패하면 화면 전체를 '낡음'으로 표시한다.
+  // 카드에만 오류를 띄우고 표는 옛 숫자를 그대로 두면, 스크롤한 사람이 현재 값으로 오인한다.
+  const el = $('#stale');
+  const ago = lastOk ? `마지막 갱신 ${lastOk.toLocaleTimeString('ko-KR')}` : '한 번도 불러오지 못함';
+  el.textContent = `⚠ ${msg} — 아래 숫자는 현재 값이 아닙니다 (${ago})`;
+  el.style.display = 'block';
+  document.querySelector('main').style.opacity = '.45';
+}
+
+async function load() {
+  let d;
+  try {
+    const r = await fetch('/api/dashboard');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    d = await r.json();
+  } catch (e) {
+    markStale('대시보드를 갱신하지 못했습니다');
+    return;
+  }
+  $('#stale').style.display = 'none';
+  document.querySelector('main').style.opacity = '1';
+  lastOk = new Date();
+  $('#updated').textContent = '갱신 ' + lastOk.toLocaleTimeString('ko-KR');
+
+  $('#brand').textContent = d.brand || '';
+  $('#mode').textContent = d.dry_run ? 'DRY-RUN (모의 발행)' : '실발행 ON';
+  $('#mode').className = 'pill ' + (d.dry_run ? 'pill-dry' : 'pill-live');
+  $('#provider').textContent = '카피: ' + (d.copy_provider || '-');
+  if (d.profile) {
+    let el = document.getElementById('profile');
+    if (!el) {
+      el = document.createElement('span');
+      el.id = 'profile'; el.className = 'pill pill-info';
+      $('#provider').after(el);
+    }
+    el.textContent = '업종: ' + d.profile;
+  }
+  $('#rangelbl').textContent = `최근 ${d.days}일`;
+
+  // ── 준비 상태 (지금 어디까지 됐나 / 뭐가 막혀 있나) ──
+  const R = d.readiness || { items: [], ok: 0, total: 0 };
+  const ICON = { ok: '✓', warn: '!', todo: '·' };
+  $('#readysub').textContent = `${R.ok}/${R.total} 완료`;
+  $('#rfill').style.width = (R.total ? R.ok / R.total * 100 : 0) + '%';
+  $('#ready').innerHTML = R.items.map(i =>
+    `<div class="ritem ${i.state}">
+       <div class="ic">${ICON[i.state] || '·'}</div>
+       <div><div class="nm">${esc(i.name)}</div>
+         <div class="dt">${esc(i.detail)}</div>
+         ${i.state !== 'ok' && i.todo ? `<div class="td">→ ${esc(i.todo)}</div>` : ''}
+       </div></div>`).join('');
+  // 다음에 할 일 하나만 콕 집어준다
+  const pending = R.items.filter(i => i.state !== 'ok');
+  $('#nextstep').textContent = pending.length
+    ? `다음 할 일: ${pending[0].name} — ${pending[0].todo}`
+    : '준비 완료 — 승인 콘솔에서 광고를 승인하면 발행됩니다.';
+
+  const s = d.summary;
+  $('#cards').innerHTML =
+      card('승인 대기', s.pending_approvals, s.pending_approvals ? '확인 필요 →' : '없음', s.pending_approvals > 0)
+    + card('오늘 발행', s.posted_today, `최근 7일 ${s.posted_week}건 · 상한 ${d.daily_limit}/일`)
+    + card('오늘 접수', s.leads_today, `최근 7일 ${s.leads_week}건 · 누적 ${s.leads_total}건`, s.leads_today > 0)
+    + card('활성 채널', `${s.channels_enabled}/${s.channels_total}`, '발행 대상')
+    + card('모의 발행', s.dry_week, '최근 7일 (실발행 아님)')
+    + card('발행 실패', s.failed_week, s.failed_week ? '최근 7일 — 계정·셀렉터 점검' : '최근 7일 없음')
+    // ⚠ 여기를 '정상 동작'으로 쓰면 안 된다. 세션 만료로 광고가 한 건도 안 나가는
+    //    상태에서도 화면이 초록불처럼 보여 며칠을 그냥 보내게 된다.
+    + card('안 나간 발행', (s.blocked_week || 0),
+        (s.blocked_week ? (s.blocked_top || '원인 확인 필요') : '최근 7일 없음'))
+    + (s.stuck_week ? card('결과 미기록', s.stuck_week, '발행 중 멈춤 — 확인 필요') : '');
+
+  // 채널별 성과
+  const tb = $('#chtbl').querySelector('tbody');
+  tb.innerHTML = '';
+  $('#chempty').style.display = d.channels.length ? 'none' : 'block';
+  for (const c of d.channels) {
+    // 막대는 반드시 전환율을 그린다. 접수 건수로 그리면 발행 2·접수 2(100%)가
+    // 발행 100·접수 50(50%)보다 짧게 보여 운영 판단이 뒤집힌다.
+    const conv = c.conversion === null
+      ? '<span style="color:var(--faint)" title="아직 실발행이 없어 전환율을 계산할 수 없습니다">— <span style="font-size:.72rem">발행 없음</span></span>'
+      : `${c.conversion}% <span class="bar" title="전환율 ${c.conversion}%"><i style="width:${Math.min(100, c.conversion)}%"></i></span>`;
+    tb.insertAdjacentHTML('beforeend',
+      `<tr><td>${esc(c.name || c.key)}</td>`
+      + `<td>${tag('t-' + c.platform, c.platform)}</td>`
+      + `<td>${tag('t-' + (c.audience || 'consumer'), c.audience || '-')}</td>`
+      + `<td>${tag(c.enabled ? 't-on' : 't-off', c.enabled ? '활성' : '중지')}</td>`
+      + `<td class="num">${c.posted}</td><td class="num" style="color:var(--faint)">${c.dry}</td>`
+      + `<td class="num"><b>${c.leads}</b></td><td>${conv}</td></tr>`);
+  }
+  $('#attrnote').textContent = d.unattributed
+    ? `※ 유입 채널이 확인되지 않은 접수 ${d.unattributed}건 (직접 방문·수동 배포 등). 전환율 계산에서 제외됩니다.`
+    : '';
+
+  // 최근 접수
+  const lt = $('#leadtbl').querySelector('tbody'); lt.innerHTML = '';
+  $('#leadempty').style.display = d.recent_leads.length ? 'none' : 'block';
+  for (const l of d.recent_leads) {
+    lt.insertAdjacentHTML('beforeend',
+      `<tr><td>${esc(l.name)}</td><td>${esc(l.phone)}</td><td>${esc(l.amount || '-')}</td>`
+      + `<td>${esc(l.source_channel || '-')}</td><td style="color:var(--muted)">${esc(l.created_at)}</td></tr>`);
+  }
+
+  // 최근 발행
+  const pt = $('#posttbl').querySelector('tbody'); pt.innerHTML = '';
+  $('#postempty').style.display = d.recent_posts.length ? 'none' : 'block';
+  for (const p of d.recent_posts) {
+    pt.insertAdjacentHTML('beforeend',
+      `<tr><td>${esc(p.channel || '-')}</td><td>${tag('t-' + p.status, p.status)}</td>`
+      + `<td style="color:var(--muted)">${esc(p.at)}</td></tr>`);
+  }
+}
+load();
+setInterval(load, 30000);
+</script>
+</body>
+</html>

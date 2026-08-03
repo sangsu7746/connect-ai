@@ -1,0 +1,39 @@
+# ============================================================
+#  업종 프로필 — PhotoMagic (사진 변환)
+#  홍보서에서 자동 생성 (URL 은 홍보서에 적힌 주소, 접속 확인 완료)
+#  전환:  .env 의 AUTOAD_PROFILE=photomagic
+# ============================================================
+key: photomagic
+name: "PhotoMagic (사진 변환)"
+
+brand:
+  company: headjim.com
+  roman: ""
+  phone: ""                      # 웹 서비스 → 전화 대신 site 로 유도
+  region: "전국 온라인"
+  channels: "웹에서 바로 이용"
+  registered: ""
+  site: "headjim-photomagic.web.app"
+  reg_no: ""
+
+compliance:
+  disclaimer: "※ AI가 생성한 결과물로, 실제와 다를 수 있습니다."
+  banned_phrases:
+    - "무조건"
+    - "100%"
+    - "완벽하게"
+    - "절대"
+  note: "사진 변환. 원본 훼손·복원 보장 표현 금지."
+
+content:
+  source: docs                   # 기성 전단이 없으므로 홍보서에서 소재 생성
+  flyers_dir: ""
+  docs_dir: "D:/headjim AI-LAB-Template/docs/광고홍보서"
+  doc: "PhotoMagic — 사진 변환 광고홍보서.pdf"                   # 이 업종의 기본 설명서
+
+fallback_copy:
+  body: "PhotoMagic — 자세한 내용은 headjim-photomagic.web.app 에서 확인하세요."
+
+intake:
+  title: "서비스 문의"
+  target: none                   # 대출앱으로 보내지 않음 (클라우드 수신함에만)

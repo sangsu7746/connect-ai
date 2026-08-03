@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoAd 승인 콘솔</title>
+<style>
+  :root{
+    --ink:#16202A; --muted:#566672; --line:#e1e7e8; --paper:#f4f7f7; --surface:#fff;
+    --accent:#0C7C74; --accent-strong:#095F59; --accent-soft:#ddedeb;
+    --ok:#2f7d5a; --crit:#b24336; --signal:#b26e12; --signal-soft:#f6e9d4;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);line-height:1.6;
+    font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif}
+  header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);
+    padding:14px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  header h1{font-size:1.15rem;margin:0;font-weight:800}
+  header .brand{color:var(--muted);font-size:.85rem}
+  .pill{font-size:.72rem;font-weight:800;padding:3px 9px;border-radius:999px;
+    background:var(--signal-soft);color:var(--signal);letter-spacing:.03em}
+  header .spacer{flex:1}
+  button{font-family:inherit;cursor:pointer;border:0;border-radius:9px;font-weight:700}
+  .btn-refresh{background:var(--surface);border:1px solid var(--line);color:var(--ink);padding:8px 14px}
+  main{max-width:920px;margin:0 auto;padding:20px}
+  .count{font-size:.9rem;color:var(--muted);margin:0 0 14px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    display:grid;grid-template-columns:200px 1fr;gap:0;margin-bottom:16px}
+  .card img{width:200px;height:100%;object-fit:cover;background:#0e1a1e;display:block}
+  .body{padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+  .meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .badge{font-size:.72rem;font-weight:800;padding:3px 9px;border-radius:6px;background:var(--accent-soft);color:var(--accent-strong)}
+  .badge.plat{background:#eef2f2;color:var(--muted)}
+  .headline{font-size:1.08rem;font-weight:800;margin:2px 0}
+  .cap-body{font-size:.9rem;color:var(--muted);white-space:pre-wrap}
+  .cta{font-size:.9rem;font-weight:700;color:var(--accent-strong)}
+  .fallback{font-size:.7rem;color:var(--signal);font-weight:700}
+  .actions{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+  .approve{background:var(--accent);color:#fff;padding:9px 18px}
+  .reject{background:#fff;border:1px solid var(--crit);color:var(--crit);padding:9px 16px}
+  .edit{background:#fff;border:1px solid var(--line);color:var(--ink);padding:9px 16px}
+  .empty{text-align:center;color:var(--muted);padding:60px 0;font-size:1rem}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;
+    padding:11px 18px;border-radius:10px;font-size:.9rem;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%}
+  #toast.show{opacity:1}
+  @media(max-width:560px){.card{grid-template-columns:1fr}.card img{width:100%;height:200px}}
+</style>
+</head>
+<body>
+  <header>
+    <h1>AutoAd 승인 콘솔</h1>
+    <!-- ⚠ 여기에 고정 상호를 쓰지 않는다. 서버는 대출 업종으로 뜨므로
+         타투·인테리어 광고를 검토할 때도 대출 상호가 붙어 오해를 준다.
+         표기는 카드마다(그 소재의 업종으로) 보여준다. -->
+    <span class="brand" id="brand"></span>
+    <span class="pill" id="drymode">DRY-RUN</span>
+    <span class="brand" id="stale"></span>
+    <div class="spacer"></div>
+    <button class="btn-refresh" onclick="load()">↻ 새로고침</button>
+  </header>
+  <main>
+    <p class="count" id="count">불러오는 중…</p>
+    <div id="list"></div>
+  </main>
+  <div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
+
+async function load(){
+  try{
+    const root = await (await fetch('/')).json();
+    // 상단에는 상호를 쓰지 않는다(업종이 섞이므로). 카드마다 표시한다.
+    const items = await (await fetch('/api/approvals')).json();
+    const list = $('#list'); list.innerHTML='';
+    $('#count').textContent = items.length ? `승인 대기 ${items.length}건` : '';
+    if(!items.length){ list.innerHTML='<div class="empty">승인 대기 없음 ✅</div>'; return; }
+    for(const it of items){
+      const c = it.caption||{};
+      const el = document.createElement('div'); el.className='card';
+      el.dataset.approval = it.approval_id;   // 클릭 시 이 카드의 버튼만 잠그기 위한 표식
+      el.innerHTML = `
+        <img src="/creatives/${encodeURIComponent(it.image_name||'')}" alt="전단" onerror="this.style.opacity=.15">
+        <div class="body">
+          <div class="meta">
+            <span class="badge">${it.channel||''}</span>
+            <span class="badge plat">${it.platform||''}</span>
+            ${it.brand?`<span class="badge">${esc(it.brand)}</span>`:''}
+            ${it.profile_key?`<span class="badge">${esc(it.profile_key)}</span>`:''}
+            ${c._fallback?'<span class="fallback">⚠ 폴백 캡션</span>':''}
+          </div>
+          <div class="headline">${esc(c.headline||'(제목 없음)')}</div>
+          <div class="cap-body">${esc(c.body||'')}</div>
+          <div class="cta">${esc(c.cta||'')}</div>
+          <div class="actions">
+            <button class="approve" onclick="decide(${it.approval_id},'approved')">✅ 승인 · 발행</button>
+            <button class="reject" onclick="decide(${it.approval_id},'rejected')">❌ 거절</button>
+            <button class="edit" onclick="editCap(${it.approval_id})">✏️ 수정</button>
+          </div>
+        </div>`;
+      list.appendChild(el);
+    }
+  }catch(e){ $('#count').textContent='불러오기 실패: '+e; }
+}
+// 따옴표까지 escape (값이 속성에 들어가는 경로 방어)
+function esc(s){ return String(s == null ? '' : s)
+  .replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+// 처리 중인 승인 id. 실발행은 간격 유지 때문에 응답까지 수 분이 걸릴 수 있는데,
+// 그동안 버튼이 살아 있으면 "안 눌렸나?" 하고 다시 눌러 같은 글이 두 번 나간다.
+const _inflight = new Set();
+
+async function decide(id, decision, note=''){
+  if(_inflight.has(id)){ toast('이미 처리 중입니다 — 잠시만 기다려 주세요'); return; }
+  _inflight.add(id);
+  // 이 카드의 버튼을 즉시 잠근다(응답을 기다리지 않는다)
+  document.querySelectorAll(`[data-approval="${id}"] button`).forEach(b=>{
+    b.disabled = true; b.style.opacity = .5;
+  });
+  if(decision==='approved') toast('발행 처리 중… 간격 유지로 몇 분 걸릴 수 있습니다');
+  try{
+    const r = await fetch(`/api/approvals/${id}/decide`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({decision, note})});
+    const d = await r.json();
+    if(decision==='approved') toast(d.published? `발행 완료 (${d.dry_run?'DRY-RUN':'실발행'})` : ('발행 안 됨: '+(d.reason||'대시보드에서 사유 확인')));
+    else if(decision==='rejected') toast('거절 처리됨');
+    else toast(d.ok? '카피 재생성 → 재승인 대기' : ('수정 실패: '+(d.error||'')));
+  }catch(e){ toast('오류: '+e); }
+  finally{ _inflight.delete(id); }
+
+  // ⚠ 여기서 load() 로 목록을 다시 그리면 남은 카드가 위로 밀린다.
+  //   같은 자리를 다시 누르면 **의도하지 않은 다른 카드**가 승인된다
+  //   (실측: 한 칸 걸러 8건이 연속 승인됨). 실발행이었다면 사고다.
+  //   처리한 카드는 자리를 지킨 채 표시만 바꾸고, 목록 갱신은 사람이 누른다.
+  const card = document.querySelector(`[data-approval="${id}"]`);
+  if(card){
+    card.style.opacity = .35;
+    card.style.pointerEvents = 'none';
+    const done = document.createElement('div');
+    done.textContent = decision==='approved' ? '✔ 처리됨 (발행 요청)'
+                     : decision==='rejected' ? '✔ 거절됨' : '✔ 수정 요청됨';
+    done.style.cssText = 'padding:10px 14px;font-weight:700;color:#7ee0a0';
+    card.appendChild(done);
+  }
+  const s = document.getElementById('stale');
+  if(s) s.textContent = '처리한 건이 있습니다 — ↻ 새로고침으로 목록을 갱신하세요';
+}
+function editCap(id){
+  const note = prompt('수정 요청을 입력하세요 (예: 더 짧게 / 혜택 강조)');
+  if(note) decide(id,'edited',note);
+}
+load();
+</script>
+</body>
+</html>

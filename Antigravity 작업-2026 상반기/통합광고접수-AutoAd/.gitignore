@@ -1,0 +1,22 @@
+# 시크릿
+.env
+*.key
+
+# 데이터/생성물
+data/
+*.db
+*.db-journal
+downloads/
+creatives/
+*.png
+*.jpg
+
+# 템플릿 라이브러리(더스틴홀딩스 전단·PSD)는 추적 대상
+!content/templates/
+!content/templates/**
+
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+venv/
