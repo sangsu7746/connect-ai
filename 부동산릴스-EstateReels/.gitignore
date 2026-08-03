@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-ssr
+*.local
+.firebase
+.DS_Store
+functions/node_modules
+local-helper/node_modules
+*.log

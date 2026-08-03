@@ -1,0 +1,302 @@
+<title>유튜브 매물영상 벤치마킹 v2 — estate-reels</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --surface:#ffffff; --surface-2:#fbfaf7;
+    --ink:#15202e; --ink-soft:#47536a; --muted:#818c9d; --line:#e5e8ee;
+    --gold:#a9781f; --gold-ink:#7a560f; --gold-soft:#f6ecd4;
+    --blue:#2f5aa8; --blue-soft:#dfe8f7;
+    --emerald:#127a58; --emerald-soft:#d6efe6;
+    --coral:#c73e5c; --coral-soft:#fbe1e7;
+    --shadow:0 1px 2px rgba(16,35,63,.05), 0 8px 30px rgba(16,35,63,.06);
+    --radius:14px;
+    --sans:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,"Cascadia Mono","Segoe UI Mono",monospace;
+    --maxw:880px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0c111b; --surface:#141d2b; --surface-2:#111925;
+      --ink:#eef2f8; --ink-soft:#aab6ca; --muted:#6d7a90; --line:rgba(255,255,255,.08);
+      --gold:#eec269; --gold-ink:#f4d488; --gold-soft:rgba(238,194,105,.13);
+      --blue:#77a0e6; --blue-soft:rgba(63,111,196,.18);
+      --emerald:#3ad9a0; --emerald-soft:rgba(52,211,153,.14);
+      --coral:#f0637a; --coral-soft:rgba(240,99,122,.15);
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 34px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0c111b; --surface:#141d2b; --surface-2:#111925;
+    --ink:#eef2f8; --ink-soft:#aab6ca; --muted:#6d7a90; --line:rgba(255,255,255,.08);
+    --gold:#eec269; --gold-ink:#f4d488; --gold-soft:rgba(238,194,105,.13);
+    --blue:#77a0e6; --blue-soft:rgba(63,111,196,.18);
+    --emerald:#3ad9a0; --emerald-soft:rgba(52,211,153,.14);
+    --coral:#f0637a; --coral-soft:rgba(240,99,122,.15);
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 34px rgba(0,0,0,.35);
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f6f8; --surface:#ffffff; --surface-2:#fbfaf7;
+    --ink:#15202e; --ink-soft:#47536a; --muted:#818c9d; --line:#e5e8ee;
+    --gold:#a9781f; --gold-ink:#7a560f; --gold-soft:#f6ecd4;
+    --blue:#2f5aa8; --blue-soft:#dfe8f7;
+    --emerald:#127a58; --emerald-soft:#d6efe6;
+    --coral:#c73e5c; --coral-soft:#fbe1e7;
+    --shadow:0 1px 2px rgba(16,35,63,.05), 0 8px 30px rgba(16,35,63,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.68;font-size:16.5px;-webkit-font-smoothing:antialiased;letter-spacing:-.003em}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px 96px}
+  .num{font-variant-numeric:tabular-nums}
+  h1,h2,h3{text-wrap:balance;letter-spacing:-.02em;margin:0}
+  a{color:var(--blue)}
+  header{padding:60px 0 28px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600;display:flex;align-items:center;gap:9px}
+  .eyebrow::before{content:"";width:26px;height:1.5px;background:var(--gold);display:inline-block}
+  h1{font-size:clamp(29px,5.2vw,45px);font-weight:850;line-height:1.1;margin:15px 0 13px}
+  h1 .hl{color:var(--gold)}
+  .lede{font-size:clamp(16px,2.4vw,19px);color:var(--ink-soft);max-width:60ch;font-weight:450}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .tag{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 11px;box-shadow:var(--shadow)}
+  .tag b{color:var(--ink);font-weight:700}
+  .v2{background:var(--gold-soft);color:var(--gold-ink);border:none;font-weight:700}
+  section{padding:44px 0;border-bottom:1px solid var(--line)}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  h2{font-size:clamp(22px,3.4vw,29px);font-weight:800;margin:8px 0 6px;line-height:1.2}
+  .sub{color:var(--ink-soft);max-width:64ch;margin:0 0 22px}
+  p{margin:0 0 14px;color:var(--ink-soft)}
+  p strong,li strong{color:var(--ink);font-weight:650}
+  .insights{display:grid;gap:12px}
+  .ins{display:grid;grid-template-columns:44px 1fr;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  .ins.flag{border-color:var(--gold);background:var(--gold-soft)}
+  .ins .n{font-family:var(--mono);font-size:19px;font-weight:700;color:var(--gold);background:var(--gold-soft);border-radius:10px;display:grid;place-items:center;height:44px}
+  .ins.flag .n{background:var(--gold);color:#241704}
+  .ins h3{font-size:16.5px;font-weight:750;margin-bottom:3px;color:var(--ink)}
+  .ins p{margin:0;font-size:14.5px}
+  /* killer contrast */
+  .vs{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch;margin-bottom:14px}
+  .vs .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);text-align:center}
+  .vs .panel.win{border-color:var(--gold);background:var(--gold-soft)}
+  .vs .cap{font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;font-family:var(--mono)}
+  .vs .win .cap{color:var(--gold-ink)} .vs .lose .cap{color:var(--muted)}
+  .vs .big{font-size:clamp(28px,6vw,42px);font-weight:850;line-height:1;margin:8px 0 4px;font-variant-numeric:tabular-nums}
+  .vs .win .big{color:var(--gold-ink)} .vs .lose .big{color:var(--ink-soft)}
+  .vs .lbl{font-size:12.5px;color:var(--ink-soft)}
+  .vs .mid{display:grid;place-items:center;font-family:var(--mono);font-weight:800;color:var(--coral);font-size:15px}
+  .mult{text-align:center;font-size:14px;color:var(--ink-soft)}
+  .mult b{color:var(--coral);font-weight:800}
+  /* table */
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);background:var(--surface)}
+  table{border-collapse:collapse;width:100%;font-size:13.6px;min-width:560px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+  th{font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--surface-2)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr:last-child td{border-bottom:none}
+  td b{color:var(--ink)} td em{font-style:normal;background:var(--gold-soft);color:var(--gold-ink);padding:1px 5px;border-radius:5px;font-weight:700}
+  .rank{color:var(--muted);font-family:var(--mono);font-weight:700}
+  .short{font-size:10.5px;font-weight:700;color:var(--coral);background:var(--coral-soft);border-radius:5px;padding:1px 6px;margin-left:5px}
+  /* hook chips */
+  .hooks{display:grid;gap:11px}
+  .hk{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+  .hk .ht{font-size:13.5px;font-weight:750;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .hk .ht .ex{font-family:var(--mono);font-size:11.5px;color:var(--gold-ink);background:var(--gold-soft);border-radius:6px;padding:2px 8px;font-weight:700;margin-left:auto}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-size:12.5px;font-weight:600;background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:4px 10px;color:var(--ink-soft)}
+  /* callout / model channel */
+  .callout{background:var(--gold-soft);border:1px solid transparent;border-radius:var(--radius);padding:18px 20px;margin-top:6px}
+  .callout.blue{background:var(--blue-soft)} .callout.coral{background:var(--coral-soft)}
+  .callout b{color:var(--ink)}
+  .likebars{display:grid;gap:9px;margin-top:14px}
+  .lb{display:grid;grid-template-columns:170px 1fr 48px;gap:12px;align-items:center;font-size:12.5px}
+  .lb .t{color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lb .tr{height:22px;background:var(--emerald-soft);border-radius:6px;overflow:hidden}
+  .lb .fl{height:100%;background:linear-gradient(90deg,var(--emerald),color-mix(in srgb,var(--emerald) 60%,var(--gold)))}
+  .lb .p{font-family:var(--mono);font-weight:750;color:var(--emerald);text-align:right}
+  /* action */
+  .stack{display:grid;gap:11px}
+  .act{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:12px;padding:15px 18px;box-shadow:var(--shadow)}
+  .act .h{display:flex;align-items:center;gap:10px;margin-bottom:5px;flex-wrap:wrap}
+  .act h3{font-size:15.5px;font-weight:750;color:var(--ink)}
+  .act p{margin:0;font-size:14px}
+  .pri{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--gold-ink);background:var(--gold-soft);padding:2px 8px;border-radius:6px}
+  .act.hi{border-left-color:var(--coral)} .act.hi .pri{color:var(--coral);background:var(--coral-soft)}
+  .map{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .mapcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+  .mapcard .q{font-size:13.5px;color:var(--ink-soft);font-style:italic;margin-bottom:8px;line-height:1.5}
+  .mapcard .q span{color:var(--coral);font-style:normal;font-weight:600}
+  .cc{font-weight:750;color:var(--emerald);background:var(--emerald-soft);border-radius:7px;padding:3px 10px;font-size:12.5px}
+  .foot{padding-top:26px;color:var(--muted);font-size:12.5px;line-height:1.7}
+  .foot code{font-family:var(--mono);font-size:11px;background:var(--surface-2);padding:1px 6px;border-radius:5px;border:1px solid var(--line)}
+  ul{margin:0 0 14px;padding-left:20px;color:var(--ink-soft)} li{margin-bottom:6px}
+  @media (max-width:620px){
+    .map{grid-template-columns:1fr}
+    .vs{grid-template-columns:1fr;gap:8px} .vs .mid{padding:4px}
+    .lb{grid-template-columns:120px 1fr 44px}
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">estate-reels · Benchmark Report</div>
+    <h1>같은 숏폼인데 <span class="hl">조회수 2만 배</span> — 결국 ‘훅’이 전부였다</h1>
+    <p class="lede">아파트·빌라 매물영상과 숏폼을 표본 100+로 넓혀 다시 분석했다. v1의 결론 하나가 뒤집혔다: <b>숏폼이 조회수 최상위 레인</b>이다.</p>
+    <div class="meta">
+      <span class="tag v2">v2 · 표본 100+ (약 122편)</span>
+      <span class="tag">📅 <b>2026-07-24</b></span>
+      <span class="tag">출처 <b>YouTube Data API</b> 실측</span>
+      <span class="tag">6개 검색 → videos.list</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="kicker">Executive Summary</div>
+    <h2>핵심 5가지 (v2 갱신)</h2>
+    <p class="sub">표본을 넓히자 가장 중요한 결론이 바뀌었습니다.</p>
+    <div class="insights">
+      <div class="ins flag"><div class="n">1</div><div><h3>⚡ (정정) 숏폼이 조회수 ‘최상위 레인’이다</h3><p>v1(3채널)에선 롱폼 임장이 커 보였지만, 100+로 넓히니 <b>역대 1~2위가 30~60초 숏폼</b>. 착한부동산 33초 <b class="num">363만</b>, 부동산여지도 30초 <b class="num">130만</b>, 올레길 1분 <b class="num">87만</b>. → <b>estate-reels의 주력(30초~3분)이 조회수 천장이 가장 높은 자리.</b></p></div></div>
+      <div class="ins flag"><div class="n">2</div><div><h3>🎯 같은 숏폼, 훅 유무로 최대 약 2만 배</h3><p>훅 없는 “○○ 매물 소개 숏폼”은 <b class="num">27~913뷰</b>, 훅 있는 숏폼은 <b class="num">수십만~363만</b>. <b>포맷이 아니라 첫 문장(제목·훅)이 조회수를 만든다.</b></p></div></div>
+      <div class="ins"><div class="n">3</div><div><h3>이기는 공식은 그대로 강화</h3><p><code>[질문·궁금증/충격/경고] │ [숫자·혜택 배지] │ [단지·입지]</code> — 파이프로 끊어 스캔되게.</p></div></div>
+      <div class="ins"><div class="n">4</div><div><h3>지향할 모델 채널 = 구해줘홈즈 하우스투어</h3><p>블로그식 매물 워크스루 + <b>매물번호 시리즈</b>. 조회는 중간이나 <b>좋아요율 1.2~2.3%로 전체 최상위</b>(충성·실수요). 우리 결과물이 닮아야 할 형태.</p></div></div>
+      <div class="ins"><div class="n">5</div><div><h3>급매·폭락·할인 키워드가 상위작에 편재</h3><p>“급매·초급매·반값·폭락·-50%·파격할인·헐값”. 그리고 매물마다 번호를 붙인 <b>시리즈 카탈로그</b> 운영이 공통.</p></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">01 · The Proof</div>
+    <h2>같은 숏폼, 훅 유무로 갈린 조회수</h2>
+    <p class="sub">같은 길이·같은 “매물 소개” 목적. 제목에 궁금증·충격이 있느냐 없느냐의 차이다.</p>
+    <div class="vs">
+      <div class="panel win"><div class="cap">훅 있는 숏폼</div><div class="big">3,634,006</div><div class="lbl">“촌집 매물이 <b style="color:var(--gold-ink)">없는 이유</b>” · 33초</div></div>
+      <div class="mid">vs</div>
+      <div class="panel lose"><div class="cap">훅 없는 숏폼</div><div class="big">178</div><div class="lbl">“○○ 매물 소개 숏폼” · 중앙값</div></div>
+    </div>
+    <p class="mult">→ 같은 30~60초 매물 숏폼인데 <b>약 20,000배</b> 차이. estate-reels가 자막·제목을 어떻게 뽑느냐가 곧 성패.</p>
+  </section>
+
+  <section>
+    <div class="kicker">02 · Leaderboard</div>
+    <h2>역대 조회수 TOP 15 (매물·집소개)</h2>
+    <p class="sub">TOP 15의 절반이 60초 이하 숏폼. 나머지도 전부 강한 훅.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th class="num">#</th><th>채널</th><th>제목(요약)</th><th>길이</th><th class="num">조회수</th></tr></thead>
+        <tbody>
+          <tr><td class="rank">1</td><td>착한부동산TV</td><td>촌집 매물이 <em>없는 이유</em><span class="short">숏폼</span></td><td>0:33</td><td class="num"><b>3,634,006</b></td></tr>
+          <tr><td class="rank">2</td><td>집공략</td><td><em>절대 사면 안 되는</em> 빌라 top3</td><td>7:11</td><td class="num"><b>2,955,467</b></td></tr>
+          <tr><td class="rank">3</td><td>자취남</td><td><em>하루만에 구매한</em> 18평 당산</td><td>23:01</td><td class="num">1,608,970</td></tr>
+          <tr><td class="rank">4</td><td>부동산여지도</td><td>바닷가 주택 <em>급매가</em><span class="short">숏폼</span></td><td>0:30</td><td class="num">1,303,232</td></tr>
+          <tr><td class="rank">5</td><td>올레길TV</td><td>제주 애월 2억대 세컨하우스 <em>어떠세요?</em><span class="short">숏폼</span></td><td>1:00</td><td class="num">872,814</td></tr>
+          <tr><td class="rank">6</td><td>파이팅팔콘</td><td><em>완전 뚝 떨어졌습니다</em> 과천 반값 폭락<span class="short">숏폼</span></td><td>0:36</td><td class="num">696,815</td></tr>
+          <tr><td class="rank">7</td><td>부PT매물</td><td><em>60억</em> 복층 펜트하우스 논현<span class="short">숏폼</span></td><td>0:47</td><td class="num">652,633</td></tr>
+          <tr><td class="rank">8</td><td>자취남</td><td>24평 빌라 <em>아파트보다 예쁘다</em></td><td>26:36</td><td class="num">636,727</td></tr>
+          <tr><td class="rank">9</td><td>자취남</td><td>서울 <em>가성비 가장 좋은</em> 동네 노원구</td><td>20:25</td><td class="num">530,405</td></tr>
+          <tr><td class="rank">10</td><td>아파트써처</td><td>부산 중상급지 아파트 <em>BEST 10</em></td><td>8:19</td><td class="num">500,475</td></tr>
+          <tr><td class="rank">11</td><td>아파트써처</td><td>대구 중상급지 <em>BEST 10</em></td><td>10:38</td><td class="num">498,640</td></tr>
+          <tr><td class="rank">12</td><td>대발이부동산TV</td><td>매매 <em>실화?</em> 19평이 2,700만원부터?!</td><td>12:57</td><td class="num">489,901</td></tr>
+          <tr><td class="rank">13</td><td>경아재</td><td><em>-50% 속출 6억이 3억된</em> 대구 신축<span class="short">숏폼</span></td><td>0:58</td><td class="num">476,667</td></tr>
+          <tr><td class="rank">14</td><td>저렴한가[家]</td><td><em>서울인데?! 1억대?!</em> 급매<span class="short">숏폼</span></td><td>0:27</td><td class="num">339,939</td></tr>
+          <tr><td class="rank">15</td><td>설소장TV</td><td><em>1억2천 내리는</em> 급매 바닷가 주택</td><td>19:47</td><td class="num">328,317</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">03 · Hook Types</div>
+    <h2>이기는 훅 유형 (실측)</h2>
+    <div class="hooks">
+      <div class="hk"><div class="ht">궁금증·정보갭 <span class="ex">363만</span></div><div class="chips"><span class="chip">촌집 매물이 없는 이유</span><span class="chip">왜 13억은 팔리고 9억은 남았을까</span><span class="chip">신축 33평 대신 45평 살까?</span></div></div>
+      <div class="hk"><div class="ht">경고·네거티브 <span class="ex">296만</span></div><div class="chips"><span class="chip">절대 사면 안 되는 빌라 top3</span><span class="chip">이런 집들은 피하세요</span></div></div>
+      <div class="hk"><div class="ht">충격 숫자 <span class="ex">65만</span></div><div class="chips"><span class="chip">60억 펜트하우스</span><span class="chip">6억이 3억된</span><span class="chip">19평이 2,700만원부터?!</span><span class="chip">1억대?!</span></div></div>
+      <div class="hk"><div class="ht">급매·폭락·할인 <span class="ex">130만</span></div><div class="chips"><span class="chip">완전 뚝 떨어졌습니다</span><span class="chip">반값 폭락</span><span class="chip">-50% 속출</span><span class="chip">1억2천 내리는 급매</span><span class="chip">파격 할인</span></div></div>
+      <div class="hk"><div class="ht">질문 초대 <span class="ex">87만</span></div><div class="chips"><span class="chip">이런 세컨하우스 어떠세요?</span><span class="chip">이런 인테리어 하우스 어떠세요?</span></div></div>
+      <div class="hk"><div class="ht">혜택 배지(단지·입지)</div><div class="chips"><span class="chip">무입주금·전액대출</span><span class="chip">초역세권·초품아·숲세권</span><span class="chip">실입주금 0원</span><span class="chip">즉시입주·올수리·시세차익</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">04 · Format &amp; Lane</div>
+    <h2>estate-reels 자리 재정의</h2>
+    <p class="sub">숏폼이 조회 천장 최상위. 우리가 촬영 없이 대량 생산 가능한 바로 그 포맷.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>레인</th><th>조회 천장</th><th>특징</th><th>estate-reels</th></tr></thead>
+        <tbody>
+          <tr style="background:var(--gold-soft)"><td><b>숏폼 30~60초</b></td><td><b>최상위</b> (수십만~363만)</td><td>훅 하나로 폭발, 알고리즘 유입</td><td><b>★ 주력</b></td></tr>
+          <tr><td>1~3분 매물 소개</td><td>중상 (수천~수만)</td><td>워크스루+정보, 실수요</td><td><b>★ 카탈로그</b></td></tr>
+          <tr><td>롱폼 임장 15~40분</td><td>상 (수만~수십만)</td><td>청약·투자 의사결정</td><td>보완(본편 예고편)</td></tr>
+          <tr><td>집구경 리뷰 20분+</td><td>최상 (100만+)</td><td>산 사람 리뷰(자취남·유부남)</td><td>훅만 참고</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">05 · Model Channel</div>
+    <h2>벤치마크: 구해줘홈즈 하우스투어</h2>
+    <p class="sub">경기광주 빌라를 매번 같은 블로그식 포맷으로. estate-reels 결과물이 지향할 딱 그 형태.</p>
+    <div class="callout">
+      <b>일관 포맷</b> — 외관→내부 워크스루 + <code style="font-family:var(--mono);font-size:12px">[혜택 훅] [스펙] [매물번호][하우스투어][무입주금][전액대출]</code> 파이프 제목. 매물마다 번호(H1601, H1602…)를 붙여 <b>채널이 곧 검색 가능한 카탈로그</b>.
+    </div>
+    <div class="likebars">
+      <div class="lb"><span class="t">2억중반 신축 (H1611)</span><span class="tr"><span class="fl" style="width:100%"></span></span><span class="p">2.27%</span></div>
+      <div class="lb"><span class="t">서울출퇴근 1억중반 4룸</span><span class="tr"><span class="fl" style="width:91%"></span></span><span class="p">2.06%</span></div>
+      <div class="lb"><span class="t">2억대 초갓성비 신축</span><span class="tr"><span class="fl" style="width:73%"></span></span><span class="p">1.65%</span></div>
+      <div class="lb"><span class="t">2억초반 복층·루프탑</span><span class="tr"><span class="fl" style="width:72%"></span></span><span class="p">1.63%</span></div>
+    </div>
+    <p style="font-size:12.5px;color:var(--muted);margin-top:10px">좋아요율(=좋아요/조회) — 전 표본 중 최상위. 조회수는 수천~4만이나 실수요 충성도가 가장 높다.</p>
+  </section>
+
+  <section>
+    <div class="kicker">06 · Audience</div>
+    <h2>시청자 관심사 = 우리 8컨셉 (재검증)</h2>
+    <div class="map">
+      <div class="mapcard"><div class="q">“이 가격이면 <span>미분양</span>” · “계약율이 중요”</div><span class="cc">투자가치 · 급매</span></div>
+      <div class="mapcard"><div class="q">“경산이라 <span>학군</span>이 아쉽죠”</div><span class="cc">학군·교육환경</span></div>
+      <div class="mapcard"><div class="q">“작은방이 <span>반창</span>” · “옵션이 다 기본”</div><span class="cc">내부·구조</span></div>
+      <div class="mapcard"><div class="q">“<span>중산지 뷰</span> 원툴” · 오션뷰·숲세권</div><span class="cc">뷰 · 감성</span></div>
+    </div>
+    <p style="margin-top:16px">검색 쿼리에서도 “급매·역세권·초품아·숲세권·시세차익”이 반복 — v1의 댓글 신호와 일치. <b>매물영상의 목적은 문의 유도</b>: 상위 채널 모두 제목·고정댓글에 전화·카톡·매물번호를 노출.</p>
+  </section>
+
+  <section>
+    <div class="kicker">07 · Competitors</div>
+    <h2>경쟁 지형 (업데이트)</h2>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>구분</th><th>예시</th><th>우리와의 관계</th></tr></thead>
+        <tbody>
+          <tr style="background:var(--coral-soft)"><td><b>AI 자동 매물영상</b></td><td><b>VideoStew</b> — 홍보영상 자체 <b class="num">82,512</b>뷰(“블로그 딸깍→매물영상”)</td><td><b style="color:var(--coral)">정면 경쟁</b></td></tr>
+          <tr><td>영상 외주</td><td>크몽 매물/분양 제작(수만~수십만원)</td><td>대체재 · 우리는 즉시·무료</td></tr>
+          <tr><td>매물번호 카탈로그 채널</td><td>구해줘홈즈·저렴한가·집튜브·바로부동산</td><td><b>우리가 대체·보조</b>할 대상</td></tr>
+          <tr><td>집구경 리뷰 유튜버</td><td>자취남(100만+)·유부남</td><td>카테고리 다름 · 훅만 참고</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout blue" style="margin-top:14px"><b>차별점(전면 배치)</b> — ① 무료·로컬 처리 ② 8컨셉 멀티버전(타깃 A/B) ③ AI 이미지 분석·자동 배치 + Gemini 스토리·나레이션 ④ 네이버 블로그 자동 반입(사진 포함).</div>
+  </section>
+
+  <section>
+    <div class="kicker">08 · Action Items</div>
+    <h2>estate-reels에 반영할 것 (v2)</h2>
+    <div class="stack">
+      <div class="act hi"><div class="h"><span class="pri">우선 ★★★</span><h3>숏폼 훅을 최우선으로</h3></div><p>30~60초 “숏폼 티저”를 기본 추천 포맷으로. Gemini 자막·제목에 <b>훅 유형(궁금증/경고/충격숫자/급매/질문)</b>을 명시 주입.</p></div>
+      <div class="act hi"><div class="h"><span class="pri">우선 ★★★</span><h3>제목·썸네일 텍스트 생성기</h3></div><p><code style="font-family:var(--mono);font-size:12px">[훅] │ [숫자·혜택] │ [단지·입지]</code>로 유튜브·블로그·릴스 제목까지 자동. 혜택 배지 프리셋(초역세권·초품아·무입주금·급매 -N%·즉시입주·올수리).</p></div>
+      <div class="act"><div class="h"><span class="pri">★★</span><h3>매물번호 시리즈화</h3></div><p>결과물에 매물번호/시리즈 라벨 → 중개사 채널을 “카탈로그”로 성장시키는 기능.</p></div>
+      <div class="act"><div class="h"><span class="pri">★★</span><h3>급매 컨셉 강화</h3></div><p>“반값·폭락·-N%·파격할인·헐값” 훅 프리셋. 단, <b>허위·과장 금지 가드</b> 동반.</p></div>
+      <div class="act"><div class="h"><span class="pri">★★</span><h3>CTA 강화</h3></div><p>마지막 컷 연락처·문의 배지 크게 + “지금 문의”.</p></div>
+    </div>
+  </section>
+
+  <section style="border-bottom:none">
+    <div class="kicker">09 · Limitations &amp; Next</div>
+    <h2>한계와 다음 단계</h2>
+    <ul>
+      <li><b>표본</b> — 100+편이지만 상위 편중. “매물 소개”와 “투자정보/뉴스”가 일부 섞임(제목·길이로 분리). 구독자수 미수집(조회·참여율 중심).</li>
+      <li><b>자막 미수집</b> — 서버 IP의 YouTube 차단으로 오프닝 멘트 원문 제외(제목·댓글로 대체).</li>
+      <li><b>다음</b> — ① 컨셉별 조회수 분포 회귀 ② 숏폼 vs 롱폼 정량 비교 ③ <b>우리 결과물 3~4개 실제 업로드 A/B</b>(같은 매물, 훅 있음/없음·컨셉별)로 이 가설을 우리 데이터로 검증.</li>
+    </ul>
+    <div class="foot">
+      <b style="color:var(--ink-soft)">데이터</b> — 방법: <code>search.list</code>(viewCount) 6쿼리 → <code>videos.list</code> 하이드레이션(2026-07-24). 주요 채널: 착한부동산TV·집공략·자취남·부동산여지도·올레길TV·파이팅팔콘·부PT매물·아파트써처·대발이부동산TV·경아재·저렴한가[家]·구해줘홈즈 하우스투어·집튜브·초이스부동산·제주도부동산TV·스카이복덕방·빌라게이션 외. 경쟁사: videostew.com/ko/real-estate, 크몽.
+    </div>
+  </section>
+</div>
