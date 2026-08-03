@@ -3,8 +3,11 @@
 #  · 점수 분기가 이 시스템의 안전 경계다.
 #    자동분 상한이 차면 고득점 건은 '폐기'가 아니라 '승인 큐'로 간다
 #    (좋은 기회를 버리지 않으면서 무검수 발행량만 묶는다).
-#  · run_once() 는 절대 예외를 밖으로 흘리지 않는다 — 글 1건 처리 중
-#    무엇이 터지든 그 건만 errors 에 기록하고 다음 글로 넘어간다.
+#  · run_once() 는 절대 예외를 밖으로 흘리지 않는다 — 수집·준비 단계
+#    (harvest/ensure_channel/gate.screen/pub.login 등)가 통째로 터지든,
+#    글 1건 처리 중 무엇이 터지든, 전부 errors 에 기록하고 정상적으로
+#    dict 를 반환한다(리뷰 라운드 1 Finding 2 — 예전엔 for 루프 안만
+#    이 보장을 받았다).
 #  · 콘솔로 나가는 문자열 중 원글 본문·LLM 답글·예외 메시지가 섞인 것은
 #    전부 threads.reply_writer._cp949_safe() 를 거친다(2차 sanitizer를
 #    새로 만들지 않고 재사용) — cp949 콘솔에서 죽는 사고를 막기 위함.
@@ -26,8 +29,25 @@ def ensure_channel(account: str) -> int:
     """threads 채널 1행을 보장한다(멱등).
 
     채널 행을 두는 이유 — posts/creatives 가 channel_id 를 요구하고,
-    대시보드 집계가 채널 단위로 돌기 때문. 코드 수정 없이 그대로 잡힌다."""
+    대시보드 집계가 채널 단위로 돌기 때문. 코드 수정 없이 그대로 잡힌다.
+
+    ⚠ 리뷰 라운드 1 Finding 1: db.add_channel() 은 `INSERT OR IGNORE`
+    라서, 이미 같은 (platform, target_ref) 행이 있으면 아무것도 삽입하지
+    않고 cur.lastrowid 로 0 을 돌려준다(sqlite 사양 — 실제로 삽입한 행이
+    없으므로) — 이걸 그대로 channel_id 로 반환하면, 두 번째 회차부터
+    creatives.channel_id=0 이 돼 FK 위반이 나고(per-post try/except 가
+    삼켜서 "실패"로만 기록되고), 그 이후 회차는 전부 아무것도 발행하지
+    못하면서 겉보기 stats 는 계속 그럴듯하게 나온다(실측: PASS 2 부터
+    'FOREIGN KEY constraint failed'). db.py 는 수정 금지 대상이므로,
+    여기서 _ensure_campaign() 과 같은 SELECT-then-insert 패턴으로
+    직접 멱등성을 보장한다."""
     ref = f"@{account}" if account and not account.startswith("@") else (account or "@threads")
+    with db.get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM channels WHERE platform=? AND target_ref=?",
+            ("threads", ref)).fetchone()
+        if row:
+            return row["id"]
     return db.add_channel("threads", ref, name=f"쓰레드 {ref}", audience="consumer")
 
 
@@ -58,7 +78,17 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
              # 그래서 이름에도 '손실'이라는 단정적 표현을 피했다.
              "harvest_ambiguous": 0, "harvest_unpaired": 0}
 
-    posts = harvester.harvest(account, config.THREADS_HARVEST_LIMIT)
+    # ── 준비 1단계: 수집. 아직 브라우저(pub)를 안 띄웠으므로 여기서
+    # 뭐가 터져도 leak 걱정은 없지만, run_once() 자체는 이 단계에서도
+    # 절대 raise 하면 안 된다(리뷰 라운드 1 Finding 2) — 스케줄러가
+    # 이 함수 자체를 못 믿게 되면 회차가 통째로 멈춘다.
+    try:
+        posts = harvester.harvest(account, config.THREADS_HARVEST_LIMIT)
+    except Exception as e:
+        stats["errors"].append(_cp949_safe(f"수집 실패({type(e).__name__}): {e}"))
+        _log_summary(stats)
+        return stats
+
     stats["harvested"] = len(posts)
     # parse_feed() 는 harvest() 내부에서 스크롤마다 여러 번 불리고, 이 두
     # 카운터는 '가장 최근 parse_feed() 호출' 분만 반영한다(harvester.py
@@ -77,27 +107,52 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
     # 신선도 — 오래된 글의 답글은 아무도 보지 않는다.
     posts = [p for p in posts if _fresh_enough(p)]
 
-    channel_id = ensure_channel(account)
-    campaign_id = _ensure_campaign()
-    verdicts = gate.screen(posts, tcfg)
-
-    pub = ThreadsPublisher(account)
-    if not dry_run:
-        pub.login()
-
-    # 오늘 이미 실제로 나간 자동분(과거 회차 포함, 이 회차 시작 시점 스냅샷).
-    # dry-run 은 posts.status 를 'posted' 로 남기지 않으므로(_do_reply() 를
-    # 타지 않음) db.threads_replies_today(auto_only=True) 를 이 회차 중간에
-    # 다시 조회해도 이 회차 안에서 이미 자동발행'하기로 한' 건수가 반영되지
-    # 않는다 — pub._rate_ok() 만 믿으면 한 회차 안에서 자동분 상한이 전혀
-    # 작동하지 않는다(실측: 상한 1을 줘도 dry-run 한 회차에서 2건이 샜다).
-    # 그래서 이 회차 자체의 소진분은 auto_sent_this_pass 로 따로 센다.
-    # pub._rate_ok() 는 실발행일 때 DB 진실을 한 번 더 교차 확인하는
-    # 이중 방어선으로 그대로 남긴다.
-    auto_today_base = db.threads_replies_today(auto_only=True)
-    auto_sent_this_pass = 0
-
+    # ── 준비 2단계: 채널/캠페인 확보 + 게이트 판정. 역시 pub(브라우저)
+    # 이전이라 leak 걱정은 없다 — 리뷰 라운드 1 Finding 2 가 실측한
+    # 대표 사례: gate.screen() 내부 _load_prompt() 가 prompts/screen.txt
+    # 를 못 읽으면(경로 오류 등) 여기서 예외가 그대로 터진다.
     try:
+        channel_id = ensure_channel(account)
+        campaign_id = _ensure_campaign()
+        verdicts = gate.screen(posts, tcfg)
+    except Exception as e:
+        stats["errors"].append(_cp949_safe(f"준비 단계 실패({type(e).__name__}): {e}"))
+        _log_summary(stats)
+        return stats
+
+    # ── 여기부터 pub(브라우저)를 만든다. 이 지점 이후로는 함수를 어떤
+    # 경로로 빠져나가든 pub.quit() 이 반드시 불려야 한다 — 리뷰 라운드 1
+    # Finding 2: 예전엔 try/finally 가 for 루프에만 걸려 있어서
+    # pub.login() 실패(예: 크롬 업데이트 이후 chromedriver 버전 불일치)
+    # 가 quit() 없이 그대로 raise 됐다(=실행 모드에서 크롬 프로세스 leak).
+    pub = ThreadsPublisher(account)
+    try:
+        if not dry_run:
+            pub.login()
+
+        # 오늘 이미 실제로 나간 자동분(과거 회차 포함, 이 회차 시작 시점
+        # 스냅샷). dry-run 은 posts.status 를 'posted' 로 남기지 않으므로
+        # (_do_reply() 를 타지 않음) db.threads_replies_today(auto_only=True)
+        # 를 이 회차 중간에 다시 조회해도 이 회차 안에서 이미 자동발행
+        # '하기로 한' 건수가 반영되지 않는다 — pub._rate_ok() 만 믿으면
+        # 한 회차 안에서 자동분 상한이 전혀 작동하지 않는다(실측: 상한
+        # 1을 줘도 dry-run 한 회차에서 2건이 샜다). 그래서 이 회차
+        # 자체의 소진분은 auto_sent_this_pass 로 따로 센다. pub._rate_
+        # ok() 는 실발행일 때 DB 진실을 한 번 더 교차 확인하는 이중
+        # 방어선으로 그대로 남긴다.
+        auto_today_base = db.threads_replies_today(auto_only=True)
+        auto_sent_this_pass = 0
+        # 리뷰 라운드 1 Finding 3: 같은 작성자의 두 번째 글이 이번
+        # 회차 안에서 또 걸리는 경우를 막는다. threads_target_upsert()
+        # 는 post_url 로 키를 잡으므로 같은 작성자의 다른 글은 완전히
+        # 새 target 이 되고, threads_author_replied_since() 는
+        # replied_at(=실제 발행 성공 시에만 찍힘, 항목 3 참고) 만 보므로
+        # "이번 회차에서 이미 답글을 준(자동이든 승인 큐행이든)" 작성자를
+        # 놓친다 — 자동 상한을 auto_today_base+auto_sent_this_pass 로
+        # 합쳐 본 것과 같은 패턴으로, DB 확인과 별개로 메모리에 따로
+        # 추적한다.
+        authors_replied_this_pass = set()
+
         for post, verdict in zip(posts, verdicts):
             try:
                 target_id = db.threads_target_upsert(post, config.PROFILE_KEY)
@@ -115,11 +170,12 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
                     continue
 
                 # 작성자 쿨다운은 반드시 답글 생성(LLM 호출)보다 먼저 본다 —
-                # 이미 버릴 답글에 LLM 할당량을 쓰지 않기 위함이다. 순서를
-                # 바꾸면(반응 생성 후 쿨다운 체크) 매 회차 무의미한 LLM
-                # 호출이 쌓인다.
-                if db.threads_author_replied_since(
-                        post.author, config.THREADS_AUTHOR_COOLDOWN_DAYS):
+                # 이미 버릴 답글에 LLM 할당량을 쓰지 않기 위함이다. DB 기록
+                # (지난 회차들) + 이번 회차 안에서 이미 답글을 준 작성자를
+                # 함께 본다(Finding 3).
+                if (post.author in authors_replied_this_pass
+                        or db.threads_author_replied_since(
+                            post.author, config.THREADS_AUTHOR_COOLDOWN_DAYS)):
                     db.threads_target_verdict(
                         target_id, verdict.score, "dropped",
                         f"작성자 쿨다운({config.THREADS_AUTHOR_COOLDOWN_DAYS}일)")
@@ -134,6 +190,12 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
                     stats["dropped"] += 1
                     stats["errors"].append(_cp949_safe(f"{post.url}: {e}"))
                     continue
+
+                # 이 작성자에게는 이번 회차 안에서 더 이상 답글을 만들지
+                # 않는다 — 자동/큐 어느 쪽으로 갈지 정해지기 전에 미리
+                # 막아야, "1건 자동 + 1건 큐"처럼 두 갈래로 새는 것도
+                # 함께 막힌다(Finding 3 이 지적한 두 번째 증상).
+                authors_replied_this_pass.add(post.author)
 
                 # passed 는 '판정 통과 + 답글 생성 성공'까지 온 건수다.
                 # 이후 auto/queue 분기나 DB 기록에서 실패해도(아래 outer
@@ -166,26 +228,25 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
                     post_id = db.record_post(creative_id, channel_id, status=status)
                     db.update_post_status(post_id, status,
                                           perm_url=res.perm_url, error=res.error)
-                    _mark_auto(post_id)
                     if res.ok:
                         auto_sent_this_pass += 1
                         stats["auto_published"] += 1
-                        # ── 항목 3: link_creative 호출 시점을 '실제 발행
-                        # 성공'으로 못박는다 ──
-                        # db.threads_author_replied_since() 는 replied_at 을
-                        # 보고, replied_at 은 threads_target_link_creative()
-                        # 가 찍는다(db.py, 수정 금지). dry-run 성공도
-                        # res.ok=True 이므로, 조건 없이 여기서 매번 link 를
-                        # 걸면 미리보기/개발 중 반복 dry-run 만으로 실제로는
-                        # 한 번도 답글을 달지 않은 작성자가 쿨다운에 걸린다
-                        # — 승인 큐에 쌓인 미승인 건이 (아직 안 나갔는데도)
-                        # 쿨다운을 잠그는 것과 근본 원인이 같은 사고다.
-                        # 큐 분기(else 절)에서는 애초에 link 를 걸지 않으므로
-                        # 그 사고는 이미 피했고, 여기서는 dry_run 여부까지
-                        # 한 번 더 좁혀 '실제로 게시된 경우'에만 쿨다운
-                        # 시계가 돈다.
+                        # ── 항목 3 + 리뷰 라운드 1 Finding 4: '실제로
+                        # 게시된 경우'에만 쿨다운 시계(link_creative)와
+                        # 자동분 마커(_mark_auto)를 남긴다. dry-run
+                        # 성공도 res.ok=True 이므로, 조건 없이 이 둘을
+                        # 부르면 (a) 미리보기/개발 중 반복 dry-run 만으로
+                        # 실제로는 한 번도 답글을 달지 않은 작성자가
+                        # 쿨다운에 걸리고(항목 3), (b) metrics_json 의
+                        # auto 마커만 보고 자동분을 세는 미래 쿼리가
+                        # dry-run 을 실제 발행으로 오인한다(Finding 4).
+                        # 큐 분기(else 절)에서는 애초에 이 둘을 걸지
+                        # 않으므로 그 사고는 이미 피했고, 여기서는
+                        # dry_run 여부까지 한 번 더 좁혀 '실제로 게시된
+                        # 경우'에만 두 표식이 남는다.
                         if not dry_run:
                             db.threads_target_link_creative(target_id, creative_id)
+                            _mark_auto(post_id)
                     else:
                         stats["errors"].append(
                             _cp949_safe(f"{post.url}: {res.error}"))
@@ -202,9 +263,15 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
                 # 회차 전체를 끌고 내려가지 않는다 — 기록하고 다음 글로.
                 stats["errors"].append(
                     _cp949_safe(f"{getattr(post, 'url', '?')}: {e}"))
+    except Exception as e:
+        # pub.login()·db.threads_replies_today() 등 루프 진입 전 준비
+        # 자체가 통째로 실패한 경우 — 이번 회차는 글을 하나도 처리하지
+        # 못했지만 run_once() 는 여전히 raise 하지 않는다(Finding 2).
+        stats["errors"].append(
+            _cp949_safe(f"발행 준비 실패({type(e).__name__}): {e}"))
     finally:
-        # 루프 도중 무엇이 터지든(위에서 다 잡지만, 방어적으로 한 번 더)
-        # 브라우저 프로세스를 반드시 정리한다.
+        # 이 지점 위 어디서 무엇이 터지든(로그인 실패 포함) 브라우저
+        # 프로세스를 반드시 정리한다.
         pub.quit()
 
     _log_summary(stats)

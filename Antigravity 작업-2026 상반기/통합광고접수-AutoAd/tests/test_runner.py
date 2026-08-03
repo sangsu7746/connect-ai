@@ -234,3 +234,150 @@ def test_dry_run_auto_publish_does_not_poison_author_cooldown(wired, temp_db):
     assert res["auto_published"] == 2   # sanity: 정상적으로 라우팅은 됐다
     assert db.threads_author_replied_since("@u0", 30) is False
     assert db.threads_author_replied_since("@u3", 30) is False
+
+
+# ── 리뷰 라운드 1(Critical 2 · Important 1 · Minor 2) 대응 테스트 ──
+
+
+def test_run_once_is_idempotent_across_passes(wired):
+    """같은 계정으로 두 번째 회차를 돌려도(채널 행이 이미 있는 상태)
+    첫 회차와 동일한 라우팅 결과가 나와야 한다. ensure_channel() 이
+    멱등하지 않으면(db.add_channel() 의 INSERT OR IGNORE 가 이미 있는
+    행에는 lastrowid=0 을 돌려주는 sqlite 사양 때문에) 두 번째 회차부터
+    channel_id=0 으로 creatives FK 위반이 나 조용히 아무것도 안
+    나가는데 stats 는 정상처럼 보인다(리뷰 라운드 1 Finding 1). 이
+    "run_once() 두 번 호출" 모양이 전체 스위트에 없었다는 것 자체가
+    지적 대상이라, 개별 버그 재현이 아니라 일반 가드로 남긴다."""
+    kwargs = dict(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    res1 = wired.run_once(**kwargs)
+    res2 = wired.run_once(**kwargs)
+    assert res1["errors"] == []
+    assert res2["errors"] == []
+    assert res2["auto_published"] == res1["auto_published"]
+    assert res2["queued"] == res1["queued"]
+    assert res2["dropped"] == res1["dropped"]
+
+
+def test_harvest_failure_is_recorded_not_raised(wired, monkeypatch):
+    """harvester.harvest() 가 통째로 예외를 던져도(네트워크 등)
+    run_once() 는 raise 하지 않고 errors 에 기록한 채 정상 반환한다
+    (리뷰 라운드 1 Finding 2 — 준비 단계는 이전엔 이 보장 밖이었다)."""
+    def _boom(*a, **k):
+        raise RuntimeError("네트워크 오류")
+    monkeypatch.setattr(wired.harvester, "harvest", _boom)
+    res = wired.run_once(account="tester", profile={"threads": {}}, dry_run=True)
+    assert res["harvested"] == 0
+    assert len(res["errors"]) == 1
+
+
+def test_gate_screen_failure_is_recorded_not_raised(wired, monkeypatch):
+    """gate.screen() 이 통째로 예외를 던져도(예: 프롬프트 파일 로드
+    실패) run_once() 는 raise 하지 않는다(리뷰 라운드 1 Finding 2 —
+    실제 트리거는 gate.py 의 _load_prompt() 가 prompts/screen.txt 를
+    못 읽는 경우)."""
+    def _boom(*a, **k):
+        raise FileNotFoundError("prompts/screen.txt 없음")
+    monkeypatch.setattr(wired.gate, "screen", _boom)
+    res = wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    assert len(res["errors"]) == 1
+    assert res["auto_published"] == 0
+    assert res["queued"] == 0
+    assert res["dropped"] == 0
+
+
+def test_ensure_channel_failure_is_recorded_not_raised(wired, monkeypatch):
+    """ensure_channel() 자체가 터져도(예: "database is locked")
+    run_once() 는 raise 하지 않는다(리뷰 라운드 1 Finding 2)."""
+    def _boom(account):
+        raise RuntimeError("database is locked")
+    monkeypatch.setattr(wired, "ensure_channel", _boom)
+    res = wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    assert len(res["errors"]) == 1
+    assert res["auto_published"] == 0
+
+
+def test_login_failure_still_quits_and_does_not_raise(wired, monkeypatch):
+    """실행 모드(dry_run=False)에서 pub.login() 이 터져도(예: 크롬
+    업데이트 이후 chromedriver 버전 불일치) run_once() 는 raise 하지
+    않고, pub.quit() 은 반드시 불린다 — 안 그러면 그 순간 크롬
+    프로세스가 leak 된다(리뷰 라운드 1 Finding 2, 가장 심각한 실측
+    사례: 예전엔 quit_calls == [] 였다)."""
+    quit_calls = []
+    monkeypatch.setattr(wired.ThreadsPublisher, "quit",
+                        lambda self: quit_calls.append(1))
+
+    def _boom_login(self, cred=None):
+        raise RuntimeError("chromedriver 버전 불일치")
+    monkeypatch.setattr(wired.ThreadsPublisher, "login", _boom_login)
+
+    res = wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=False)
+    assert quit_calls == [1]
+    assert len(res["errors"]) == 1
+    assert res["auto_published"] == 0
+
+
+def test_same_author_second_post_in_same_pass_is_cooldown_dropped(wired, monkeypatch):
+    """같은 작성자가 이번 회차 안에서 두 번째 글로 또 걸리면(첫 글이
+    자동발행이든 승인 큐행이든) DB 의 replied_at 은 아직 안 찍혀 있으므로
+    (승인 큐행은 애초에 안 찍히고, 자동발행도 dry-run 이면 항목 3 에
+    따라 안 찍힌다) threads_author_replied_since() 단독으로는 못 잡는다
+    — 회차 내 메모리 추적이 필요하다(리뷰 라운드 1 Finding 3)."""
+    posts = [
+        RawPost(url="https://www.threads.net/@dup/post/1", author="@dup",
+                text="셀카 보정 1", posted_at=_FRESH_TS),
+        RawPost(url="https://www.threads.net/@dup/post/2", author="@dup",
+                text="셀카 보정 2", posted_at=_FRESH_TS),
+    ]
+    verdicts = [Verdict(True, 95, "r", "a"), Verdict(True, 92, "r", "a")]
+    monkeypatch.setattr(wired.harvester, "harvest", lambda *a, **k: posts)
+    monkeypatch.setattr(wired.gate, "screen", lambda *a, **k: verdicts)
+    res = wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    assert res["auto_published"] == 1
+    assert res["queued"] == 0
+    assert res["dropped"] == 1
+
+
+def test_same_author_queued_then_auto_in_same_pass_is_also_blocked(wired, monkeypatch):
+    """"1건은 자동발행, 다른 1건은 큐로" 처럼 두 갈래로 새는 경우도
+    막아야 한다(리뷰 라운드 1 Finding 3 이 명시한 두 번째 증상) — 첫
+    글이 자동임계 미만이라 큐로 가도, 같은 작성자의 두 번째 글은
+    자동임계를 넘겨도 쿨다운으로 dropped 되어야 한다."""
+    posts = [
+        RawPost(url="https://www.threads.net/@dup2/post/1", author="@dup2",
+                text="셀카 보정 1", posted_at=_FRESH_TS),
+        RawPost(url="https://www.threads.net/@dup2/post/2", author="@dup2",
+                text="셀카 보정 2", posted_at=_FRESH_TS),
+    ]
+    verdicts = [Verdict(True, 75, "r", "a"), Verdict(True, 95, "r", "a")]
+    monkeypatch.setattr(wired.harvester, "harvest", lambda *a, **k: posts)
+    monkeypatch.setattr(wired.gate, "screen", lambda *a, **k: verdicts)
+    res = wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    assert res["queued"] == 1
+    assert res["auto_published"] == 0
+    assert res["dropped"] == 1
+
+
+def test_mark_auto_only_written_on_real_publish(wired, temp_db):
+    """드라이런 자동발행은 posts.metrics_json 에 auto 마커를 남기지
+    않는다 — 마커만 보고 자동분을 세는 미래 쿼리가 드라이런을 실제
+    발행으로 오인하지 않도록(리뷰 라운드 1 Finding 4)."""
+    import db
+    wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    with db.get_conn() as conn:
+        rows = conn.execute("SELECT metrics_json FROM posts").fetchall()
+    assert rows   # sanity: 자동발행 건이 실제로 posts 에 기록됐다
+    assert all(not r["metrics_json"] for r in rows)
