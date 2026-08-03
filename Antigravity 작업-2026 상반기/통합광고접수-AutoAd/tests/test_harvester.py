@@ -164,9 +164,13 @@ def test_parse_feed_ignores_mention_link_before_own_permalink():
 def test_parse_feed_drops_card_with_two_permalink_time_pairings():
     """카드 하나 안에서 permalink+<time> 짝이 2개 이상 잡히면(구조만으로
     어느 게 이 카드 자신의 글인지 확정할 수 없음) 아무 글도 만들지
-    않고, 대신 last_dropped_count() 로 셀 수 있게 한다. 오귀속(엉뚱한
+    않고, 대신 last_ambiguous_count() 로 셀 수 있게 한다. 오귀속(엉뚱한
     글 URL 에 이 카드의 본문이 잘못 붙는 사고)보다 누락이 훨씬 안전하다
-    (리뷰 Finding 2 의 두 번째 요구 — '모호한 카드'도 테스트)."""
+    (리뷰 Finding 2 의 두 번째 요구 — '모호한 카드'도 테스트).
+
+    Round 2 Finding 8: 이 경우는 '짝이 2개 이상'이라 last_ambiguous_
+    count() 로 잡혀야 한다 — last_no_pairing_count() 는 0 이어야 한다
+    (짝이 아예 없는 카드와는 다른 원인이므로 섞이면 안 된다)."""
     html = (
         '<div data-pressable-container="true">'
         '<a href="/@dave/post/DDD1" role="link">'
@@ -179,18 +183,42 @@ def test_parse_feed_drops_card_with_two_permalink_time_pairings():
     )
     posts = harvester.parse_feed(html)
     assert posts == []
-    assert harvester.last_dropped_count() == 1
+    assert harvester.last_ambiguous_count() == 1
+    assert harvester.last_no_pairing_count() == 0
+
+
+# ── 리뷰 Round 2 Finding 8 — "짝 0개"와 "짝 2개+"는 원인이 다르므로
+#    별도 카운터로 노출해야 한다 ─────────────────────────────────
+def test_parse_feed_counts_no_pairing_separately_from_ambiguous():
+    """permalink+<time> 짝이 아예 없는 카드(광고·비-글 카드 흉내)는
+    ambiguous 가 아니라 no_pairing 으로 잡혀야 한다 — 두 신호를 하나로
+    섞으면 서로 다른 실패 원인(확정 못 함 vs 애초에 글이 아님)이
+    뭉개진다(리뷰 Finding 8)."""
+    html = (
+        '<div data-pressable-container="true">'
+        '<span dir="auto">스폰서 · 지금 다운로드</span>'
+        '</div>'
+    )
+    posts = harvester.parse_feed(html)
+    assert posts == []
+    assert harvester.last_no_pairing_count() == 1
+    assert harvester.last_ambiguous_count() == 0
 
 
 # ── 리뷰 Round 1 Finding 3 — 중첩 카드(인용/리포스트)가 바깥 글을
 #    삼키는 대신 눈에 보이게(드롭 카운트) 처리돼야 한다 ──────────
 def test_parse_feed_nested_card_never_misattributes_and_is_counted():
     """인용/리포스트처럼 data-pressable-container 가 중첩되면, 문자열
-    분할 특성상 바깥 글의 permalink 가 안쪽 청크로 흘러들어가 안쪽
-    청크에 permalink+<time> 짝이 2개(자기 것 + 바깥 것) 잡힌다.
-    어느 게 진짜 바깥 글인지 구조만으로 확정할 수 없으므로 드롭하고
-    카운트만 남겨야 한다 — carol(안쪽) 글이 alice(바깥) 글로
-    둔갑하거나 그 반대가 되는 일은 절대 없어야 한다(리뷰 재현 그대로)."""
+    분할 특성상 바깥 글의 permalink 가 안쪽 청크로 흘러들어간다. 실제로
+    청크가 2개 생긴다 — 바깥 청크(alice 자신의 permalink 가 안쪽으로
+    빠져나가 짝이 0개)와 안쪽 청크(자기 것 + 흘러들어온 바깥 것, 짝이
+    2개). carol(안쪽) 글이 alice(바깥) 글로 둔갑하거나 그 반대가 되는
+    일은 절대 없어야 한다(리뷰 재현 그대로).
+
+    Round 2 Finding 8: 예전엔 이 둘을 하나의 카운터로 뭉개서 '글 2건이
+    사라졌는데 신호는 1만 남는' 축소 보고가 났다(리뷰어 실측). 이제는
+    바깥 청크 → last_no_pairing_count()==1, 안쪽 청크 →
+    last_ambiguous_count()==1 로 원인별로 갈라져 나와야 한다."""
     html = (
         '<div id="wrap">'
         '<div data-pressable-container="true">'          # 바깥(alice) 카드 시작
@@ -213,7 +241,8 @@ def test_parse_feed_nested_card_never_misattributes_and_is_counted():
         assert not (p.url.endswith("/INNER1") and "alice" in p.text)
         assert not (p.url.endswith("/OUTER1") and "carol" in p.text)
     assert posts == []                       # 이번 모양에서는 완전히 드롭된다
-    assert harvester.last_dropped_count() == 1
+    assert harvester.last_ambiguous_count() == 1     # 안쪽 청크(짝 2개)
+    assert harvester.last_no_pairing_count() == 1    # 바깥 청크(짝 0개)
 
 
 # ── 리뷰 Round 1 Finding 5 (minor) — URL 프래그먼트가 dedup 을
@@ -234,16 +263,113 @@ def test_parse_feed_strips_url_fragment_for_dedup():
     assert posts[0].url == "https://www.threads.net/@frank/post/FFF1"
 
 
-# ── 리뷰 Round 1 Finding 5 (minor) — 알려진 UI 문구가 본문에 안
-#    섞여야 한다 ───────────────────────────────────────────────
-def test_parse_feed_filters_known_ui_chrome_from_text():
+# ── 리뷰 Round 2 Finding 7 — Round 1 의 UI 문구 블록리스트가
+#    실제 글 내용을 지우는 방향(over-blocking)으로 더 위험했다.
+#    "번역 보기" 를 걸러내던 Round 1 테스트는 이 전제 자체가 뒤집혀서
+#    폐기하고, 대신 "절대 내용을 지우지 않는다"를 증명하는 테스트로
+#    바꿨다. 판단·근거는 task-4-report.md Round 2 Finding 7 절 참고 —
+#    요약하면 실측 마크업 없이 블록리스트로는 "진짜 UI 문구"와
+#    "우연히 그 단어와 같은 실제 글"을 구분할 방법이 없고, 후자를
+#    지우는 피해가 전자를 안 거르는 피해보다 훨씬 크고 무한하다고
+#    판단해 블록리스트 자체를 없앴다(빈 조각만 제거) ─────────────
+def test_parse_feed_never_empties_post_whose_entire_text_is_a_chrome_lookalike():
+    """글 전체가 우연히 옛 블록리스트 단어("더보기")와 똑같아도 절대
+    비어버리면 안 된다 — 지워지면 gate 가 점수 매길 원문 자체가
+    사라진다."""
     html = (
         '<div data-pressable-container="true">'
-        '<a href="/@grace/post/GGG1" role="link">'
+        '<a href="/@henry/post/HHH1" role="link">'
         '<time datetime="2026-08-03T09:00:00.000Z">1시간</time></a>'
-        '<span dir="auto">진짜 본문입니다</span>'
-        '<span dir="auto">번역 보기</span>'
+        '<span dir="auto">더보기</span>'
         '</div>'
     )
     posts = harvester.parse_feed(html)
-    assert posts[0].text == "진짜 본문입니다"
+    assert posts[0].text == "더보기"
+
+
+def test_parse_feed_preserves_fragmented_text_containing_chrome_lookalike_word():
+    """본문이 여러 조각으로 쪼개져 오다가 한 조각이 우연히 옛
+    블록리스트 문구("더 보기")와 똑같아도, 그 조각만 통째로 사라지면
+    안 된다 — "더 보기 좋은 방법 있을까요?" 같은 정상적인 문장이
+    "좋은 방법 있을까요?" 로 잘려 의미가 바뀌는 사고(리뷰 재현)를
+    막는다."""
+    html = (
+        '<div data-pressable-container="true">'
+        '<a href="/@ivy/post/III1" role="link">'
+        '<time datetime="2026-08-03T09:00:00.000Z">1시간</time></a>'
+        '<span dir="auto">더 보기</span>'
+        '<span dir="auto"> 좋은 방법 있을까요?</span>'
+        '</div>'
+    )
+    posts = harvester.parse_feed(html)
+    assert posts[0].text == "더 보기 좋은 방법 있을까요?"
+
+
+# ── 리뷰 Round 2 Finding 6 — permalink 앵커의 href 는 속성 순서와
+#    무관하게 잡혀야 한다(실제 React 마크업은 href 가 첫 속성이
+#    아닌 경우가 흔하다) ──────────────────────────────────────────
+def test_parse_feed_matches_permalink_when_href_is_first_attribute():
+    """href 가 첫 속성인 경우(기존 픽스처와 같은 모양) — 회귀 확인용
+    독립 테스트. feed_page.html 기반 테스트들이 간접적으로 이미
+    커버하지만, Finding 6 셋(첫/중간/끝)을 나란히 두기 위해 명시적으로
+    추가했다."""
+    html = (
+        '<div data-pressable-container="true">'
+        '<a href="/@zoe/post/ORDER1" role="link">'
+        '<time datetime="2026-08-03T09:00:00.000Z">1시간</time></a>'
+        '<span dir="auto">순서 테스트: href 처음</span>'
+        '</div>'
+    )
+    posts = harvester.parse_feed(html)
+    assert len(posts) == 1
+    assert posts[0].url == "https://www.threads.net/@zoe/post/ORDER1"
+
+
+def test_parse_feed_matches_permalink_when_href_is_last_attribute():
+    """리뷰어 재현 그대로 — href 가 마지막 속성."""
+    html = (
+        '<div data-pressable-container="true">'
+        '<a role="link" class="x1i10hfl" href="/@zoe/post/ORDER1">'
+        '<time datetime="2026-08-03T09:00:00.000Z">1시간</time></a>'
+        '<span dir="auto">순서 테스트: href 끝</span>'
+        '</div>'
+    )
+    posts = harvester.parse_feed(html)
+    assert len(posts) == 1
+    assert posts[0].url == "https://www.threads.net/@zoe/post/ORDER1"
+
+
+def test_parse_feed_matches_permalink_when_href_is_middle_attribute():
+    """href 가 중간 속성."""
+    html = (
+        '<div data-pressable-container="true">'
+        '<a role="link" href="/@zoe/post/ORDER1" data-testid="post-link">'
+        '<time datetime="2026-08-03T09:00:00.000Z">1시간</time></a>'
+        '<span dir="auto">순서 테스트: href 중간</span>'
+        '</div>'
+    )
+    posts = harvester.parse_feed(html)
+    assert len(posts) == 1
+    assert posts[0].url == "https://www.threads.net/@zoe/post/ORDER1"
+
+
+def test_parse_feed_does_not_pair_sibling_anchor_href_with_different_anchor_time():
+    """형제 앵커 사이에서 href 와 <time> 이 잘못 짝지어지면 안 된다 —
+    앵커 A(href 만 있고 자기 <time> 없음)의 href 가, 뒤따르는 형제
+    앵커 B 의 <time> 과 엮여 "A 의 URL + B 의 시각"이라는 유령 글이
+    만들어지는 사고를 막는다(Finding 6 수정이 태그 경계를 넘지
+    않는지 직접 증명하는 음성 테스트)."""
+    html = (
+        '<div data-pressable-container="true">'
+        '<a href="/@zoe/post/DECOY1" role="link"></a>'
+        '<a href="/@zoe/post/ORDER1" role="link">'
+        '<time datetime="2026-08-03T09:00:00.000Z">1시간</time></a>'
+        '<span dir="auto">진짜 본문</span>'
+        '</div>'
+    )
+    posts = harvester.parse_feed(html)
+    assert len(posts) == 1
+    assert posts[0].url == "https://www.threads.net/@zoe/post/ORDER1"
+    assert "DECOY1" not in posts[0].url
+    assert harvester.last_ambiguous_count() == 0
+    assert harvester.last_no_pairing_count() == 0
