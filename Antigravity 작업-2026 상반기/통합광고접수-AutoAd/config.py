@@ -118,6 +118,11 @@ SESSION_RECHECK_MIN = int(os.getenv("SESSION_RECHECK_MIN", "30"))
 def cookie_path(platform: str, account: str = None):
     """그 계정의 쿠키 파일 경로(존재 여부와 무관). 진단 메시지·점검에 쓴다."""
     from pathlib import Path as _P
+    if platform == "threads":
+        acc = account or THREADS_ACCOUNT
+        if not acc:
+            return None
+        return _P(FB_PROJECT_APP_DIR).parent / "data" / "cookies" / f"threads_{acc}.json"
     acc = account or (BAND_ACCOUNT if platform == "band" else FACEBOOK_ACCOUNT)
     if not acc:
         return None

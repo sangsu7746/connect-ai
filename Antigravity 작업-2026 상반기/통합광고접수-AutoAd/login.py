@@ -10,9 +10,13 @@
 #    python login.py --check                     저장된 세션이 아직 살아있는지 점검
 #    python login.py band     --account naver_내아이디
 #    python login.py facebook --account 내이메일@example.com
+#    python login.py threads  --account 내계정 (생략하면 THREADS_ACCOUNT)
 #    python login.py kakao                        (로그인 불필요 — 안내만)
 #
 #  쿠키 저장 위치: 페이스북-광고글/data/cookies/
+#  ⚠ threads 는 band/facebook 과 달리 이 프로그램(AutoAd) 안의
+#    threads.automator 를 직접 쓴다(channels.engine.load 로 다른
+#    프로젝트를 빌려오지 않는다) — 별도 함수 login_threads() 참고.
 # ============================================================
 import sys
 import io
@@ -144,6 +148,30 @@ def interactive_login(platform: str, account: str, wait_min: int = 5) -> bool:
         auto.quit()
 
 
+# ── 쓰레드 수동 로그인 (band/facebook 과 달리 이 프로그램 내부 automator) ──
+def login_threads(account: str) -> bool:
+    """창을 띄워 사람이 직접 로그인한다. 2FA·캡차는 사람이 통과한다.
+    로그인이 끝나면 Enter — 그 시점의 쿠키를 저장한다.
+
+    ⚠ band/facebook 처럼 자동 로그인을 시도하지 않는다. 스레드도 Meta
+      계열이라 자동화된 로그인 시도 자체가 탐지·차단의 신호가 되기 쉽다."""
+    from threads.automator import THREADS_HOME, ThreadsAutomator
+    auto = ThreadsAutomator(account, headless=False)   # 반드시 창 띄움
+    try:
+        auto.start()
+        auto.driver.get(THREADS_HOME + "/login")
+        print(f"[threads:login] 열린 창에서 '{account}' 계정으로 로그인하세요.")
+        input("        로그인 완료 후 Enter: ")
+        if auto.is_logged_in():
+            auto.save_cookies()
+            print(f"[threads:login] 쿠키 저장 완료 → {auto._cookie_path()}")
+            return True
+        print("[threads:login] 로그인 상태가 확인되지 않았습니다. 다시 시도하세요.")
+        return False
+    finally:
+        auto.quit()
+
+
 def kakao_notice():
     print("카카오톡은 별도 로그인이 필요 없습니다.")
     print("  · PC 카카오톡을 실행해 로그인된 상태로 열어두기만 하면 됩니다.")
@@ -164,8 +192,10 @@ def main():
         pass
 
     ap = argparse.ArgumentParser(description="채널 로그인 세션 만들기/점검")
-    ap.add_argument("platform", nargs="?", choices=["band", "facebook", "kakao"])
-    ap.add_argument("--account", help="밴드=네이버아이디(또는 naver_아이디) / 페북=이메일")
+    ap.add_argument("platform", nargs="?", choices=["band", "facebook", "threads", "kakao"])
+    ap.add_argument("--account",
+                     help="밴드=네이버아이디(또는 naver_아이디) / 페북=이메일 / "
+                          "쓰레드=계정명(비우면 THREADS_ACCOUNT)")
     ap.add_argument("--check", action="store_true", help="저장된 세션 목록 보기")
     ap.add_argument("--verify-only", action="store_true", help="브라우저로 세션 유효성만 확인")
     ap.add_argument("--wait", type=int, default=5, help="로그인 대기 시간(분)")
@@ -176,6 +206,11 @@ def main():
         return
     if a.platform == "kakao":
         kakao_notice()
+        return
+    if a.platform == "threads":
+        # band/facebook 과 달리 --verify-only 를 지원하지 않는다(별도 확인
+        # 경로가 필요 없을 만큼 로그인 자체가 가볍다 — 창 띄우고 Enter 뿐).
+        login_threads(a.account or config.THREADS_ACCOUNT)
         return
     if not a.account:
         print("--account 를 지정하세요. 예: python login.py band --account naver_myid")
