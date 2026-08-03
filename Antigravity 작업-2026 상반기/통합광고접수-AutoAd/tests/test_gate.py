@@ -1,8 +1,10 @@
 import json
+import re
 from pathlib import Path
 
 import pytest
 
+import config
 from threads import gate
 from threads.models import RawPost
 
@@ -49,7 +51,12 @@ def test_screen_returns_same_length_and_order(tcfg):
 
 def test_hardblocked_posts_never_reach_llm(tcfg):
     """하드블록 글이 LLM 까지 가면 안 된다 — 비용도 낭비지만
-    LLM 이 높은 점수를 줄 여지를 아예 없애는 것이 핵심."""
+    LLM 이 높은 점수를 줄 여지를 아예 없애는 것이 핵심.
+
+    프롬프트 템플릿 자체의 안내 문구(예시로 '부고' 같은 단어를 그대로 쓴다)와
+    겹치지 않도록, 골든셋 글의 '본문'에서만 나오는 문구로 확인한다.
+    바닥 키워드로 확인하면 템플릿 문구가 우연히 그 단어를 포함하는 순간
+    이 글의 본문이 실제로 안 실렸는지와 무관하게 깨진다."""
     posts = [p for p, _ in _golden()]
     seen = {}
 
@@ -58,8 +65,8 @@ def test_hardblocked_posts_never_reach_llm(tcfg):
         return json.dumps({"results": []}, ensure_ascii=False)
 
     gate.screen(posts, tcfg, _llm=mock)
-    assert "부고" not in seen["prompt"]
-    assert "투병" not in seen["prompt"]
+    assert "장례식장은 아래와 같습니다" not in seen["prompt"]   # @d, 부고
+    assert "투병 중인데 사진이라도" not in seen["prompt"]       # @k, 투병(+사진 은 관심 키워드)
 
 
 def test_llm_failure_is_retryable_not_rejection(tcfg):
@@ -86,3 +93,72 @@ def test_unsafe_flag_forces_fail(tcfg):
         {"index": 0, "score": 99, "reason": "민감", "angle": "", "safe": False}]},
         ensure_ascii=False)
     assert gate.screen(posts, tcfg, _llm=mock)[0].passed is False
+
+
+def test_threads_config_uses_profile_brand_not_active_config():
+    """threads_config() 은 넘겨받은 profile 인자의 브랜드를 최우선으로 쓴다.
+
+    config.BRAND_COMPANY/PROFILE_NAME 은 .env 의 AUTOAD_PROFILE(현재 이
+    테스트 실행 시점엔 loan)로 바인딩되는 '현재 활성 프로필' 값이다. 여기로
+    바로 폴백하면, 예를 들어 photomagic 프로필 딕셔너리를 넘겼는데
+    화면에는 대출 상호명이 찍히는 사고가 난다(approval.py 의 profile_key
+    누락 사고와 같은 유형). 이 테스트는 그 폴백이 인자보다 먼저
+    쓰이지 않는지를 확인하는, threads_config() 의 첫 테스트다."""
+    profile = {
+        "name": "테스트업종 (가짜)",
+        "brand": {"company": "테스트회사", "site": "https://test.example"},
+        "threads": {},
+    }
+    tcfg = gate.threads_config(profile)
+    assert tcfg["brand"] == "테스트회사"
+    assert tcfg["brand"] != config.BRAND_COMPANY
+    assert tcfg["brand_desc"] == "테스트업종 (가짜)"
+    assert tcfg["landing"] == "https://test.example"
+
+
+def test_malformed_score_field_does_not_crash_screen(tcfg):
+    """배치 응답 자체는 유효한 JSON 이어도, 항목 하나의 score 필드가
+    숫자가 아니면(예: "high") screen() 이 예외로 죽으면 안 된다.
+    그 항목만 retryable 로 남기고 나머지 배치는 정상 처리돼야 한다."""
+    posts = [RawPost(url="u1", author="@a", text="셀카 보정 고민"),
+             RawPost(url="u2", author="@b", text="흑백 필터 추천")]
+    mock = lambda p: json.dumps({"results": [
+        {"index": 0, "score": "high", "reason": "?", "angle": "", "safe": True},
+        {"index": 1, "score": 90, "reason": "ok", "angle": "도구 추천", "safe": True},
+    ]}, ensure_ascii=False)
+
+    verdicts = gate.screen(posts, tcfg, _llm=mock)   # 예외 없이 끝나야 한다
+
+    assert len(verdicts) == 2
+    assert verdicts[0].passed is False
+    assert verdicts[0].retryable is True
+    assert verdicts[1].passed is True
+    assert verdicts[1].score == 90
+
+
+def test_cross_batch_index_remapping(tcfg):
+    """생존 글이 BATCH_SIZE 를 넘어 여러 배치로 나뉠 때, 배치 안 로컬 index 를
+    원본 index 로 되돌리는 매핑이 배치가 바뀌어도 안 어긋나야 한다.
+
+    이게 깨지면 한 글의 판정이 다른 글에 붙는다 — 하드블록 글에 광고가 붙는
+    사고와 같은 유형이라 Minor 가 아니라 별도로 확인한다. 골든셋 12건으로는
+    배치가 하나뿐이라(생존자 6건 < BATCH_SIZE 12) 이 회귀를 못 잡으므로
+    픽스처 파일을 부풀리는 대신 글을 코드로 만든다."""
+    n = gate.BATCH_SIZE * 2 + 2   # 최소 3개 배치가 나오도록
+    posts = [RawPost(url=f"u{i}", author=f"@u{i}", text=f"사진 보정 고민 {i}번")
+             for i in range(n)]
+
+    def mock(prompt):
+        # 프롬프트에 박힌 "[로컬index] ... N번" 에서 N(원본 index)을 읽어
+        # 그 글만의 고유한 점수로 되돌려준다 — 채점 결과가 엉뚱한 글에
+        # 붙으면 곧바로 어긋난 점수로 드러난다.
+        results = [{"index": int(local_i), "score": int(marker),
+                    "reason": "ok", "angle": "", "safe": True}
+                   for local_i, marker in re.findall(r"\[(\d+)\] .*?(\d+)번", prompt)]
+        return json.dumps({"results": results}, ensure_ascii=False)
+
+    verdicts = gate.screen(posts, tcfg, _llm=mock)
+
+    assert len(verdicts) == n
+    for i, v in enumerate(verdicts):
+        assert v.score == i, f"post {i} 의 점수가 다른 글의 것({v.score})으로 뒤바뀜"

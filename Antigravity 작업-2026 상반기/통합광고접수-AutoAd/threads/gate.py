@@ -18,13 +18,22 @@ BATCH_SIZE = 12
 
 
 def threads_config(profile: dict) -> dict:
-    """프로필에서 threads: 섹션을 꺼내고 빠진 값을 채운다."""
-    t = dict((profile or {}).get("threads") or {})
+    """프로필에서 threads: 섹션을 꺼내고 빠진 값을 채운다.
+
+    브랜드/설명/랜딩은 넘겨받은 profile 인자를 최우선으로 쓴다.
+    config.BRAND_COMPANY 등은 '현재 활성 프로필'(.env 의 AUTOAD_PROFILE)로
+    바인딩되는 값이라, 여기로 바로 폴백하면 다른 프로필의 profile dict 를
+    넘겨도 활성 프로필의 상호명이 찍히는 사고가 난다(approval.py 의
+    profile_key 누락 사고 — pending() 주석 참고 — 와 같은 유형).
+    config.* 는 profile 인자에 아무 정보도 없을 때만 쓰는 최후의 안전망이다."""
+    profile = profile or {}
+    t = dict(profile.get("threads") or {})
     t.setdefault("interest_keywords", [])
     t.setdefault("hard_block", [])
-    t.setdefault("landing", config.BRAND_SITE or "")
-    t.setdefault("brand", config.BRAND_COMPANY or "")
-    t.setdefault("brand_desc", config.PROFILE_NAME or "")
+    brand_block = profile.get("brand") or {}
+    t.setdefault("landing", brand_block.get("site") or config.BRAND_SITE or "")
+    t.setdefault("brand", brand_block.get("company") or config.BRAND_COMPANY or "")
+    t.setdefault("brand_desc", profile.get("name") or config.PROFILE_NAME or "")
     return t
 
 
@@ -118,8 +127,17 @@ def screen(posts: list, tcfg: dict, _llm=None) -> list:
                 verdicts[orig_idx] = Verdict(passed=False, score=0, retryable=True,
                                              reason="LLM 응답에 이 글이 없음")
                 continue
-            score = int(r.get("score") or 0)
-            safe = bool(r.get("safe", False))
+            try:
+                # 배치 전체는 유효한 JSON 이어도 항목 하나의 필드값이 이상할 수
+                # 있다(예: score:"high"). 여기서 안 잡으면 screen() 전체가
+                # 죽어 나머지 배치·나머지 글까지 통째로 날아간다.
+                score = int(r.get("score") or 0)
+                safe = bool(r.get("safe", False))
+            except (TypeError, ValueError) as e:
+                verdicts[orig_idx] = Verdict(
+                    passed=False, score=0, retryable=True,
+                    reason=f"LLM 응답 필드 이상({type(e).__name__})")
+                continue
             # safe=False 면 점수가 아무리 높아도 떨어뜨린다.
             passed = safe and score >= config.THREADS_GATE_THRESHOLD
             verdicts[orig_idx] = Verdict(
