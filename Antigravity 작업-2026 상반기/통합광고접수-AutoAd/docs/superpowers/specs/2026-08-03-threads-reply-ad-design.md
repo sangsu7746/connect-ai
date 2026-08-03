@@ -305,6 +305,60 @@ THREADS_HARVEST_LIMIT        = 60    # 1회차 수집 목표 건수
 
 ---
 
+## 7-1. 골든셋 실측 결과 (2026-08-04) -- 하네스만 완료, 실측 미실시
+
+**이 절은 "실측 결과"가 아니라 "실측이 아직 불가능한 이유"를 기록한다.**
+Task 8 은 브리프(Step 1)대로 Threads 추천 피드에서 실제 글 100건을 수집해
+사람이 라벨링하는 것을 전제로 한다. 그런데 이 프로젝트에서 Threads 세션은
+단 한 번도 만들어진 적이 없다(`login.py threads` 실행 이력 없음) -- 로그인된
+브라우저 세션이 없으면 `threads/harvester.py` 로 긁어올 방법 자체가 없고,
+라벨링은 사업주 본인의 판단이 필요한 일이라 대행할 수 없다.
+
+그래서 이번 태스크에서 실제로 완료한 것은 **측정 하네스**뿐이다:
+
+- `tools/threads_goldenset.py` -- 리포트 도구. 픽스처가 synthetic 이면
+  출력 맨 앞/뒤에 경고 배너를 찍는다.
+- `tests/test_gate_golden.py` -- 하드블록 글이 절대 통과하면 안 된다는
+  회귀 테스트. `pytest -m golden` 으로만 실행(평소엔 스킵).
+- `tests/conftest.py` -- `golden` 마커 등록 + 기본 스킵 훅.
+- `tests/fixtures/sample_posts.json` -- 12건 -> 66건. **전건 synthetic**
+  (사람이 손으로 지어낸 데이터, 실제 수집 아님 -- 파일 최상단 `_disclaimer`
+  참고). 하드블록 계열(부고·사고·투병·확진·사망) 16건, UI 크롬 충돌
+  (`화질`/`필터` 같은 관심 키워드와 우연히 겹치는 인터페이스 문구) 6건,
+  비꼬기 4건, "답글이 오히려 무례한" 케이스 5건 포함.
+
+**실측 결과 (표본 66건, synthetic):**
+- 표본: 66건 (reply 17 / skip 44 / borderline 5, 하드블록 계열 16건)
+- 오탐(모의 LLM 이 skip 글에 70점 이상을 준 사례): 모의(mock) LLM 로만
+  검증 -- 실제 LLM 을 호출하지 않았다(브리프의 명시적 금지: 할당량 낭비 +
+  synthetic 데이터로는 결과가 무의미).
+- 확정 `THREADS_AUTO_THRESHOLD` = **미정** -- synthetic 데이터에서 나온
+  숫자는 애초에 채택 대상이 아니다.
+
+**하드블록 불변식은 검증됨(quota 소모 없이):** `content.copy_engine._call_llm`
+을 모의 LLM 으로 교체해, 하드블록 글 16건 전체에 대해 "safe=true, score=100"
+(가장 적대적인 응답)을 주도록 강제한 뒤 `test_hardblocked_never_scores_high`
+를 직접 호출했다 -- 그래도 통과한 글은 0건이었다. `gate.keyword_pass()` 가
+하드블록을 관심 키워드보다 먼저 검사해 LLM 에 도달하기 전에 걸러내기
+때문이다(`gate.screen()` 의 keyword_pass 우선 순서, Task 2). 이건 프롬프트
+품질과 무관하게 성립하는 구조적 안전장치이므로, synthetic 데이터로도
+의미 있게 검증할 수 있었다.
+
+**실제 골든셋을 만드는 절차** (task-8-report.md 에 상세):
+1. `login.py threads` 로 세션 생성 -> `threads.harvester.harvest(limit=120)`
+   으로 추천 피드 수집
+2. 각 건에 `reply`/`skip`/`borderline` 라벨을 사람이 직접 채움 (skip 최소
+   50건, 그중 하드블록 계열 15건 이상)
+3. `tests/fixtures/sample_posts.json` 의 `posts` 배열을 교체하고, 각 항목의
+   `"synthetic": true` 를 지우거나 `false` 로 바꿈
+4. `python tools/threads_goldenset.py` 실행(실제 LLM 호출, 할당량 소모) --
+   출력에 SYNTHETIC 경고가 더 이상 뜨지 않으면 실측이 성립한 것
+5. 오탐 0건이면 리포트가 제시하는 `THREADS_AUTO_THRESHOLD` 후보를 이 절에
+   기록하고 채택. 오탐 1건이라도 있으면 `threads/prompts/screen.txt` 와
+   `profiles/*.yaml` 의 `hard_block` 을 보강하고 처음부터 다시
+
+---
+
 ## 8. 실가동 순서
 
 ```

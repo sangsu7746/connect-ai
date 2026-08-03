@@ -23,7 +23,11 @@ def tcfg():
 
 
 def _golden():
-    data = json.loads((FIXTURES / "sample_posts.json").read_text(encoding="utf-8"))
+    """sample_posts.json 은 Task 8 부터 {"_disclaimer": [...], "posts": [...]}
+    형태다(픽스처가 synthetic 임을 밝히는 헤더를 담기 위해). 이전에는 배열
+    최상위였으므로, 두 형태 모두 읽을 수 있게 해둔다."""
+    payload = json.loads((FIXTURES / "sample_posts.json").read_text(encoding="utf-8"))
+    data = payload["posts"] if isinstance(payload, dict) else payload
     return [(RawPost(url=d["url"], author=d["author"], text=d["text"],
                      posted_at=d["posted_at"]), d["label"]) for d in data]
 
