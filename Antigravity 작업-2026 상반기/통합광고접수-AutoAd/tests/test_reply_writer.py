@@ -70,6 +70,16 @@ def test_validate_rejects_banned_phrase(tcfg, monkeypatch):
     assert any("금칙어" in p for p in reply_writer.validate(bad, tcfg))
 
 
+def test_validate_never_raises_on_none_tcfg():
+    """validate() 는 '절대 예외를 던지지 않는다'는 계약이 있다 — tcfg=None 은
+    아직 프로필을 못 읽은 호출자에게서 실제로 들어올 수 있다(리뷰 Round 2,
+    Finding 5). 예외 대신 문제 목록으로 이어져야 하고, landing 이 없으니
+    어떤 링크든 '우리 것이 아님'으로 거부되는 게 맞다."""
+    problems = reply_writer.validate("아무 텍스트나 https://midjourney.com", None)
+    assert isinstance(problems, list)
+    assert any("주소" in p for p in problems)
+
+
 # ── 도메인 소유권 판정 (리뷰 Round 1, Finding 2) ────────────────
 # 부분 문자열 비교("h not in own and own not in h")는 우리 도메인이 상대
 # 호스트의 부분 문자열이거나 그 반대이기만 해도 통과시켰다 — 표준적인
@@ -169,6 +179,39 @@ def test_extract_reply_error_message_is_cp949_safe():
     with pytest.raises(ValueError) as exc_info:
         reply_writer._extract_reply(garbage)
     exc_info.value.args[0].encode("cp949")  # 여기서 못 뜨면 UnicodeEncodeError 로 실패
+
+
+# ── reply 필드 타입 검증 (리뷰 Round 2, Finding 4) ────────────────
+# {"reply": null}/숫자/리스트를 str() 로 뭉개면 'None'/'12345'/"['a', 'b']"
+# 같은 문자열이 검증을 통과해 그대로 게시된다 — validate() 는 타입을 안 보므로
+# 아무 가드도 안 걸린다. null 은 LLM 이 "할 말 없음"을 표현하는 충분히 있을
+# 법한 방식이라 더 위험하다(조용히 실패하는 게 아니라 조용히 '성공'한 것처럼
+# 보인다). 파싱 실패와 동일하게 다뤄 재시도로 흘려보내고, 두 번 다 그러면
+# ValueError 로 죽어야 한다.
+
+@pytest.mark.parametrize("bad_reply", [None, 12345, ["a", "b"]],
+                         ids=["null", "number", "list"])
+def test_write_retries_and_raises_on_non_string_reply(post, verdict, tcfg, bad_reply):
+    calls = []
+
+    def mock(prompt):
+        calls.append(prompt)
+        return json.dumps({"reply": bad_reply}, ensure_ascii=False)
+
+    with pytest.raises(ValueError):
+        reply_writer.write(post, verdict, tcfg, _llm=mock)
+    assert len(calls) == 2, "타입 위반도 파싱 실패와 동일하게 1회 재시도해야 한다"
+
+
+def test_extract_reply_rejects_non_string_reply_directly():
+    """write() 를 거치지 않고 _extract_reply() 단독으로도 타입 위반이
+    ValueError 로 드러나는지 확인(재시도 로직과 분리해서 이 가드 자체를 검증)."""
+    with pytest.raises(ValueError):
+        reply_writer._extract_reply(json.dumps({"reply": None}))
+    with pytest.raises(ValueError):
+        reply_writer._extract_reply(json.dumps({"reply": 12345}))
+    with pytest.raises(ValueError):
+        reply_writer._extract_reply(json.dumps({"reply": ["a", "b"]}))
 
 
 # ── 스킴 없는 랜딩값 (Task 2 에서 넘어온 함정) ────────────────

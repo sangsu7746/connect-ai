@@ -56,7 +56,13 @@ def _with_scheme(landing: str) -> str:
 
 
 def validate(text: str, tcfg: dict) -> list:
-    """문제 목록을 돌려준다. 빈 리스트면 통과."""
+    """문제 목록을 돌려준다. 빈 리스트면 통과. 절대 예외를 던지지 않는다.
+
+    tcfg=None 은 아직 프로필을 못 읽은 호출자에게서 실제로 들어올 수 있다.
+    빈 dict 로 취급하면 own 이 빈 문자열이 되어 '모든 링크가 우리 것이
+    아님'으로 처리되므로(landing 없음 → 전부 거부), 예외 대신 문제 목록으로
+    자연스럽게 이어진다."""
+    tcfg = tcfg or {}
     problems = []
     body = text or ""
 
@@ -125,7 +131,18 @@ def _extract_reply(raw: str) -> str:
     start, end = text.find("{"), text.rfind("}")
     if start == -1 or end == -1 or end < start:
         raise ValueError(f"JSON 없음: {_cp949_safe(raw[:120])!r}")
-    return str(json.loads(text[start:end + 1]).get("reply", "")).strip()
+    reply = json.loads(text[start:end + 1]).get("reply", "")
+    if not isinstance(reply, str):
+        # {"reply": null}/숫자/리스트를 str() 로 뭉개면 'None'/'12345' 같은
+        # 문자열이 검증을 통과해 그대로 게시된다 — validate() 는 타입을 안
+        # 보므로 아무 가드도 안 걸린다. LLM 이 null 로 "할 말 없음"을
+        # 표현하는 건 충분히 있을 수 있는 일이라, 이건 파싱 실패와 동일하게
+        # 다뤄 재시도로 흘려보낸다(빈 문자열/공백은 이미 길이 가드가 잡으므로
+        # 여기서 막지 않는다).
+        raise ValueError(
+            f"reply 필드가 문자열이 아님(type={type(reply).__name__}): "
+            f"{_cp949_safe(repr(reply))[:120]}")
+    return reply.strip()
 
 
 def _call_llm(prompt: str) -> str:
