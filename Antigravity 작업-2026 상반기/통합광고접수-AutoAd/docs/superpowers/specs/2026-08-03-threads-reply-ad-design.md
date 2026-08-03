@@ -43,7 +43,12 @@ Threads 추천(For You) 피드의 글을 읽고, 그 글에 맞는 답글을 생
 
 1. **공식 API 경로 없음.** Threads API는 자기 글 관리와 자기 글에 달린 답글 처리
    위주라, 추천 피드 순회와 제3자 글 답글에 해당하는 엔드포인트가 없다. 따라서
-   Playwright 브라우저 자동화가 유일한 수단이다.
+   브라우저 자동화가 유일한 수단이다.
+
+   **스택은 Selenium** — 기존 `facebook_automator.py` 의 스텔스 설정
+   (`navigator.webdriver` 은폐 · `excludeSwitches`), 계정별 쿠키 저장·복원,
+   세션 자동 복구, 팝업 처리를 그대로 따른다. 스레드도 Meta라 같은 탐지 계열을
+   받으므로, 실전에서 살아남은 설정을 버리고 새 스택으로 시작할 이유가 없다.
 2. **밴 리스크가 기존 채널보다 높다.** 가입한 그룹에 내 글을 올리는 것과, 모르는
    사람 글에 홍보 답글을 다는 것은 Meta 기준에서 후자가 스팸 판정에 훨씬 가깝다.
    상한·간격·작성자 쿨다운을 보수적으로 잡는 이유가 이것이다.
@@ -61,7 +66,7 @@ Threads 추천(For You) 피드의 글을 읽고, 그 글에 맞는 답글을 생
 
 ```
 [수집]  harvester.harvest(account, limit=60)
-        Playwright → threads.net 추천 탭 스크롤 → 글 카드 파싱
+        Selenium → threads.net 추천 탭 스크롤 → 글 카드 파싱
         → RawPost{url, author, text, posted_at, likes, replies}
         → db.threads_target_upsert()      ← post_url UNIQUE 로 재수집 자동 배제
 
@@ -86,7 +91,7 @@ Threads 추천(For You) 피드의 글을 읽고, 그 글에 맞는 답글을 생
         그 미만                          → 폐기 (verdict='dropped', 사유 기록)
 
 [발행]  publisher.reply(post_url, text, dry_run)
-        BaseAdapter 안전장치 통과 → Playwright 답글 작성
+        BaseAdapter 안전장치 통과 → Selenium 답글 작성
         → db.record_post / db.update_post_status(perm_url)
 ```
 
@@ -133,10 +138,16 @@ Threads 추천(For You) 피드의 글을 읽고, 그 글에 맞는 답글을 생
 
 **신규**
 - `threads/` 패키지 5개 모듈
+- `threads/automator.py` — Selenium 드라이버·쿠키·스텔스
+  (`facebook_automator.py` 패턴 이식, threads.net 도메인용)
 - `threads_targets` 테이블 1개
 - `profiles/*.yaml` 에 `threads:` 섹션 (관심 키워드 · 하드블록 키워드)
 - `/approvals` 화면에 원글 표시 블록
 - `login.py` 에 `threads` 대상 추가
+- **pytest + `tests/`** — 현재 이 프로젝트엔 테스트 러너가 없다
+  (검증이 `demo.py` · `preflight.py` · `tools/rehearsal.py` 실행 스크립트로만
+  되어 있음). gate 골든셋을 반복 실행하려면 러너가 필요하므로 추가한다.
+  기존 코드는 건드리지 않고 `tests/` 만 새로 만든다.
 
 ---
 
@@ -287,6 +298,10 @@ THREADS_HARVEST_LIMIT        = 60    # 1회차 수집 목표 건수
 
 5. **harvester**
    저장된 threads.net HTML 픽스처로 파싱만 검증. 라이브 확인은 수동 1회.
+
+러너는 pytest, 위치는 `tests/`. 1·2·4·5번은 `pytest tests/ -v` 로 돌고,
+1번의 실제 LLM 호출분은 `pytest -m golden` 으로 분리해 평소엔 제외한다
+(할당량 소모 방지).
 
 ---
 
