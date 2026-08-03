@@ -105,9 +105,7 @@ CREATE TABLE IF NOT EXISTS threads_targets (
     score        INTEGER,
     verdict      TEXT DEFAULT 'pending',
     reason       TEXT,
-    creative_id  INTEGER,               -- creatives(id) 참조지만 FK 강제는 안 함.
-                                          -- get_conn() 이 PRAGMA foreign_keys=ON 이라
-                                          -- 강제하면 답글 전 임시연결·테스트 데이터가 막힌다.
+    creative_id  INTEGER REFERENCES creatives(id),
     harvested_at TEXT NOT NULL,
     replied_at   TEXT
 );
