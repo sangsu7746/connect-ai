@@ -28,6 +28,7 @@ import time
 import signal
 import argparse
 import subprocess
+import threading
 from pathlib import Path
 from datetime import datetime
 
@@ -56,6 +57,87 @@ LOG_KEEP = 3             # {name}.1.log ~ {name}.3.log
 # PYTHONUNBUFFERED 가 없으면 파일로 리다이렉트될 때 블록 버퍼링이 걸려
 # sync 로그가 11시간 동안 빈 파일로 남는다.
 CHILD_ENV = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1")
+
+# ── 쓰레드 답글 회차 (Task 9) ────────────────────────────────────
+#  이 감독기는 APScheduler 가 아니라 subprocess 감독 루프다(스케줄러 인스턴스는
+#  app.py 의 lifespan 안, 별도 프로세스에 산다 — service.py 프로세스에서는
+#  손이 안 닿는다). 그래서 쓰레드 회차는 여기서 전용 백그라운드 스레드로 돈다.
+#
+#  회차 하나를 감독 루프 안에서 동기 실행하지 않는 이유 — harvester.harvest()
+#  는 dry-run 여부와 무관하게 항상 실제 브라우저로 추천 피드를 스크롤해서
+#  가져온다(볼 글이 있어야 판정을 하니까). 실발행이면 여기에 답글 사이
+#  THREADS_REPLY_INTERVAL_MIN~MAX(180~600초) 대기까지 더해져 회차 하나가
+#  수 분씩 걸릴 수 있다 — 그 시간만큼 감독 루프(autoad/loanapp/sync 재시작
+#  감지)가 멈추면 이 파일 본연의 역할(죽으면 다시 살린다)을 쓰레드 회차가
+#  방해하게 된다.
+THREADS_TICK_INTERVAL_SEC = 45 * 60   # 45분 간격
+THREADS_EMPTY_STREAK_LIMIT = 3        # 연속 이 횟수만큼 수집 0건이면 자동 정지
+
+_threads_empty_streak = 0
+
+
+def _threads_tick(threads_runner):
+    """쓰레드 답글 1회차. run_once() 는 스스로 예외를 밖으로 흘리지 않는다는
+    계약이 있지만(threads/runner.py 참고), 이 스레드가 죽으면 다음 회차부터
+    영영 안 돌게 되므로 한 번 더 감싼다."""
+    global _threads_empty_streak
+    try:
+        stats = threads_runner.run_once()
+    except Exception as e:
+        _log(f"[threads] 회차 실패: {type(e).__name__}: {e}")
+        return
+
+    # harvester.py 의 파싱 손실 신호(harvest_ambiguous/harvest_unpaired)를
+    # 그대로 노출한다 — 수집 0건이 '진짜 0건'인지 '파싱이 깨져서 0건'인지는
+    # 이 둘을 같이 봐야 구분된다. harvest_unpaired 는 광고/UI 카드도 섞이므로
+    # 순손실로 단정하지 않는다(threads/runner.py::_log_summary 와 같은 관례).
+    _log("[threads] 수집 {h}건(파싱 모호 {amb}건 · 짝 없음-광고/UI 카드 포함, "
+         "정상 범위일 수 있음 {unp}건) -> 통과 {p} · 자동발행 {ap} · "
+         "승인대기 {q} · 폐기 {d} · 재판정대기 {df}".format(
+             h=stats.get("harvested", 0), amb=stats.get("harvest_ambiguous", 0),
+             unp=stats.get("harvest_unpaired", 0), p=stats.get("passed", 0),
+             ap=stats.get("auto_published", 0), q=stats.get("queued", 0),
+             d=stats.get("dropped", 0), df=stats.get("deferred", 0)))
+    errs = stats.get("errors") or []
+    if errs:
+        _log(f"[threads] 회차 중 오류 {len(errs)}건(최대 3건): {errs[:3]}")
+
+    # 수집 0건이 연속되면 셀렉터가 깨진 것이라고 의심한다 — 조용히 도는
+    # 것보다 멈추는 편이 낫다(빈 피드와 파싱 붕괴는 겉보기에 똑같다).
+    if stats.get("harvested", 0) == 0:
+        _threads_empty_streak += 1
+    else:
+        _threads_empty_streak = 0
+
+    if _threads_empty_streak >= THREADS_EMPTY_STREAK_LIMIT:
+        config.THREADS_ENABLED = False
+        _log(f"[threads] [!] {THREADS_EMPTY_STREAK_LIMIT}회 연속 수집 0건 - "
+             "셀렉터가 깨졌을 가능성이 높다고 보고 쓰레드 회차를 자동 정지합니다. "
+             "python -m threads.runner 로 직접 돌려 원인을 먼저 확인하세요 "
+             "(Threads 마크업 변경이 가장 유력합니다). 원인을 해소한 뒤 재개하려면 "
+             "service.py 를 재시작하세요 - THREADS_ENABLED 는 이 프로세스 안에서만 "
+             "꺼졌고 .env 파일은 그대로입니다.")
+
+
+def _threads_loop():
+    """45분 간격으로 _threads_tick() 을 돈다. run_forever() 가 이 스레드를
+    등록할지 말지는 시작 시점의 THREADS_ENABLED 하나로만 결정한다(설계 원칙
+    2 — 꺼진 기능은 등록조차 하지 않는다, 로그를 더럽히지 않으려고).
+    등록된 뒤에도 매 반복마다 THREADS_ENABLED 를 다시 확인해서, 위 3회
+    연속 0건 자동 정지가 걸리면 이 루프도 스스로 빠져나온다.
+
+    ⚠ 데몬 스레드다 — service.py 프로세스가 죽으면(Ctrl+C 등) 진행 중이던
+    회차와 함께 그대로 끊긴다. 회차 중간의 브라우저 프로세스 정리(pub.quit())
+    는 이 경우 보장되지 않는다 — 다른 3개 감독 대상(subprocess)도 강제
+    종료(TerminateProcess) 방식이라 같은 성격의 한계를 이미 안고 있다."""
+    global _threads_empty_streak
+    _threads_empty_streak = 0
+    from threads import runner as threads_runner
+    while config.THREADS_ENABLED:
+        time.sleep(THREADS_TICK_INTERVAL_SEC)
+        if not config.THREADS_ENABLED:
+            break
+        _threads_tick(threads_runner)
 
 
 def _services() -> list:
@@ -233,6 +315,19 @@ def run_forever():
     else:
         _log("발행 모드: 실발행 ON — 승인된 건만 나갑니다")
     _log("=" * 56)
+
+    # 쓰레드 답글 회차 — 마스터 스위치가 꺼져 있으면 등록조차 하지 않는다
+    # (꺼진 기능이 로그를 더럽히지 않게 · 설계 원칙 2). 이 검사는 기동
+    # 시점 1회뿐이다 — 실행 중 .env 를 고쳐도 이 프로세스에는 반영되지
+    # 않는다(config 는 프로세스 시작 시 한 번만 읽는다, 이 코드베이스
+    # 전체의 기존 관례). 반영하려면 service.py 를 재시작해야 한다 —
+    # GO_LIVE.md 의 "비상 정지" 절에 그대로 적혀 있다.
+    if config.THREADS_ENABLED:
+        threading.Thread(target=_threads_loop, name="threads-tick", daemon=True).start()
+        _log(f"[threads] 답글 회차 등록 완료 - {THREADS_TICK_INTERVAL_SEC // 60}분 간격, "
+             f"연속 {THREADS_EMPTY_STREAK_LIMIT}회 수집 0건 시 자동 정지")
+    else:
+        _log("[threads] THREADS_ENABLED=0 - 답글 회차를 등록하지 않습니다")
 
     while not stopping["v"]:
         for s in _services():

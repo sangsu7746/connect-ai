@@ -22,6 +22,7 @@
 | P1-7 | `scheduler.py` — APScheduler+JobStore · 웹서버 lifespan 통합 | ✅ 검증(firing·재시작복구·승인전용) |
 | P1-3 | `channels/{band,facebook,kakao}.py` — 3채널 실발행 어댑터 + 3중 안전장치 | ✅ dry-run 검증(3채널 동시) (실게시=계정/카톡창+`GLOBAL_DRY_RUN=0`) |
 | P1-10 | **상시 구동** `service.py` — 3개 프로세스 감독·자동재시작·로그 | ✅ `--once` 3/3 기동 검증 (등록은 `--install`) |
+| P4 | `threads/` — 쓰레드 답글 자동광고 1단계(수집→판정→생성→분기→발행) | ✅ dry-run 검증 · 실발행=골든셋 통과 후 |
 
 **검증된 전체 흐름 (크레딧·계정 없이 실제로 동작):**
 ```
@@ -102,6 +103,14 @@ python -m uvicorn app:app --port 8010     # 접수 웹서버 → http://127.0.0.
 **그 외 남은 것:**
 - **P1-10 OS 자동시작** — 서버+스케줄러 lifespan 통합됨, Windows 작업스케줄러 등록만.
 - 실 카피 = **Gemini 무료티어로 라이브 동작(기본, `COPY_PROVIDER=gemini`)**; Claude는 크레딧 시 선택(`=claude`). 모바일 승인 = `TELEGRAM_TOKEN` / **댓글·문의 수집(피드백 루프) = P2**.
+- **쓰레드 답글 2단계** — 계정 풀·프록시·워밍업(하루 100건↑). 1단계 실측 후 별도 스펙.
+
+**쓰레드 답글 1단계 — 점화 순서는 [GO_LIVE.md](GO_LIVE.md#쓰레드-답글-자동광고--점화-순서)**:
+로그인 세션 생성 → preflight → **마크업 검증(실제 Threads 페이지 대조, 아직 안 함)**
+→ 드라이런 → **골든셋 실측(THREADS_AUTO_THRESHOLD 확정, 아직 안 함)** → 승인전용
+운영(30건) → 자동 발행 → 사람이 지켜보는 첫 실제 게시/삭제. 알려진 한계(파서
+미검증·하드블록 의도적 과차단·캡차 감지 우회 가능성·쿨다운은 실발행 성공 시에만
+시작)는 GO_LIVE.md 해당 절 "알려진 한계" 참고.
 
 **실가동 도구**: `python preflight.py`(준비 점검·읽기전용) · `python register_channels.py`(채널 등록) · [GO_LIVE.md](GO_LIVE.md)(단계별 런북·비상정지 포함).
 preflight 판정(현재): 카피·팜플렛·밴드·페북·카카오 발행 전부 ✅ / 접수→대출만 ⚠(대출앱 uvicorn 미구동).
