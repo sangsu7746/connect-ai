@@ -121,12 +121,19 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
         return stats
 
     # ── 여기부터 pub(브라우저)를 만든다. 이 지점 이후로는 함수를 어떤
-    # 경로로 빠져나가든 pub.quit() 이 반드시 불려야 한다 — 리뷰 라운드 1
+    # 경로로 빠져나가든(생성 자체가 실패하는 경우까지 포함) pub.quit()
+    # 이 존재하는 객체에 대해서만 반드시 불려야 한다 — 리뷰 라운드 1
     # Finding 2: 예전엔 try/finally 가 for 루프에만 걸려 있어서
     # pub.login() 실패(예: 크롬 업데이트 이후 chromedriver 버전 불일치)
     # 가 quit() 없이 그대로 raise 됐다(=실행 모드에서 크롬 프로세스 leak).
-    pub = ThreadsPublisher(account)
+    # 리뷰 라운드 2 Finding 2: ThreadsPublisher(account) 생성 자체가
+    # try 밖에 있어서, 생성자가 터지면(오늘은 I/O 가 없어 가능성은
+    # 낮지만 앞으로도 그럴 거라는 보장은 없다) 여전히 raise 가 새어
+    # 나갔다 — pub 를 None 으로 시작해 try 안에서 생성하고, finally
+    # 에서는 pub 이 실제로 만들어졌을 때만 quit() 을 부른다.
+    pub = None
     try:
+        pub = ThreadsPublisher(account)
         if not dry_run:
             pub.login()
 
@@ -153,6 +160,30 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
         # 추적한다.
         authors_replied_this_pass = set()
 
+        # 리뷰 라운드 2 Finding 3: authors_replied_this_pass 는 이번
+        # 회차 지역 변수라 회차를 넘어서는 기억이 없다. 이전 회차에서
+        # 승인 큐로 간 답글은 link_creative() 를 안 부르므로(항목 3)
+        # replied_at 도 안 찍힌다 — 그 결과 "1회차 큐잉 → 2회차 자동
+        # 발행"이 같은 작성자에게 실제로 일어날 수 있었다(리뷰어 실측:
+        # 두 번의 평범한 스케줄 회차만으로 재현됨). db.py 는 수정 금지
+        # 대상이므로, 이미 있는 db.list_pending_approvals() 를 재사용
+        # 해 '아직 승인 안 된' 소재의 작성자를 모은다 — 쓰레드 답글
+        # creative 는 copy_json 에 target_author 키를 담고(runner.py
+        # 의 add_creative 호출부), 이 코드베이스의 다른 소재 종류는
+        # 이 키를 쓰지 않으므로 키 존재 여부만으로 '쓰레드 답글인가'를
+        # 구분할 수 있다. 행 하나가 깨져 있어도(JSON 파싱 실패·
+        # copy_json 이 dict 가 아님 등) 그 행만 건너뛰고 회차는 계속
+        # 간다.
+        authors_pending_approval = set()
+        for row in db.list_pending_approvals():
+            try:
+                cap = json.loads(row.get("copy_json") or "{}")
+            except (TypeError, ValueError):
+                continue
+            author = cap.get("target_author") if isinstance(cap, dict) else None
+            if author:
+                authors_pending_approval.add(author)
+
         for post, verdict in zip(posts, verdicts):
             try:
                 target_id = db.threads_target_upsert(post, config.PROFILE_KEY)
@@ -170,15 +201,26 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
                     continue
 
                 # 작성자 쿨다운은 반드시 답글 생성(LLM 호출)보다 먼저 본다 —
-                # 이미 버릴 답글에 LLM 할당량을 쓰지 않기 위함이다. DB 기록
-                # (지난 회차들) + 이번 회차 안에서 이미 답글을 준 작성자를
-                # 함께 본다(Finding 3).
-                if (post.author in authors_replied_this_pass
-                        or db.threads_author_replied_since(
-                            post.author, config.THREADS_AUTHOR_COOLDOWN_DAYS)):
+                # 이미 버릴 답글에 LLM 할당량을 쓰지 않기 위함이다. 세 가지
+                # 출처를 순서대로 본다(싼 것부터 — 메모리 조회 두 개를 먼저
+                # 봐서 걸리면 DB 왕복 자체를 아낀다): ① 이번 회차 안에서
+                # 이미 답글을 준 작성자, ② 이전 회차에서 승인 대기 중인
+                # (아직 사람이 처리 안 한) 작성자(리뷰 라운드 2 Finding 3),
+                # ③ DB 에 기록된 실제 발행 쿨다운. 운영자가 어느 경로로
+                # 막혔는지 구분할 수 있게 사유를 다르게 남긴다.
+                if post.author in authors_replied_this_pass:
+                    cooldown_reason = "이번 회차 내 동일 작성자 중복"
+                elif post.author in authors_pending_approval:
+                    cooldown_reason = "승인 대기 중인 동일 작성자 글 있음"
+                elif db.threads_author_replied_since(
+                        post.author, config.THREADS_AUTHOR_COOLDOWN_DAYS):
+                    cooldown_reason = f"작성자 쿨다운({config.THREADS_AUTHOR_COOLDOWN_DAYS}일)"
+                else:
+                    cooldown_reason = None
+
+                if cooldown_reason:
                     db.threads_target_verdict(
-                        target_id, verdict.score, "dropped",
-                        f"작성자 쿨다운({config.THREADS_AUTHOR_COOLDOWN_DAYS}일)")
+                        target_id, verdict.score, "dropped", cooldown_reason)
                     stats["dropped"] += 1
                     continue
 
@@ -264,15 +306,20 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
                 stats["errors"].append(
                     _cp949_safe(f"{getattr(post, 'url', '?')}: {e}"))
     except Exception as e:
-        # pub.login()·db.threads_replies_today() 등 루프 진입 전 준비
-        # 자체가 통째로 실패한 경우 — 이번 회차는 글을 하나도 처리하지
-        # 못했지만 run_once() 는 여전히 raise 하지 않는다(Finding 2).
+        # ThreadsPublisher(account) 생성·pub.login()·db.threads_
+        # replies_today() 등 루프 진입 전 준비 자체가 통째로 실패한
+        # 경우 — 이번 회차는 글을 하나도 처리하지 못했지만 run_once()
+        # 는 여전히 raise 하지 않는다(Finding 2).
         stats["errors"].append(
             _cp949_safe(f"발행 준비 실패({type(e).__name__}): {e}"))
     finally:
         # 이 지점 위 어디서 무엇이 터지든(로그인 실패 포함) 브라우저
-        # 프로세스를 반드시 정리한다.
-        pub.quit()
+        # 프로세스를 반드시 정리한다 — 단, pub 이 실제로 만들어졌을
+        # 때만(리뷰 라운드 2 Finding 2: 생성자 자체가 실패하면 pub 은
+        # 여전히 None 이고, None.quit() 을 부르면 AttributeError 로
+        # 새로운 실패가 하나 더 생긴다).
+        if pub is not None:
+            pub.quit()
 
     _log_summary(stats)
     return stats

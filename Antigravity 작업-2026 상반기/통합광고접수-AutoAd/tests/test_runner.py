@@ -239,21 +239,37 @@ def test_dry_run_auto_publish_does_not_poison_author_cooldown(wired, temp_db):
 # ── 리뷰 라운드 1(Critical 2 · Important 1 · Minor 2) 대응 테스트 ──
 
 
-def test_run_once_is_idempotent_across_passes(wired):
+def test_run_once_is_idempotent_across_passes(wired, monkeypatch):
     """같은 계정으로 두 번째 회차를 돌려도(채널 행이 이미 있는 상태)
-    첫 회차와 동일한 라우팅 결과가 나와야 한다. ensure_channel() 이
-    멱등하지 않으면(db.add_channel() 의 INSERT OR IGNORE 가 이미 있는
-    행에는 lastrowid=0 을 돌려주는 sqlite 사양 때문에) 두 번째 회차부터
+    문제없이 라우팅이 계속돼야 한다. ensure_channel() 이 멱등하지
+    않으면(db.add_channel() 의 INSERT OR IGNORE 가 이미 있는 행에는
+    lastrowid=0 을 돌려주는 sqlite 사양 때문에) 두 번째 회차부터
     channel_id=0 으로 creatives FK 위반이 나 조용히 아무것도 안
     나가는데 stats 는 정상처럼 보인다(리뷰 라운드 1 Finding 1). 이
     "run_once() 두 번 호출" 모양이 전체 스위트에 없었다는 것 자체가
-    지적 대상이라, 개별 버그 재현이 아니라 일반 가드로 남긴다."""
+    지적 대상이라, 개별 버그 재현이 아니라 일반 가드로 남긴다.
+
+    두 회차의 작성자는 서로 다르게 둔다 — 같은 작성자를 재사용하면
+    리뷰 라운드 2 Finding 3(승인 대기 중인 작성자 재차단)이 정당하게
+    끼어들어 "동일한 라우팅 결과"가 채널 멱등성과 무관한 이유로 깨진다
+    (1회차에서 큐로 간 작성자는 2회차에 정확히 다시 큐로 가면 안 되는
+    게 올바른 동작이다 — 그건 test_pending_approval_from_earlier_
+    pass_blocks_same_author 가 따로 검증한다). 이 테스트는 오직
+    ensure_channel()/_ensure_campaign() 의 멱등성만 본다."""
     kwargs = dict(account="tester", profile={"threads": {
         "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
         dry_run=True)
     res1 = wired.run_once(**kwargs)
-    res2 = wired.run_once(**kwargs)
     assert res1["errors"] == []
+
+    posts2 = [RawPost(url=f"https://www.threads.net/@v{i}/post/{i}",
+                      author=f"@v{i}", text="셀카 보정", posted_at=_FRESH_TS)
+              for i in range(4)]
+    verdicts2 = [Verdict(True, 95, "r", "a"), Verdict(True, 75, "r", "a"),
+                 Verdict(False, 50, "낮음", ""), Verdict(True, 92, "r", "a")]
+    monkeypatch.setattr(wired.harvester, "harvest", lambda *a, **k: posts2)
+    monkeypatch.setattr(wired.gate, "screen", lambda *a, **k: verdicts2)
+    res2 = wired.run_once(**kwargs)
     assert res2["errors"] == []
     assert res2["auto_published"] == res1["auto_published"]
     assert res2["queued"] == res1["queued"]
@@ -381,3 +397,126 @@ def test_mark_auto_only_written_on_real_publish(wired, temp_db):
         rows = conn.execute("SELECT metrics_json FROM posts").fetchall()
     assert rows   # sanity: 자동발행 건이 실제로 posts 에 기록됐다
     assert all(not r["metrics_json"] for r in rows)
+
+
+# ── 리뷰 라운드 2(Critical/Important 잔여 2건) 대응 테스트 ──
+
+
+def test_publisher_constructor_failure_is_recorded_not_raised(wired, monkeypatch):
+    """ThreadsPublisher(account) 생성 자체가 터져도(오늘은 I/O 가 없어
+    가능성은 낮지만 계약은 지켜야 한다) run_once() 는 raise 하지 않고
+    errors 에 기록한 채 정상적으로 dict 를 반환한다(리뷰 라운드 2
+    Finding 2 — 잔여분: 생성자만 두 보호구간 사이에 있었다)."""
+    def _boom(*a, **k):
+        raise RuntimeError("publisher init 실패")
+    monkeypatch.setattr(wired, "ThreadsPublisher", _boom)
+    res = wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    assert len(res["errors"]) == 1
+    assert res["auto_published"] == 0
+    assert res["queued"] == 0
+
+
+def test_pending_approval_from_earlier_pass_blocks_same_author(wired, monkeypatch):
+    """1회차에서 작성자 A 의 글이 승인 대기 큐로 갔다면(아직 승인 전),
+    2회차에서 같은 작성자 A 의 다른 글은 자동발행되면 안 된다 — DB
+    쪽 쿨다운(replied_at)은 큐잉만으로는 안 찍히고(항목 3), 이번 회차
+    지역 변수인 authors_replied_this_pass 도 회차를 넘어서는 기억이
+    없다(리뷰 라운드 2 Finding 3 — 리뷰어가 두 번의 평범한 스케줄
+    회차만으로 실제 재현함)."""
+    posts_pass1 = [RawPost(url="https://www.threads.net/@authorA/post/1",
+                           author="@authorA", text="셀카 보정 1",
+                           posted_at=_FRESH_TS)]
+    verdicts_pass1 = [Verdict(True, 75, "r", "a")]   # 자동임계(90) 미만 -> 큐
+    monkeypatch.setattr(wired.harvester, "harvest", lambda *a, **k: posts_pass1)
+    monkeypatch.setattr(wired.gate, "screen", lambda *a, **k: verdicts_pass1)
+    res1 = wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    assert res1["queued"] == 1
+
+    posts_pass2 = [RawPost(url="https://www.threads.net/@authorA/post/2",
+                           author="@authorA", text="셀카 보정 2",
+                           posted_at=_FRESH_TS)]
+    verdicts_pass2 = [Verdict(True, 95, "r", "a")]   # 자동임계 이상
+    monkeypatch.setattr(wired.harvester, "harvest", lambda *a, **k: posts_pass2)
+    monkeypatch.setattr(wired.gate, "screen", lambda *a, **k: verdicts_pass2)
+    res2 = wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    assert res2["auto_published"] == 0
+    assert res2["queued"] == 0
+    assert res2["dropped"] == 1
+
+
+def test_pending_approval_for_different_author_does_not_block(wired, monkeypatch):
+    """승인 대기 큐에 작성자 B 의 글이 있어도, 전혀 다른 작성자 C 의
+    글은 그대로 라우팅돼야 한다 — target_author 집합이 과하게 넓게
+    잡히지 않는지 확인한다."""
+    posts_pass1 = [RawPost(url="https://www.threads.net/@authorB/post/1",
+                           author="@authorB", text="셀카 보정",
+                           posted_at=_FRESH_TS)]
+    verdicts_pass1 = [Verdict(True, 75, "r", "a")]
+    monkeypatch.setattr(wired.harvester, "harvest", lambda *a, **k: posts_pass1)
+    monkeypatch.setattr(wired.gate, "screen", lambda *a, **k: verdicts_pass1)
+    res1 = wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    assert res1["queued"] == 1
+
+    posts_pass2 = [RawPost(url="https://www.threads.net/@authorC/post/1",
+                           author="@authorC", text="셀카 보정",
+                           posted_at=_FRESH_TS)]
+    verdicts_pass2 = [Verdict(True, 95, "r", "a")]
+    monkeypatch.setattr(wired.harvester, "harvest", lambda *a, **k: posts_pass2)
+    monkeypatch.setattr(wired.gate, "screen", lambda *a, **k: verdicts_pass2)
+    res2 = wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    assert res2["auto_published"] == 1
+    assert res2["dropped"] == 0
+
+
+def test_malformed_pending_approval_copy_json_is_skipped(wired, temp_db):
+    """copy_json 이 깨진(JSON 파싱 불가) 승인 대기 행이 있어도 그 행만
+    건너뛰고 회차는 정상적으로 계속된다 — 이 조회 하나가 회차 전체를
+    죽이면 안 된다(리뷰 라운드 2 Finding 3)."""
+    import db
+    channel_id = db.add_channel("band", "https://band.test/x", name="테스트밴드")
+    campaign_id = db.add_campaign("다른 캠페인")
+    with db.get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO creatives (campaign_id, channel_id, kind, copy_json, "
+            "image_path, approved, created_at) VALUES (?,?,?,?,?,0,?)",
+            (campaign_id, channel_id, "image", "{not valid json", "", "2026-01-01"))
+        creative_id = cur.lastrowid
+    db.enqueue_approval(creative_id)
+
+    res = wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    assert res["errors"] == []
+    assert res["auto_published"] == 2
+    assert res["queued"] == 1
+    assert res["dropped"] == 1
+
+
+def test_pending_approval_from_non_threads_creative_does_not_block(wired, temp_db):
+    """target_author 키가 없는(쓰레드 답글이 아닌) 승인 대기 소재는
+    작성자 쿨다운 판단에 전혀 관여하지 않는다 — copy_json 에 다른
+    채널(밴드 등) 캡션 필드만 있는 정상 케이스."""
+    import db
+    channel_id = db.add_channel("band", "https://band.test/y", name="테스트밴드2")
+    campaign_id = db.add_campaign("밴드 캠페인")
+    creative_id = db.add_creative(campaign_id, channel_id, {
+        "headline": "제목", "body": "본문", "cta": "신청"}, kind="image")
+    db.enqueue_approval(creative_id)
+
+    res = wired.run_once(account="tester", profile={"threads": {
+        "interest_keywords": ["보정"], "hard_block": [], "landing": "https://x.test"}},
+        dry_run=True)
+    assert res["auto_published"] == 2
+    assert res["queued"] == 1
+    assert res["dropped"] == 1
+    assert res["errors"] == []
