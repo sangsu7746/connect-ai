@@ -29,6 +29,17 @@ def _own_host(landing: str) -> str:
     return re.sub(r"^https?://", "", (landing or "").strip().lower()).split("/")[0]
 
 
+def _cp949_safe(s: str) -> str:
+    """cp949 콘솔에 그대로 찍혀도 죽지 않도록 인코딩 불가 문자를 이스케이프한다.
+
+    Task 1 에서 로그 문자열에 낀 em dash/이모지가 cp949 콘솔 자체를 죽여
+    회차 하나를 통째로 날린 사고가 있었다. LLM 원문이 예외 메시지에 실리는
+    이 지점(_extract_reply 의 JSON 파싱 실패 메시지)이 같은 사고의 재발
+    지점이라 여기서 미리 막는다. repr() 은 출력 가능한 비-ASCII 문자를
+    이스케이프하지 않으므로 repr 을 적용하기 전에 이걸 거쳐야 한다."""
+    return s.encode("cp949", errors="backslashreplace").decode("cp949")
+
+
 def _with_scheme(landing: str) -> str:
     """랜딩 값에 스킴이 없으면 https:// 를 붙인다.
 
@@ -65,7 +76,16 @@ def validate(text: str, tcfg: dict) -> list:
     own = _own_host(tcfg.get("landing", ""))
     hosts = [h.lower() for h in _URL_RE.findall(body)]
     for h in hosts:
-        if not own or (h not in own and own not in h):
+        # 부분 문자열 비교(구 버전)는 'evilphotomagic.test',
+        # 'photomagic.test.evil.com', 'app.test'(own 이 'my-photomagic-app.test'
+        # 일 때) 를 전부 우리 것으로 오인했다 — 우리 도메인이 상대방 호스트의
+        # 부분 문자열이거나 그 반대이기만 하면 통과되는 구조였기 때문이다.
+        # 이건 표준적인 피싱 룩어라이크 모양이다. copy_engine._find_leaks() 는
+        # 같은 부분 문자열 방식을 그대로 쓰지만 그쪽은 우리가 쓴 캠페인
+        # 카피를 검사하는 것이고, 여기는 남이 쓴 글에 반응해 만든 답글이
+        # 그 사람 타임라인에 자동 게시되는 것이라 노출 성격이 다르다 — 여기만
+        # 정확 일치/도메인 경계(.) 일치로 좁힌다.
+        if not own or not (h == own or h.endswith("." + own)):
             problems.append(f"우리 것이 아닌 주소: {h}")
     if len(hosts) > 1:
         problems.append(f"링크 과다({len(hosts)}개, 최대 1개)")
@@ -104,7 +124,7 @@ def _extract_reply(raw: str) -> str:
         text = fence.group(1).strip()
     start, end = text.find("{"), text.rfind("}")
     if start == -1 or end == -1 or end < start:
-        raise ValueError(f"JSON 없음: {raw[:120]!r}")
+        raise ValueError(f"JSON 없음: {_cp949_safe(raw[:120])!r}")
     return str(json.loads(text[start:end + 1]).get("reply", "")).strip()
 
 
@@ -126,7 +146,20 @@ def write(post: RawPost, verdict: Verdict, tcfg: dict, _llm=None) -> Reply:
     prompt = base
     notes = []
     for attempt in (1, 2):
-        text = _extract_reply(llm(prompt))
+        try:
+            text = _extract_reply(llm(prompt))
+        except ValueError as e:
+            # LLM 이 JSON 형식을 안 지킨 응답(설명 텍스트만, 네트워크 오류
+            # 메시지 등)도 '위반'과 동일하게 다룬다. 여기서 안 잡으면
+            # _extract_reply 의 ValueError 가 루프 밖으로 그대로 새어나가
+            # 첫 호출이 쓰레기를 뱉는 순간 재시도 없이 바로 죽어 '1회
+            # 재생성' 계약이 깨진다(copy_engine.generate_copy() 는 이
+            # 파싱 실패를 잡아 재시도하는데, 이 모듈의 초판은 그 처리가
+            # 빠져 있었다 — 리뷰에서 재현된 회귀).
+            notes.append(f"{attempt}차 위반: 응답 파싱 실패({e})")
+            prompt = (base + "\n\n[재작성] 이전 응답이 JSON 형식이 아니었다. "
+                      '아래 형식만 정확히 출력하라: {"reply": "답글 전문"}')
+            continue
         problems = validate(text, tcfg)
         if not problems:
             return Reply(text=text, guard_notes=notes)

@@ -70,6 +70,42 @@ def test_validate_rejects_banned_phrase(tcfg, monkeypatch):
     assert any("금칙어" in p for p in reply_writer.validate(bad, tcfg))
 
 
+# ── 도메인 소유권 판정 (리뷰 Round 1, Finding 2) ────────────────
+# 부분 문자열 비교("h not in own and own not in h")는 우리 도메인이 상대
+# 호스트의 부분 문자열이거나 그 반대이기만 해도 통과시켰다 — 표준적인
+# 피싱 룩어라이크 모양이 전부 뚫렸다. 정확 일치/도메인 경계(.) 일치로
+# 좁힌 뒤 이 세 가지 모양 + 정당한 서브도메인 1건을 확인한다.
+
+def test_validate_rejects_lookalike_prefix_domain(tcfg):
+    """own='photomagic.test' 가 상대 호스트 뒤쪽에 그대로 박혀 있어도
+    (evilphotomagic.test) 우리 것이 아니다."""
+    bad = "여기 써보세요 https://evilphotomagic.test 좋아요"
+    assert any("주소" in p for p in reply_writer.validate(bad, tcfg))
+
+
+def test_validate_rejects_lookalike_suffix_domain(tcfg):
+    """우리 도메인이 상대 호스트의 접두부로만 나오는 피싱형 도메인
+    (photomagic.test.evil.com)."""
+    bad = "여기 https://photomagic.test.evil.com 확인해보세요"
+    assert any("주소" in p for p in reply_writer.validate(bad, tcfg))
+
+
+def test_validate_rejects_substring_owner_domain():
+    """우리 도메인 자체가 상대 호스트의 부분 문자열인 경우
+    (own='my-photomagic-app.test', link='app.test')."""
+    tcfg2 = {"interest_keywords": [], "hard_block": [],
+             "landing": "https://my-photomagic-app.test", "brand": "PhotoMagic",
+             "brand_desc": "사진 보정 웹서비스"}
+    bad = "여기 https://app.test 써보세요"
+    assert any("주소" in p for p in reply_writer.validate(bad, tcfg2))
+
+
+def test_validate_accepts_legitimate_subdomain(tcfg):
+    """우리 도메인의 진짜 서브도메인은 여전히 통과해야 한다(도트 경계 일치)."""
+    good = "여기 https://app.photomagic.test 확인해보세요"
+    assert reply_writer.validate(good, tcfg) == []
+
+
 def test_write_retries_once_then_succeeds(post, verdict, tcfg):
     calls = []
 
@@ -92,6 +128,47 @@ def test_write_raises_after_second_violation(post, verdict, tcfg):
                                 ensure_ascii=False)
     with pytest.raises(ValueError):
         reply_writer.write(post, verdict, tcfg, _llm=mock)
+
+
+# ── 파싱 실패 시 재시도 (리뷰 Round 1, Finding 1) ────────────────
+# _extract_reply() 의 ValueError 가 write() 의 재시도 루프 밖으로 새어나가
+# 첫 호출이 JSON 이 아닌 응답을 뱉는 순간 2차 시도 없이 바로 죽던 회귀.
+
+def test_write_retries_when_first_response_is_unparseable(post, verdict, tcfg):
+    """1차 응답이 JSON 이 아니어도(설명 텍스트만 옴) 예외로 바로 죽지 않고
+    1회 재시도해 정상 답글을 돌려준다."""
+    calls = []
+
+    def mock(prompt):
+        calls.append(prompt)
+        if len(calls) == 1:
+            return "죄송합니다, 요청을 처리할 수 없습니다."  # JSON 아님
+        return json.dumps({"reply": "저도 그 고민요. https://photomagic.test"},
+                          ensure_ascii=False)
+
+    result = reply_writer.write(post, verdict, tcfg, _llm=mock)
+    assert len(calls) == 2
+    assert "photomagic.test" in result.text
+    assert result.guard_notes, "1차 파싱 실패 내역이 남아야 한다"
+
+
+def test_write_raises_after_second_parse_failure(post, verdict, tcfg):
+    """2차 시도까지 계속 JSON 이 아니면 최종적으로 ValueError 를 던진다
+    (다른 예외 타입으로 새거나, 잘라낸 텍스트를 돌려주면 안 된다)."""
+    mock = lambda p: "이건 계속 JSON 이 아닙니다"
+    with pytest.raises(ValueError):
+        reply_writer.write(post, verdict, tcfg, _llm=mock)
+
+
+def test_extract_reply_error_message_is_cp949_safe():
+    """LLM 원문에 cp949 로 인코딩할 수 없는 문자(em dash, 이모지)가 섞여
+    JSON 파싱에 실패해도, 예외 메시지 자체는 cp949 콘솔에 그대로 찍을 수
+    있어야 한다 — Task 1 에서 이 경로(원문을 그대로 예외 메시지에 실음)가
+    콘솔을 죽인 사고가 있었다(리뷰 Round 1, Finding 3)."""
+    garbage = "설명 — 이모지 섞임 \U0001F600 JSON 아님"
+    with pytest.raises(ValueError) as exc_info:
+        reply_writer._extract_reply(garbage)
+    exc_info.value.args[0].encode("cp949")  # 여기서 못 뜨면 UnicodeEncodeError 로 실패
 
 
 # ── 스킴 없는 랜딩값 (Task 2 에서 넘어온 함정) ────────────────
