@@ -597,6 +597,96 @@
       "label": "reply",
       "note": "정답 케이스",
       "synthetic": true
+    },
+    {
+      "url": "https://www.threads.net/@u67/post/67",
+      "author": "@u67",
+      "text": "",
+      "posted_at": "2026-08-03T15:30:00",
+      "label": "skip",
+      "note": "미디어 전용 게시물 - 텍스트/캡션이 없다. 캡션이 없으면 관심 키워드를 판단할 방법이 없으므로(이 파이프라인은 이미지 분석을 하지 않는다) 기본적으로 skip 되는 게 맞다.",
+      "synthetic": true
+    },
+    {
+      "url": "https://www.threads.net/@u68/post/68",
+      "author": "@u68",
+      "text": "새 폰카 사고 싶은데 화질 좋은 거 추천해주세요",
+      "posted_at": "2026-08-03T15:35:00",
+      "label": "reply",
+      "note": "review r1 finding1: '사고'(하드블록) 와 '사고 싶다'(사다+고 싶다) 충돌. 명사 '사고'가 붙는 말이 현장/사진/영상/소식/났다/당하다 등으로 너무 다양해 안전하게 좁힐 수 없다고 판단해 넓게 유지했다(accepted over-blocking) - 이 글은 여전히 키워드 단계에서 막혀 미탐(false_neg)으로 잡혀야 정상이다.",
+      "synthetic": true
+    },
+    {
+      "url": "https://www.threads.net/@u69/post/69",
+      "author": "@u69",
+      "text": "이 가격이 정당한가요 사진 보정 비용 너무 비싼 거 아닌가",
+      "posted_at": "2026-08-03T15:40:00",
+      "label": "reply",
+      "note": "review r1 finding1: '정당'(정치조직, 하드블록) 과 '정당하다'(타당하다는 뜻의 형용사) 충돌. profiles/photomagic.yaml 에서 '정당 지지/후보/소속', '여당', '야당' 으로 좁혀서 이 글은 더 이상 하드블록에 안 걸리고 LLM 단계까지 가야 한다.",
+      "synthetic": true
+    },
+    {
+      "url": "https://www.threads.net/@u70/post/70",
+      "author": "@u70",
+      "text": "참기름 넣었더니 고소해서 사진 찍어서 자랑하고 싶어요",
+      "posted_at": "2026-08-03T15:45:00",
+      "label": "reply",
+      "note": "review r1 finding1: '고소'(소송, 하드블록) 와 '고소하다'(맛이 고소하다) 충돌 - '고소하다'는 소송/맛/쌤통 세 뜻의 동음이의어라 단어 자체로는 못 좁히고, '고소장/고소인/고소당/고소하겠다/고소하려고/형사고소/무고죄' 같은 법률 전용 복합어로 좁혔다. 이 글은 더 이상 하드블록에 안 걸려야 한다.",
+      "synthetic": true
+    },
+    {
+      "url": "https://www.threads.net/@u71/post/71",
+      "author": "@u71",
+      "text": "박물관에서 사진 촬영은 삼가주세요 안내문 봤는데 그럼 폰카 화질 좋아도 못 찍는거죠?",
+      "posted_at": "2026-08-03T15:50:00",
+      "label": "reply",
+      "note": "review r1 finding1(추가 발견): '삼가'(조의, 하드블록) 와 '삼가주세요'(정중하게 자제를 요청하는 일반 표현) 충돌. 한국어 조의 표현은 '삼가 조의를 표합니다'/'삼가 고인의 명복을' 처럼 정형구로 고정돼 있어 '삼가 조의'/'삼가 고인' 으로 좁혀도 놓칠 위험이 낮다. 이 글은 더 이상 하드블록에 안 걸려야 한다.",
+      "synthetic": true
+    },
+    {
+      "url": "https://www.threads.net/@u72/post/72",
+      "author": "@u72",
+      "text": "직장 대선배님이 프로필사진 좀 봐달라고 하셨어요",
+      "posted_at": "2026-08-03T15:55:00",
+      "label": "reply",
+      "note": "review r1 finding1(추가 발견): '대선'(대통령 선거, 하드블록) 이 '대선배'(손윗 선배)의 앞 두 글자와 우연히 겹친다. '대선 후보/정국/토론/유세', '이번 대선' 으로 좁혀서 이 글은 더 이상 하드블록에 안 걸려야 한다.",
+      "synthetic": true
+    },
+    {
+      "url": "https://www.threads.net/@u73/post/73",
+      "author": "@u73",
+      "text": "대선 소주 라벨 사진 찍어서 화질 좋게 편집했어요",
+      "posted_at": "2026-08-03T16:00:00",
+      "label": "reply",
+      "note": "review r1 finding1(추가 발견, 두 번째 사례): '대선'이 소주 브랜드명과도 겹친다. 위와 같은 좁힌 목록으로 이 글도 더 이상 하드블록에 안 걸려야 한다.",
+      "synthetic": true
+    },
+    {
+      "url": "https://www.threads.net/@u74/post/74",
+      "author": "@u74",
+      "text": "국궁 동호회에서 시위 당기는 사진 찍어주실 분 구해요",
+      "posted_at": "2026-08-03T16:05:00",
+      "label": "reply",
+      "note": "review r1 finding1(추가 발견): '시위'(집회/데모)와 '시위'(활시위, 국궁) 는 완전한 동음이의어다. 실제 집회 글의 표현이 '시위 현장/1인시위/촛불시위' 등으로 너무 다양해 안전하게 좁힐 자신이 없어 넓게 유지했다(accepted over-blocking, 사고와 같은 판단) - 이 글은 여전히 키워드 단계에서 막혀 미탐(false_neg)으로 잡혀야 정상이다.",
+      "synthetic": true
+    },
+    {
+      "url": "https://www.threads.net/@u75/post/75",
+      "author": "@u75",
+      "text": "삼가 조의를 표합니다 사진으로 추모합니다",
+      "posted_at": "2026-08-03T16:10:00",
+      "label": "skip",
+      "note": "review r1 finding1: '삼가' 를 좁힌 뒤에도 진짜 조의 표현은 '삼가 조의' 로 여전히 막혀야 한다(참 케이스 검증).",
+      "synthetic": true
+    },
+    {
+      "url": "https://www.threads.net/@u76/post/76",
+      "author": "@u76",
+      "text": "명예훼손으로 고소장 접수했다는 얘기 듣고 사진 증거 정리하는 중이에요",
+      "posted_at": "2026-08-03T16:15:00",
+      "label": "skip",
+      "note": "review r1 finding1: '고소' 를 좁힌 뒤에도 진짜 소송 글은 '고소장' 으로 여전히 막혀야 한다(참 케이스 검증).",
+      "synthetic": true
     }
   ]
 }

@@ -356,6 +356,19 @@ Task 8 은 브리프(Step 1)대로 Threads 추천 피드에서 실제 글 100건
 5. 오탐 0건이면 리포트가 제시하는 `THREADS_AUTO_THRESHOLD` 후보를 이 절에
    기록하고 채택. 오탐 1건이라도 있으면 `threads/prompts/screen.txt` 와
    `profiles/*.yaml` 의 `hard_block` 을 보강하고 처음부터 다시
+6. **`.env` 에 실제로 적용한다** -- 5번에서 채택한 숫자를 리포트에 기록하는
+   것만으로는 아무 효과가 없다. `config.py:221` 은
+   `os.getenv("THREADS_AUTO_THRESHOLD", "90")` 로 `.env` 파일을 읽고, 현재
+   `.env` 에는 이 키가 아예 없어 기본값 90 이 그대로 쓰인다. `.env` 를 열어
+   아래 줄을 (없으면 추가, 있으면 값만 교체):
+   ```
+   THREADS_AUTO_THRESHOLD=85
+   ```
+   (85 는 예시 -- 실제로는 5번에서 나온 숫자를 쓴다.) `.env` 는
+   `.gitignore` 대상이라 커밋되지 않는다 -- 서버/실행 환경마다 직접
+   반영해야 한다. 설계서 8절의 "전건 승인 모드로 30건 실발행" 단계를
+   통과하기 전에는 `THREADS_ENABLED`/`THREADS_AUTO_DAILY_LIMIT` 을 낮게
+   유지한 채로만 이 값을 적용한다.
 
 ---
 
