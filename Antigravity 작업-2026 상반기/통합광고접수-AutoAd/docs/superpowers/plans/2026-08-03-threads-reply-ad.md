@@ -2007,17 +2007,55 @@ cd /d && git commit -m "feat(threads): runner — 점수 분기(자동/승인/�
 
 ---
 
-## Task 7: 승인 콘솔에 원글 표시
+## Task 7: 승인 콘솔 — 원글 표시 + 승인 발행 경로 배선
 
 승인자가 원글을 못 보면 답글이 적절한지 판단할 수 없다. 이 화면 없이는 승인 게이트가 형식만 남는다.
 
+**그리고 승인 버튼이 실제로 발행까지 이어져야 한다.** Task 6 리뷰에서 드러난 사실:
+승인 발행 경로가 통째로 끊겨 있다. 세 곳이 어긋난다.
+
+1. `orchestrator.ADAPTERS`(`orchestrator.py:27-31`)에 `"threads"` 항목이 없어
+   `get_adapter()`(`:53-55`)가 `ValueError("미지원 채널: threads")` 를 던진다.
+2. `publish_creative()`(`:547`)가 본문을 `_caption_text(caption)` 으로 만드는데
+   이는 `headline`/`body`/`cta` 를 잇는다. 답글 `copy_json` 에는 `reply` 뿐이라
+   **빈 문자열이 발행된다.**
+3. 같은 함수가 `adapter.post(row["target_ref"], ...)` 로 대상을 넘기는데
+   `target_ref` 는 채널의 `@핸들` 이지 **답글을 달 원글 URL이 아니다.**
+
+즉 어댑터만 등록하면 "빈 글을 내 프로필에 올리려 시도"하게 된다. 세 곳을 함께 고쳐야 한다.
+
 **Files:**
-- Modify: `approval.py`(`pending()` 반환에 답글 필드 추가), `ui/approvals.html`
-- Create: `tests/test_approval_threads.py`
+- Modify: `approval.py`(`pending()` 반환에 답글 필드 추가), `ui/approvals.html`,
+  `orchestrator.py`(ADAPTERS 등록 + `publish_creative` 의 threads 분기)
+- Create: `channels/threads.py`(`ThreadsAdapter`), `tests/test_approval_threads.py`,
+  `tests/test_orchestrator_threads.py`
 
 **Interfaces:**
-- Consumes: `creatives.copy_json` 의 `threads_reply` 형식 (Task 6)
-- Produces: `approval.pending()` 의 각 항목에 추가 키 — `is_reply: bool`, `reply_text: str`, `target_url: str`, `target_author: str`, `target_excerpt: str`, `score: int`
+- Consumes: `creatives.copy_json` 의 `threads_reply` 형식 (Task 6),
+  `threads.publisher.ThreadsPublisher` (Task 5)
+- Produces:
+  - `approval.pending()` 의 각 항목에 추가 키 — `is_reply: bool`, `reply_text: str`,
+    `target_url: str`, `target_author: str`, `target_excerpt: str`, `score: int`
+  - `channels.threads.ThreadsAdapter(account_id=None, headless=None)` —
+    `ChannelAdapter` 규격의 `post(target, text, image_path=None, dry_run=True) -> PostResult`
+    로 `ThreadsPublisher.reply()` 를 감싼다. `image_path` 는 무시한다(답글은 텍스트 전용).
+    `target` 은 **원글 URL** 이다(채널 핸들 아님).
+  - `orchestrator.ADAPTERS["threads"] = ThreadsAdapter`
+
+**주의 — 기존 3채널을 건드리지 않는다.** `publish_creative` 의 분기는
+`platform == "threads"` 일 때만 타야 하고, band/facebook/kakao 경로는 바이트 단위로
+동일하게 남아야 한다. 이 함수는 되돌릴 수 없는 실발행을 하는 공용 코드다.
+
+**중복 발행 방지가 이미 있다.** `approve_and_publish`(`:669`)가
+`db.decide_approval(...)` 반환값으로 재승인을 끊는다(`:680-683`). 답글도 같은 관문을
+지나므로 별도 장치는 필요 없다 — 다만 그 동작이 threads 경로에서도 유지되는지
+테스트로 확인할 것.
+
+**`threads_target_link_creative()` 호출 위치.** 승인 발행이 성공하면 그 시점에
+작성자 쿨다운이 시작돼야 한다. 그런데 `orchestrator.py` 는 `threads_targets` 를
+전혀 모른다. Task 6 는 자동 발행 성공 시에만 링크한다. 승인 경로에서도 같은 규칙
+(실발행 성공 시에만)이 적용되도록 하되, `orchestrator` 에 threads 전용 지식을
+얼마나 넣을지는 구현자가 판단하고 리포트에 근거를 남긴다.
 
 - [ ] **Step 1: 실패하는 테스트를 쓴다**
 
