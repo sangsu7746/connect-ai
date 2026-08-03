@@ -381,11 +381,6 @@ def track_path(campaign: dict) -> str:
         return ""
     if not re.fullmatch(r"[0-9]+-[0-9]+", key):
         return site          # 추적 키가 없으면 추적 없이 사이트 주소만
-    # rewrite 를 올리지 않은 사이트에는 짧은 경로를 쓰지 않는다.
-    # 클릭을 못 세는 정도가 아니라, Vercel 처럼 404 를 주는 곳에서는
-    # 광고를 누른 사람이 오류 페이지를 보게 된다(실측: mirizip.com).
-    if site.lower() not in config.TRACK_SITES:
-        return site
     return f"{site}/{config.TRACK_PREFIX}/{key}"
 
 
