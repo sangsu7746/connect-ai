@@ -37,3 +37,31 @@ fallback_copy:
 intake:
   title: "서비스 문의"
   target: none                   # 대출앱으로 보내지 않음 (클라우드 수신함에만)
+
+threads:
+  interest_keywords:
+    - 사진
+    - 셀카
+    - 프로필사진
+    - 보정
+    - 인생네컷
+    - 증명사진
+    - 포토샵
+    - 필터
+    - 화질
+    - 흑백
+  hard_block:
+    - 부고
+    - 삼가
+    - 조의
+    - 사고
+    - 확진
+    - 투병
+    - 수술
+    - 고소
+    - 소송
+    - 정당
+    - 대선
+    - 시위
+    - 사망
+  landing: "https://headjim-photomagic.web.app"
