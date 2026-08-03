@@ -13,7 +13,8 @@
 #  실행 전 확인할 것: tests/fixtures/sample_posts.json 의 각 항목이
 #  "synthetic": true 를 달고 있는 동안은 이 스크립트가 무엇을 출력하든
 #  THREADS_AUTO_THRESHOLD 를 켤 근거가 되지 않는다. 실제 라벨링된 골든셋으로
-#  교체하는 절차는 이 파일 하단 및 task-8-report.md 를 참고.
+#  교체하는 절차는 docs/superpowers/specs/2026-08-03-threads-reply-ad-design.md
+#  의 "7-1. 골든셋 실측 결과" 절, 그리고 task-8-report.md 를 참고.
 # ============================================================
 import json
 import sys
