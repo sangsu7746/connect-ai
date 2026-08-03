@@ -25,3 +25,6 @@ SQLAlchemy
 
 # 승인 콘솔 (P1-6)
 python-telegram-bot
+
+# 테스트 (신규 — threads/ 파이프라인 검증용)
+pytest

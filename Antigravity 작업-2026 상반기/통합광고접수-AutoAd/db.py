@@ -93,9 +93,30 @@ CREATE TABLE IF NOT EXISTS approvals (
     created_at  TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS threads_targets (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_url     TEXT NOT NULL UNIQUE,
+    author       TEXT NOT NULL,
+    text         TEXT,
+    posted_at    TEXT,
+    likes        INTEGER DEFAULT 0,
+    replies      INTEGER DEFAULT 0,
+    profile_key  TEXT,
+    score        INTEGER,
+    verdict      TEXT DEFAULT 'pending',
+    reason       TEXT,
+    creative_id  INTEGER,               -- creatives(id) 참조지만 FK 강제는 안 함.
+                                          -- get_conn() 이 PRAGMA foreign_keys=ON 이라
+                                          -- 강제하면 답글 전 임시연결·테스트 데이터가 막힌다.
+    harvested_at TEXT NOT NULL,
+    replied_at   TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_creatives_campaign ON creatives(campaign_id);
 CREATE INDEX IF NOT EXISTS idx_posts_status       ON posts(status);
 CREATE INDEX IF NOT EXISTS idx_approvals_state    ON approvals(state);
+CREATE INDEX IF NOT EXISTS idx_threads_targets_author  ON threads_targets(author);
+CREATE INDEX IF NOT EXISTS idx_threads_targets_verdict ON threads_targets(verdict);
 """
 
 # 향후 컬럼 추가 시 여기에 (테이블, 컬럼, DDL) 등록 → 멱등 마이그레이션
@@ -553,6 +574,83 @@ def stuck_consumers() -> list:
             "SELECT * FROM consumers WHERE COALESCE(registered,0)=0 "
             "AND COALESCE(created_at,'') <= ? ORDER BY id",
             (_give_up_cutoff(),)).fetchall()
+    return [dict(r) for r in rows]
+
+
+# ── 쓰레드 답글 (threads/) ──────────────────────────────────
+def threads_target_upsert(post, profile_key: str) -> int:
+    """수집한 원글 1건 기록. post_url 이 이미 있으면 기존 id 를 그대로 준다.
+
+    갱신하지 않는 이유 — 이미 판정·답글까지 끝난 글을 재수집했을 때
+    score/verdict 를 덮어쓰면 같은 글에 두 번 답글이 나간다."""
+    with get_conn() as conn:
+        row = conn.execute("SELECT id FROM threads_targets WHERE post_url=?",
+                           (post.url,)).fetchone()
+        if row:
+            return row["id"]
+        cur = conn.execute(
+            """INSERT INTO threads_targets
+               (post_url, author, text, posted_at, likes, replies,
+                profile_key, verdict, harvested_at)
+               VALUES (?,?,?,?,?,?,?,'pending',?)""",
+            (post.url, post.author, post.text, post.posted_at,
+             post.likes, post.replies, profile_key, _now()))
+        return cur.lastrowid
+
+
+def threads_target_verdict(target_id: int, score: int, verdict: str, reason: str = ""):
+    """판정 결과 기록. verdict: pending | passed | dropped"""
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE threads_targets SET score=?, verdict=?, reason=? WHERE id=?",
+            (score, verdict, reason, target_id))
+
+
+def threads_target_link_creative(target_id: int, creative_id: int):
+    """생성된 답글(creative)을 원글에 잇고 답글 시각을 찍는다.
+
+    replied_at 이 작성자 쿨다운의 기준이 된다."""
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE threads_targets SET creative_id=?, replied_at=? WHERE id=?",
+            (creative_id, _now(), target_id))
+
+
+def threads_replies_today(auto_only: bool = False) -> int:
+    """오늘 실제로 나간 답글 수.
+
+    posts 를 센다(threads_targets 가 아니라). 답글이 생성됐어도
+    승인 대기 중이면 계정에 부하를 준 것이 아니기 때문이다."""
+    today = _now()[:10]
+    sql = """SELECT COUNT(*) AS n FROM posts p
+             JOIN creatives c ON c.id = p.creative_id
+             WHERE c.kind='threads_reply'
+               AND p.status='posted' AND substr(p.posted_at,1,10)=?"""
+    params = [today]
+    if auto_only:
+        sql += " AND p.metrics_json LIKE '%\"auto\": true%'"
+    with get_conn() as conn:
+        return conn.execute(sql, params).fetchone()["n"]
+
+
+def threads_author_replied_since(author: str, days: int) -> bool:
+    """이 작성자에게 최근 days 일 안에 답글을 단 적이 있나."""
+    import datetime as _dt
+    cutoff = (_dt.datetime.now() - _dt.timedelta(days=days)).isoformat()
+    with get_conn() as conn:
+        row = conn.execute(
+            """SELECT 1 FROM threads_targets
+               WHERE author=? AND replied_at IS NOT NULL AND replied_at >= ?
+               LIMIT 1""", (author, cutoff)).fetchone()
+    return row is not None
+
+
+def threads_targets_pending(limit: int = 50) -> list:
+    """아직 판정 안 된 원글."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            """SELECT * FROM threads_targets WHERE verdict='pending'
+               ORDER BY id LIMIT ?""", (limit,)).fetchall()
     return [dict(r) for r in rows]
 
 

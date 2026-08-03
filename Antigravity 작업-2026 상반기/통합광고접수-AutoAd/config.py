@@ -193,6 +193,28 @@ FALLBACK_BODY = (PROFILE.get("fallback_copy") or {}).get("body", "")
 INTAKE_TITLE  = (PROFILE.get("intake") or {}).get("title", "상담 접수")
 INTAKE_TARGET = (PROFILE.get("intake") or {}).get("target", "none")
 
+# ── 쓰레드 답글 자동광고 (1단계) ────────────────────────────
+# 마스터 스위치. GLOBAL_DRY_RUN 과 AND — 둘 중 하나라도 꺼지면 실발행 없음.
+THREADS_ENABLED = os.getenv("THREADS_ENABLED", "0") == "1"
+# 쿠키 파일명을 결정한다. login.py --account 에 쓴 값과 반드시 같아야 한다.
+THREADS_ACCOUNT = _secret("THREADS_ACCOUNT")
+THREADS_DAILY_LIMIT = int(os.getenv("THREADS_DAILY_LIMIT", "20"))
+# 자동 발행분 전용 상한. 총 상한과 분리하는 이유 —
+# 자동분은 사람이 안 본 채 나간다. gate 가 오작동해 전부 고득점을 주면
+# 총 상한만으로는 하루치가 통째로 무검수 발행된다. 사고 크기를 여기서 묶는다.
+THREADS_AUTO_DAILY_LIMIT = int(os.getenv("THREADS_AUTO_DAILY_LIMIT", "3"))
+# 자동 발행 임계. 골든셋 실측 전까지는 근거가 없으므로 높게 시작한다.
+THREADS_AUTO_THRESHOLD = int(os.getenv("THREADS_AUTO_THRESHOLD", "90"))
+THREADS_GATE_THRESHOLD = int(os.getenv("THREADS_GATE_THRESHOLD", "70"))
+THREADS_REPLY_INTERVAL_MIN = int(os.getenv("THREADS_REPLY_INTERVAL_MIN", "180"))
+THREADS_REPLY_INTERVAL_MAX = int(os.getenv("THREADS_REPLY_INTERVAL_MAX", "600"))
+# 같은 사람에게 반복 답글이 붙는 것이 신고로 가는 가장 빠른 경로다.
+THREADS_AUTHOR_COOLDOWN_DAYS = int(os.getenv("THREADS_AUTHOR_COOLDOWN_DAYS", "30"))
+# 오래된 글의 답글은 아무도 보지 않는다. 노출 없는 리스크일 뿐이다.
+THREADS_POST_MAX_AGE_MIN = int(os.getenv("THREADS_POST_MAX_AGE_MIN", "90"))
+THREADS_REPLY_MAX_CHARS = int(os.getenv("THREADS_REPLY_MAX_CHARS", "280"))
+THREADS_HARVEST_LIMIT = int(os.getenv("THREADS_HARVEST_LIMIT", "60"))
+
 REQUIRED_SECRETS = ["ANTHROPIC_API_KEY"]  # P1 진입 시 최소 필요
 
 
