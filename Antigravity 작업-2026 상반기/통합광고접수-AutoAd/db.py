@@ -168,6 +168,95 @@ _MIGRATIONS = [
 ]
 
 
+def _migrate_threads_targets_fk():
+    """threads_targets.creative_id 에 FK 강제를 뒤늦게 붙인다(멱등).
+
+    최초 배포(2026-08-03, 커밋 45459faad)는 REFERENCES 없이 나갔다. init_db() 의
+    'CREATE TABLE IF NOT EXISTS' 는 이미 존재하는 테이블은 건드리지 않으므로,
+    그 버전으로 한 번이라도 만들어진 실제 DB 는 SCHEMA 문자열이 FK 를 선언해도
+    실제로는 강제되지 않는 채로 영원히 남는다. _MIGRATIONS(컬럼 추가 전용) 로는
+    컬럼의 제약을 못 바꾸므로, 여기서 SQLite 표준 재구성 패턴(새 테이블 생성 →
+    복사 → 교체)으로 직접 처리한다.
+
+    새로 만드는 DB 는 SCHEMA 가 이미 REFERENCES 를 포함해 만들어 주므로
+    이 함수는 그런 경우 아무 것도 하지 않는다(sqlite_master 검사로 판단)."""
+    conn = sqlite3.connect(DB_PATH, isolation_level=None)   # autocommit — PRAGMA/DDL 즉시 적용
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='threads_targets'"
+        ).fetchone()
+        if row is None:
+            return  # 아직 테이블이 없음 — 방금 SCHEMA 가 올바른 버전으로 만들 것이다
+        if row["sql"] and "REFERENCES creatives" in row["sql"]:
+            return  # 이미 최신 — 재구성 불필요
+
+        print("[DB] threads_targets 재구성 - creative_id 에 FK 강제 추가")
+        # 복사하는 동안 FK 를 꺼둔다. 켜둔 채로 하면, 옛 스키마에서 이미
+        # 존재하지 않는 creatives.id 를 가리키던 행이 있을 때 복사 자체가
+        # (지금 새로 추가하려는) 그 제약에 걸려 재구성이 중간에 실패한다.
+        conn.execute("PRAGMA foreign_keys = OFF")
+
+        dangling = conn.execute(
+            """SELECT COUNT(*) AS n FROM threads_targets
+               WHERE creative_id IS NOT NULL
+                 AND creative_id NOT IN (SELECT id FROM creatives)"""
+        ).fetchone()["n"]
+        if dangling:
+            print(f"[DB] 경고: threads_targets.creative_id 가 존재하지 않는 "
+                  f"creatives.id 를 가리키는 행 {dangling}건 발견 - 데이터는 "
+                  f"그대로 보존하지만, 재구성 이후로는 이런 값을 새로 넣거나 "
+                  f"바꾸려는 시도가 FK 위반으로 막힌다.")
+
+        conn.execute("BEGIN")
+        try:
+            conn.execute("""
+                CREATE TABLE threads_targets__new (
+                    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                    post_url     TEXT NOT NULL UNIQUE,
+                    author       TEXT NOT NULL,
+                    text         TEXT,
+                    posted_at    TEXT,
+                    likes        INTEGER DEFAULT 0,
+                    replies      INTEGER DEFAULT 0,
+                    profile_key  TEXT,
+                    score        INTEGER,
+                    verdict      TEXT DEFAULT 'pending',
+                    reason       TEXT,
+                    creative_id  INTEGER REFERENCES creatives(id),
+                    harvested_at TEXT NOT NULL,
+                    replied_at   TEXT
+                )
+            """)
+            # 컬럼을 명시적으로 나열한다 — SELECT * 는 나중에 컬럼이 하나 더
+            # 생겼을 때 신구 테이블의 컬럼 순서가 어긋나도 조용히 통과해 버린다.
+            conn.execute("""
+                INSERT INTO threads_targets__new
+                    (id, post_url, author, text, posted_at, likes, replies,
+                     profile_key, score, verdict, reason, creative_id,
+                     harvested_at, replied_at)
+                SELECT id, post_url, author, text, posted_at, likes, replies,
+                       profile_key, score, verdict, reason, creative_id,
+                       harvested_at, replied_at
+                FROM threads_targets
+            """)
+            conn.execute("DROP TABLE threads_targets")
+            conn.execute("ALTER TABLE threads_targets__new RENAME TO threads_targets")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_threads_targets_author  "
+                "ON threads_targets(author)")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_threads_targets_verdict "
+                "ON threads_targets(verdict)")
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
+            raise
+    finally:
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.close()
+
+
 def init_db():
     """테이블 생성 + 멱등 컬럼 마이그레이션."""
     with get_conn() as conn:
@@ -180,6 +269,7 @@ def init_db():
                     print(f"[DB] {table}.{column} 컬럼 추가")
                 except Exception as e:
                     print(f"[DB] {table}.{column} 추가 실패: {e}")
+    _migrate_threads_targets_fk()
     print(f"[DB] 초기화 완료 → {DB_PATH}")
 
 
