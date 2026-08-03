@@ -24,6 +24,7 @@ def pending() -> list:
             ch = conn.execute("SELECT name, platform FROM channels WHERE id=?",
                               (r["channel_id"],)).fetchone()
         img = r.get("image_path") or ""
+        is_reply = bool(cap.get("reply"))
         out.append({
             "approval_id": r["id"],
             "creative_id": r["creative_id"],
@@ -35,6 +36,15 @@ def pending() -> list:
             #   이걸 안 실어주면 타투 광고 검토 화면에 대출 상호가 붙는다.
             "profile_key": cap.get("profile_key") or "",
             "brand": cap.get("brand") or "",
+            # ── 쓰레드 답글 ──
+            # 승인자가 원글을 못 보면 답글이 적절한지 판단할 수 없다.
+            # 이 필드들이 없으면 승인 게이트가 형식만 남는다.
+            "is_reply": is_reply,
+            "reply_text": cap.get("reply") or "",
+            "target_url": cap.get("target_url") or "",
+            "target_author": cap.get("target_author") or "",
+            "target_excerpt": cap.get("target_excerpt") or "",
+            "score": cap.get("score") or 0,
         })
     return out
 

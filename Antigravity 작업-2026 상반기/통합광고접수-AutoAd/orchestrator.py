@@ -22,12 +22,14 @@ from channels.base import PostResult
 from channels.band import BandAdapter
 from channels.facebook import FacebookAdapter
 from channels.kakao import KakaoAdapter
+from channels.threads import ThreadsAdapter
 
 # 플랫폼 → 어댑터 (P0-3 인터페이스로 통일)
 ADAPTERS = {
     "band": BandAdapter,
     "facebook": FacebookAdapter,
     "kakao": KakaoAdapter,
+    "threads": ThreadsAdapter,
 }
 
 
@@ -47,7 +49,8 @@ _PUBLISH_LOCK = threading.RLock()
 
 def default_account(platform: str) -> str:
     return {"band": config.BAND_ACCOUNT,
-            "facebook": config.FACEBOOK_ACCOUNT}.get(platform, "")
+            "facebook": config.FACEBOOK_ACCOUNT,
+            "threads": config.THREADS_ACCOUNT}.get(platform, "")
 
 
 def get_adapter(platform: str, account: str = None, fresh: bool = False):
@@ -378,6 +381,11 @@ def track_path(campaign: dict) -> str:
         return ""
     if not re.fullmatch(r"[0-9]+-[0-9]+", key):
         return site          # 추적 키가 없으면 추적 없이 사이트 주소만
+    # rewrite 를 올리지 않은 사이트에는 짧은 경로를 쓰지 않는다.
+    # 클릭을 못 세는 정도가 아니라, Vercel 처럼 404 를 주는 곳에서는
+    # 광고를 누른 사람이 오류 페이지를 보게 된다(실측: mirizip.com).
+    if site.lower() not in config.TRACK_SITES:
+        return site
     return f"{site}/{config.TRACK_PREFIX}/{key}"
 
 
@@ -544,6 +552,31 @@ def _load_creative_channel(creative_id: int) -> dict:
     return dict(row) if row else None
 
 
+def _link_threads_target(post_url: str, creative_id: int):
+    """실발행 성공 시 threads_targets 를 이 크리에이티브에 연결해 작성자
+    쿨다운(replied_at)을 시작한다(디스패치 항목 4).
+
+    threads/runner.py(Task 6)는 자동발행이 실제로 성공했을 때만
+    db.threads_target_link_creative() 를 부른다. 승인 큐를 거쳐 나가는
+    답글도 같은 규칙 — '실발행 성공 시에만' — 을 지켜야 쿨다운 시계가
+    dry-run 이나 승인 대기 상태만으로 앞서 나가지 않는다.
+
+    orchestrator 는 threads_targets 를 몰랐으므로(디스패치 원문), 여기서
+    필요한 최소한만 안다 — post_url 로 그 원글의 id 를 찾아 넘겨준다는
+    사실 하나뿐이다. 점수·검수 사유 같은 나머지 지식은 threads/ 쪽
+    책임으로 남겨 둔다. db.py 에는 'post_url 로 조회'만 하는 전용
+    함수가 없고 db.py 는 이 태스크의 수정 대상이 아니므로, 이미 이
+    파일의 다른 곳(_load_creative_channel 등)에서 쓰는 것과 같은
+    방식으로 db.get_conn() 을 직접 사용한다."""
+    if not post_url:
+        return
+    with db.get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM threads_targets WHERE post_url=?", (post_url,)).fetchone()
+    if row:
+        db.threads_target_link_creative(row["id"], creative_id)
+
+
 def publish_creative(creative_id: int, dry_run: bool = None):
     """크리에이티브 발행 — 어댑터.post() 호출 후 posts 기록. (dry_run 기본=config)"""
     dry = config.GLOBAL_DRY_RUN if dry_run is None else dry_run
@@ -552,8 +585,19 @@ def publish_creative(creative_id: int, dry_run: bool = None):
         raise ValueError(f"크리에이티브 없음: {creative_id}")
 
     caption = json.loads(row["copy_json"]) if row["copy_json"] else {}
-    text = _caption_text(caption)
     platform = row["platform"]
+    # ⚠ 쓰레드 답글은 나머지 세 채널과 본문·대상을 만드는 방식 자체가
+    #   다르다. copy_json 에는 headline/body/cta 가 없고 reply 하나뿐이라
+    #   _caption_text() 로 만들면 빈 문자열이 나가고(디스패치 항목 2),
+    #   대상도 channels.target_ref(=계정 @핸들)가 아니라 답글을 달 원글
+    #   URL(copy_json.target_url)이어야 한다(디스패치 항목 3). 이 두 줄
+    #   이외에는 band/facebook/kakao 경로를 절대 건드리지 않는다.
+    if platform == "threads":
+        text = caption.get("reply") or ""
+        target = caption.get("target_url") or ""
+    else:
+        text = _caption_text(caption)
+        target = row["target_ref"]
     account = (dict(row).get("account") or "").strip() or None
 
     post_id = db.record_post(creative_id, row["channel_id"],
@@ -562,7 +606,7 @@ def publish_creative(creative_id: int, dry_run: bool = None):
     if dry:
         # 모의 발행은 브라우저를 쓰지 않으므로 직렬화·로그인이 필요 없다.
         adapter = get_adapter(platform, account)
-        res = adapter.post(row["target_ref"], text,
+        res = adapter.post(target, text,
                            image_path=row["image_path"], dry_run=True)
         db.update_post_status(post_id, "dry", getattr(res, "perm_url", None),
                               getattr(res, "error", None))
@@ -640,7 +684,7 @@ def publish_creative(creative_id: int, dry_run: bool = None):
         # 본문 붙여넣기가 클립보드를 쓴다 → 여기가 진짜 배타 구간이다.
         try:
             with crosslock.hold("publish"):
-                res = adapter.post(row["target_ref"], text,
+                res = adapter.post(target, text,
                                    image_path=row["image_path"], dry_run=False)
         except crosslock.LockTimeout as e:
             return _block(str(e))
@@ -650,6 +694,15 @@ def publish_creative(creative_id: int, dry_run: bool = None):
         if res.ok:
             status = "posted"
             db.mark_creative_posted(creative_id)     # 소재 쿨다운 시작
+            if platform == "threads":
+                # 승인 경로로 나간 답글도 자동발행(threads/runner.py)과
+                # 같은 규칙을 지킨다 — '실발행 성공' 시점에만 threads_targets
+                # 를 이 크리에이티브에 잇는다(디스패치 항목 4). dry-run
+                # 이었다면 여기까지 오지 않는다(위 `if dry:` 에서 이미
+                # return 했다) — 그러니 dry-run 이 작성자 쿨다운을
+                # 오염시키는 일(threads/runner.py 가 막아 놓은 바로 그
+                # 사고)은 이 위치에서 조건 없이도 이미 일어날 수 없다.
+                _link_threads_target(target, creative_id)
         elif getattr(res, "blocked", False):
             status = "blocked"
         else:
