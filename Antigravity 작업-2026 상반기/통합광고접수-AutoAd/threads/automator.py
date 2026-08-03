@@ -65,35 +65,50 @@ class ThreadsAutomator:
         return self.driver
 
     def save_cookies(self):
+        """⚠ 리뷰 Finding 4: OSError 만 잡으면 죽은 드라이버 세션에서
+        get_cookies() 가 던지는 WebDriverException(사람이 2FA·캡차를
+        오래 붙잡고 있다 세션이 끊기는 경우 실측 가능)이 그대로 새어나가
+        login_threads() 를 깨뜨린다. 참조 구현(facebook_automator.
+        _save_cookies)도 전체를 Exception 으로 감싼다 — 그대로 맞춘다."""
         if not self.driver:
             return
         try:
             self._cookie_path().write_text(
                 json.dumps(self.driver.get_cookies(), ensure_ascii=False),
                 encoding="utf-8")
-        except OSError:
+        except Exception:
             pass
 
     def load_session(self) -> bool:
-        """저장된 쿠키로 세션 복원. 성공하면 True."""
+        """저장된 쿠키로 세션 복원. 성공하면 True.
+
+        ⚠ 리뷰 Finding 1: driver.get() 두 곳이 무방비였다 — threads.net
+        SPA 상대로 TimeoutException 은 충분히 있을 수 있는 일이고, 이게
+        여기서 새어나가면 harvest() 의 try/finally(except 없음)를 그대로
+        뚫고 나가 '수집 0건' 대신 진짜 크래시가 된다. 쿠키 적용까지
+        한 덩어리로 감싼다(참조 구현 facebook_automator._load_cookies
+        와 같은 폭)."""
         self.start()
         p = self._cookie_path()
         if not p.exists():
             return False
         try:
             cookies = json.loads(p.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
+            self.driver.get(THREADS_HOME)
+            time.sleep(2)
+            for c in cookies:
+                try:
+                    self.driver.add_cookie(c)
+                except Exception:
+                    continue
+            self.driver.get(THREADS_HOME)
+            time.sleep(3)
+            return self.is_logged_in()
+        except Exception:
+            # OSError/ValueError(쿠키 파일 손상)와 TimeoutException 등
+            # 드라이버 예외를 한 번에 받는다 — 어느 쪽이든 '세션 복원
+            # 실패'로 동일하게 처리하면 되므로 구분할 이유가 없다.
             return False
-        self.driver.get(THREADS_HOME)
-        time.sleep(2)
-        for c in cookies:
-            try:
-                self.driver.add_cookie(c)
-            except Exception:
-                continue
-        self.driver.get(THREADS_HOME)
-        time.sleep(3)
-        return self.is_logged_in()
 
     def is_logged_in(self) -> bool:
         """작성창 진입점이 보이면 로그인 상태로 본다.

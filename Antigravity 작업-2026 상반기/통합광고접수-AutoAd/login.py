@@ -95,6 +95,26 @@ def check_all():
             warn = "  ⚠ 오래됨(만료 가능성)" if age_d > 14 else ""
             print(f"  · {acct:34s} {age_d:5.0f}일 전{warn}")
             total += 1
+
+    # ⚠ 리뷰 Finding 5: threads 는 위 band/facebook 순회에 안 끼어 있어
+    #   --check 로는 threads 세션이 있는지 전혀 안 보였다. 쿠키 폴더는
+    #   페북과 같이 쓰지만(automator.cookie_dir 참고) 파일명 접두사
+    #   (threads_*.json)로 구분되므로 위 루프에 억지로 끼우기보다
+    #   별도 블록으로 둔다 — band/facebook 루프의 fb_ 접두 판별 로직을
+    #   3갈래로 늘리는 것보다 이쪽이 diff 가 작고 읽기 쉽다.
+    d = Path(config.FB_PROJECT_APP_DIR).parent / "data" / "cookies"
+    files = sorted(d.glob("threads_*.json"))
+    print(f"\n[threads] {d}")
+    if not files:
+        print("  (저장된 세션 없음)")
+    else:
+        for f in files:
+            age_d = (time.time() - f.stat().st_mtime) / 86400
+            acct = f.stem[len("threads_"):]
+            warn = "  경고: 오래됨(만료 가능성)" if age_d > 14 else ""
+            print(f"  · {acct:34s} {age_d:5.0f}일 전{warn}")
+            total += 1
+
     print(f"\n저장된 세션 {total}개")
     print("실제 유효한지 확인하려면 브라우저가 열립니다:")
     print("  python login.py band --account <아이디> --verify-only")
@@ -210,7 +230,18 @@ def main():
     if a.platform == "threads":
         # band/facebook 과 달리 --verify-only 를 지원하지 않는다(별도 확인
         # 경로가 필요 없을 만큼 로그인 자체가 가볍다 — 창 띄우고 Enter 뿐).
-        login_threads(a.account or config.THREADS_ACCOUNT)
+        #
+        # ⚠ 리뷰 Finding 5: band/facebook 은 아래에서 --account 없으면
+        #   막는데(215번 줄), threads 분기는 그 검사보다 먼저 return 해
+        #   버려서 빠져나갔다 — 계정도 THREADS_ACCOUNT 도 없으면
+        #   threads_.json 이라는 계정명 없는 쿠키 파일을 조용히 쓰게
+        #   된다. 같은 검사를 여기서도 한다.
+        acct = a.account or config.THREADS_ACCOUNT
+        if not acct:
+            print("--account 를 지정하거나 .env 의 THREADS_ACCOUNT 를 설정하세요.")
+            print("예: python login.py threads --account my_threads_id")
+            return
+        login_threads(acct)
         return
     if not a.account:
         print("--account 를 지정하세요. 예: python login.py band --account naver_myid")
