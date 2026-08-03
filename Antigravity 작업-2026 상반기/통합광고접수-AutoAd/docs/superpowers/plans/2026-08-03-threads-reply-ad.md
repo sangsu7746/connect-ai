@@ -15,6 +15,15 @@
 - **작업 디렉터리:** `D:\Antigravity 작업-2026 상반기\통합광고접수-AutoAd`
 - **기존 코드 수정 최소화.** `channels/base.py`, `db.py` 스키마, `approval.py` 의 기존 함수 시그니처는 바꾸지 않는다. `db.py` 컬럼 추가가 필요하면 `_MIGRATIONS` 리스트에 등록해 멱등 마이그레이션으로 처리한다.
 - **콘솔 인코딩:** Windows cp949. 로그의 한글이 깨져 보이는 것은 정상이며 파일·DB는 UTF-8이다. **테스트 assert 를 콘솔 출력에 의존시키지 말 것.**
+- **`print()` 에 cp949 로 인코딩 안 되는 문자를 쓰지 말 것 — 크래시한다.**
+  실측(Task 1): `print()` 안의 em dash 하나가 `UnicodeEncodeError` 로
+  `python db.py` 를 죽였다. pytest 는 출력을 가로채 이 경로를 안 타므로
+  **테스트는 전부 통과하는데 실제 실행만 죽는다.**
+  - 금지(콘솔 출력 경로): `—`(em dash U+2014) · `⚠` · `✅` · `❌` · 이모지 전반
+  - 허용: 한글 · ASCII · `→` · `─` · `·` · `…`
+  - 대체 표기: `—`→`-`, `✅`→`[OK]`, `❌`→`[NG]`, `⚠`→`[!]`
+  - 주석·docstring·`.md`·`.html` 파일 안에서는 무엇이든 써도 된다(UTF-8).
+    제약은 **stdout 으로 나가는 문자열**에만 적용된다.
 - **모든 신규 파일은 UTF-8**로 쓴다. 파일 읽기·쓰기 시 항상 `encoding="utf-8"` 을 명시한다.
 - **안전 기본값:** 새로 추가하는 모든 안전장치 설정의 기본값은 "가장 안전한 값"이다. `THREADS_ENABLED=0`, dry_run 인자 기본값은 `True`.
 - **`blocked` 와 `error` 를 섞지 않는다.** `blocked=True` = 안전장치가 막음(상한·시간대·쿨다운·미로그인), `error` = 진짜 실패(셀렉터·네트워크·차단). `channels/base.py:18-20` 주석 규칙을 따른다.
@@ -1347,7 +1356,7 @@ def harvest(account: str = "", limit: int = 0, headless: bool = True) -> list:
     auto = ThreadsAutomator(account, headless=headless)
     try:
         if not auto.load_session():
-            print("[threads:harvest] 세션 없음/만료 — python login.py threads 필요")
+            print("[threads:harvest] 세션 없음/만료 - python login.py threads 필요")
             return []
         auto.driver.get(THREADS_HOME)
         time.sleep(3)
@@ -1570,7 +1579,7 @@ class ThreadsPublisher(BaseAdapter):
         """저장된 쿠키만으로 복원. 세션은 `python login.py threads` 로 만든다."""
         self._logged_in = self._automator().load_session()
         if not self._logged_in:
-            print("[threads:login] 세션 만료 — python login.py threads 로 재로그인 필요")
+            print("[threads:login] 세션 만료 - python login.py threads 로 재로그인 필요")
         return self._logged_in
 
     @staticmethod
@@ -2254,11 +2263,11 @@ def main():
     print("\n── 판정 ──")
     print(f"  skip 최고점 = {skip_max}")
     if false_pos:
-        print(f"  ❌ 자동 발행 금지 — 달면 안 되는 글이 {len(false_pos)}건 통과했습니다.")
+        print(f"  [NG] 자동 발행 금지 - 달면 안 되는 글이 {len(false_pos)}건 통과했습니다.")
         print("     프롬프트/하드블록을 고치고 다시 돌리세요.")
     else:
         rec = max(skip_max + 10, 85)
-        print(f"  ✅ 오탐 0건. 권장 THREADS_AUTO_THRESHOLD = {rec}")
+        print(f"  [OK] 오탐 0건. 권장 THREADS_AUTO_THRESHOLD = {rec}")
         print("     (skip 최고점보다 충분히 위. 그래도 승인 30건 검증을 먼저 하세요.)")
 
 
@@ -2469,7 +2478,7 @@ if config.THREADS_ENABLED:
                                      if stats["harvested"] == 0 else 0)
             if _threads_empty_streak >= 3:
                 config.THREADS_ENABLED = False
-                print("[threads] ⚠ 3회 연속 수집 0건 — 셀렉터 변경 의심. 자동 정지.")
+                print("[threads] [!] 3회 연속 수집 0건 - 셀렉터 변경 의심. 자동 정지.")
         except Exception as e:
             print(f"[threads] 회차 실패: {type(e).__name__}: {e}")
 
