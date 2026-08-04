@@ -7,3 +7,7 @@ Fixed test slowdown (8m → 31.7s) by treating `POST_INTERVAL_MAX <= 0` globally
 Tasks 1-4 complete (vitest, types/store, schema, URL parsing); Task 4: added regression tests for `parseYoutubeVideoId` edge-case safety; Task 5 started.
 ## 19:43 | feat/adstudio-youtube-homage
 Task 5: validated `buildSceneDurations` regression tests; discovered plan bugs (missed `SCENE_SEC_HARD_MAX` absorption step, wrong expected vals), implementer corrected both.
+## 19:44 | feat/adstudio-youtube-homage
+Fixed interval timer bug (overcounting `posting`), approval-button blocking (switched to scheduled publishing), unused `THREADS_REPLY_INTERVAL` constant; 146 tests pass in 31.7s; remain: real-publish retry, browser reuse measurement.
+## 20:27 | feat/adstudio-youtube-homage
+Fixed API key placement (.env.example→.env for security), validated Naver & Claude APIs (Claude required credit charge), verified E2E pipeline with real news (Google/Naver search→planning→card render→PNG/ZIP).
