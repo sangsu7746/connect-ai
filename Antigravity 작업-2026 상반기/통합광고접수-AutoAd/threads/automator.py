@@ -110,19 +110,27 @@ class ThreadsAutomator:
             # 실패'로 동일하게 처리하면 되므로 구분할 이유가 없다.
             return False
 
+    # 스레드는 인스타그램 세션 위에 올라간다. 이 쿠키들이 곧 로그인 증거다.
+    _AUTH_COOKIES = ("sessionid", "ds_user_id")
+
     def is_logged_in(self) -> bool:
-        """작성창 진입점이 보이면 로그인 상태로 본다.
-        (로그인 페이지의 '로그인' 버튼 유무보다 안정적이다)"""
+        """세션 쿠키가 있으면 로그인 상태로 본다.
+
+        ⚠ 예전에는 DOM 을 추측했다 — '[href=/login] 이 없고 svg[aria-label]
+          이 있으면 로그인'. 그런데 로그인 **페이지 자체**에는 /login 링크가
+          없고(이미 거기 있으므로) 아이콘 SVG 는 있다. 그래서 로그인 창을
+          띄운 직후 곧바로 True 가 났고, 로그인 전 쿠키(csrftoken·ig_did)
+          2개만 저장된 채 '성공'으로 보고됐다(실측 2026-08-04).
+
+          쿠키는 추측이 아니다. 브라우저가 서버에서 받은 사실이고, Meta 가
+          DOM 을 바꿔도 인증 방식이 바뀌지 않는 한 그대로다."""
         if not self.driver:
             return False
         try:
-            from selenium.webdriver.common.by import By
-            if self.driver.find_elements(By.CSS_SELECTOR, "[href='/login']"):
-                return False
-            return bool(self.driver.find_elements(
-                By.CSS_SELECTOR, "[data-pressable-container], svg[aria-label]"))
+            names = {c.get("name") for c in self.driver.get_cookies()}
         except Exception:
             return False
+        return any(n in names for n in self._AUTH_COOKIES)
 
     def quit(self):
         if self.driver is not None:
