@@ -47,6 +47,10 @@ describe('parseYoutubeVideoId', () => {
     ['https://www.youtube.com/watch?v=too_short'],
     ['그냥 한글 문장'],
     [''],
+    // 회귀 테스트: 적대적 URL이 null을 반환해야 한다
+    ['https://youtube.com.evil.com/watch?v=dQw4w9WgXcQ'],  // 호스트 위장 (서브도메인 접미사 공격)
+    ['https://www.youtube.com/watch?v=dQw4w9WgXcQextra'],  // videoId 뒤 잉여 문자
+    ['//youtube.com/watch?v=dQw4w9WgXcQ'],                 // 스킴 없는 protocol-relative URL
   ])('잘못된 입력은 null: %s', (input) => {
     expect(parseYoutubeVideoId(input)).toBeNull()
   })
