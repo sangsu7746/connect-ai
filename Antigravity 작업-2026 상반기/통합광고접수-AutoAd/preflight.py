@@ -67,12 +67,25 @@ def check_threads() -> dict:
     items.append(("세션 쿠키", has_cookie,
                   str(cookie) if has_cookie else "python login.py threads 로 생성"))
 
-    prof_ok = bool((config.PROFILE.get("threads") or {}).get("interest_keywords"))
-    items.append(("프로필 threads 섹션", prof_ok,
-                  config.PROFILE_KEY if prof_ok else
-                  f"profiles/{config.PROFILE_KEY}.yaml 에 threads: 추가 필요"))
+    # ⚠ 활성 프로필(AUTOAD_PROFILE)이 아니라 쓰레드 전용 프로필을 본다.
+    #   서버는 대출 업종으로 떠 있어도 쓰레드는 THREADS_PROFILE 로 돈다.
+    #   실측(2026-08-04): 이걸 config.PROFILE 로 보다가 mirizip 에 threads:
+    #   섹션이 멀쩡히 있는데도 "loan.yaml 에 추가 필요" 로 잘못 떴다.
+    try:
+        tprof = config.threads_profile()
+    except Exception as e:
+        tprof = {}
+        items.append(("프로필 로드", False, f"{type(e).__name__}: {e}"))
+    tkey = tprof.get("key") or config.PROFILE_KEY
 
-    landing = (config.PROFILE.get("threads") or {}).get("landing") or config.BRAND_SITE
+    prof_ok = bool((tprof.get("threads") or {}).get("interest_keywords"))
+    items.append(("프로필 threads 섹션", prof_ok,
+                  (f"{tkey}"
+                   + (f" (활성 프로필은 {config.PROFILE_KEY})"
+                      if tkey != config.PROFILE_KEY else ""))
+                  if prof_ok else f"profiles/{tkey}.yaml 에 threads: 추가 필요"))
+
+    landing = (tprof.get("threads") or {}).get("landing") or config.BRAND_SITE
     items.append(("랜딩 주소", bool(landing), landing or "미설정 - 답글에 링크가 안 붙는다"))
 
     # 스위치는 통과/실패가 아니라 '현재 상태' 보고다.
