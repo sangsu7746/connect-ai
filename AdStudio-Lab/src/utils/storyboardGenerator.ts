@@ -1793,10 +1793,30 @@ const SCENE_SEC_HARD_MAX = 6
  * 그래도 남는 시간(템플릿 풀이 짧아 씬 수를 충분히 못 늘렸을 때)은 2단계에서 6초까지만 늘려 흡수한다.
  * 그래도 못 채우면(풀이 아주 짧고 요청 길이가 아주 길면) 실제 총 길이가 요청보다 짧아질 수 있다 —
  * 이 경우가 바로 해당 컨셉의 템플릿 보강이 필요하다는 신호다.
+ *
+ * @param weights 선택적 상대 가중치(오마주 모드에서 레퍼런스의 컷 비율을 전달). 길이가
+ *                sceneCount 와 다르거나 합이 0이면 무시하고 균등 분배한다.
+ *                weights 를 넘기지 않으면 아래 균등 분배 경로만 타므로 기존 호출부(가중치 없이
+ *                호출하는 모든 곳)는 이 함수가 바뀌기 전과 완전히 동일한 값을 받는다.
+ *
+ * ⚠️ 씬 길이는 SCENE_SEC_MIN~SCENE_SEC_SOFT_MAX(2~4초)로 우선 클램프된다. 영상 생성 어댑터가
+ *    짧은 클립을 안정적으로 못 만들기 때문에 생긴 기존 제약이며, 레퍼런스의 0.5초 퀵컷이나
+ *    8초 롱테이크는 그대로 재현되지 않는다(가중치를 줘도 이 클램프 자체는 그대로 적용된다).
  */
-function buildSceneDurations(durationSec: number, sceneCount: number): number[] {
-  const base = Math.max(SCENE_SEC_MIN, Math.min(SCENE_SEC_SOFT_MAX, Math.floor(durationSec / sceneCount)))
-  const durations = new Array(sceneCount).fill(base)
+export function buildSceneDurations(durationSec: number, sceneCount: number, weights?: number[]): number[] {
+  const usable = weights && weights.length === sceneCount && weights.some(w => w > 0)
+    ? weights.map(w => (Number.isFinite(w) && w > 0 ? w : 0))
+    : null
+
+  let durations: number[]
+  if (usable) {
+    const total = usable.reduce((a, b) => a + b, 0)
+    durations = usable.map(w =>
+      Math.max(SCENE_SEC_MIN, Math.min(SCENE_SEC_SOFT_MAX, Math.round((durationSec * w) / total))))
+  } else {
+    const base = Math.max(SCENE_SEC_MIN, Math.min(SCENE_SEC_SOFT_MAX, Math.floor(durationSec / sceneCount)))
+    durations = new Array(sceneCount).fill(base)
+  }
   let remainder = durationSec - durations.reduce((a, b) => a + b, 0)
 
   for (let i = 0; i < durations.length && remainder !== 0; i++) {
