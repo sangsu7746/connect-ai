@@ -55,7 +55,15 @@ export default function A5b_Reference() {
   // 언마운트(=backToTemplate 로 탈출하거나 다른 경로로 화면을 떠남) 후에도 진행 중이던
   // build() 프라미스는 계속 실행된다 — ref 로 "이 인스턴스는 끝났다"를 표시해 결과를 버린다.
   const cancelledRef = useRef(false)
-  useEffect(() => () => { cancelledRef.current = true }, [])
+  useEffect(() => {
+    // StrictMode(main.tsx 가 앱 전체를 <React.StrictMode> 로 감싼다)는 개발 모드에서
+    // 이펙트를 setup → cleanup → setup 순으로 이중 호출한다. cleanup 에서만 값을 세우면
+    // useRef(false) 는 최초 렌더에서만 초기화되므로, 합성 cleanup 이 세운 true 를 두 번째
+    // setup 이 되돌리지 않아 마운트 직후부터 취소 상태로 굳어버린다. 그래서 setup 에서도
+    // 반드시 false 로 리셋한다.
+    cancelledRef.current = false
+    return () => { cancelledRef.current = true }
+  }, [])
 
   // 분석 없이 직접 진입(새로고침 등)한 경우 자료 업로드부터 — 이 저장소의 A3~A5 화면과 동일한 관례
   useEffect(() => {
