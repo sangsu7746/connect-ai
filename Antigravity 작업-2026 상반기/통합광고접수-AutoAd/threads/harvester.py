@@ -170,35 +170,70 @@ def _parse(html: str) -> list:
         # 아니라 이 카드에서 방금 뽑아낸 자기 데이터(handle)와, 시각 표시라는
         # 위치가 고정된 패턴이다. 게다가 머리 부분에서만 뗀다 - 본문 중간의
         # 같은 문자열은 건드리지 않는다.
-        text = _strip_card_header(text, handle)
+        text = _strip_card_header(text, handle, posted_at)
 
         posts.append(RawPost(url=url, author=f"@{handle}",
                              text=text, posted_at=posted_at))
     return posts
 
 
-# 상대시각 표시 - "39분", "3시간", "1일", "2주 전" 등. 머리에서만 뗀다.
-_REL_TIME_RE = re.compile(r"^\s*\d+\s*(?:초|분|시간|일|주|개월|달|년)\s*(?:전)?\s*")
+# 상대시각 표시 토큰. 뒤에 한글이 바로 붙으면(1일'차') 본문이므로 제외하고,
+# 토큰 뒤가 공백이나 문장 끝일 때만 후보로 본다.
+_REL_TOKEN_RE = re.compile(
+    r"(\d+)\s*(초|분|시간|일|주)(?![가-힣])\s*(?:전)?(?=\s|$)")
+_UNIT_MIN = {"초": 1.0 / 60, "분": 1.0, "시간": 60.0, "일": 1440.0, "주": 10080.0}
+# 머리는 카드 앞쪽에만 있다. 이보다 뒤에 나온 시각 표현은 본문으로 본다.
+_HEADER_SCAN_CHARS = 40
 
 
-def _strip_card_header(text: str, handle: str) -> str:
-    """본문 앞에 붙어 온 '작성자명 + 상대시각' 을 뗀다.
+def _age_minutes(posted_at: str):
+    """글이 올라온 지 몇 분 됐나. 못 읽으면 None."""
+    import datetime as dt
+    if not posted_at:
+        return None
+    try:
+        ts = dt.datetime.fromisoformat(posted_at.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    now = dt.datetime.now(ts.tzinfo) if ts.tzinfo else dt.datetime.now()
+    return max(0.0, (now - ts).total_seconds() / 60.0)
 
-    둘 다 있을 수도, 하나만 있을 수도, 없을 수도 있어서 순서대로 한 번씩
-    시도한다. 없으면 그대로 둔다 - 못 떼는 것보다 본문을 깎는 게 나쁘다."""
+
+def _strip_card_header(text: str, handle: str, posted_at: str = "") -> str:
+    """카드 머리의 '작성자명/카테고리 + 상대시각' 을 뗀다.
+
+    실측(2026-08-04)에서 본 실제 모양:
+        "인테리어 22분 24년차 구축 반셀하면서..."     <- 카테고리 + 시각
+        "욕실인테리어 10시간 욕실도 귀여울수 있다!?"
+        "yonhap_news 39분 경쟁이 치열한..."            <- 핸들 + 시각
+
+    ⚠ 시각처럼 보이는 것을 무작정 떼면 본문이 깎인다. 같은 수집분에 있던 반례:
+        "3일 쉬라고… 좀.."      <- 40분 전 글이다. '3일' 은 본문이다.
+        "철거 1일차 곰팡이 발견" <- '1일차' 는 본문이다.
+
+    그래서 **글의 실제 나이와 대조**한다. 화면에 뜬 상대시각은 posted_at 에서
+    계산한 나이와 같아야 하고, 다르면 그건 본문이다. posted_at 을 못 읽으면
+    아무것도 떼지 않는다 - 못 떼는 쪽이 본문을 깎는 쪽보다 낫다."""
     if not text:
         return text
+
     out = text
-    # 표시명이 핸들과 다를 수 있으므로 핸들로 시작할 때만 뗀다.
     if handle and out.lower().startswith(handle.lower()):
         out = out[len(handle):].lstrip()
-    out = _REL_TIME_RE.sub("", out, count=1)
-    # 시각이 작성자명보다 앞에 오는 배치도 있어 한 번 더 본다.
-    if handle and out.lower().startswith(handle.lower()):
-        out = out[len(handle):].lstrip()
-    stripped = out.strip()
-    # 다 떼고 나니 빈 문자열이면 원문을 돌려준다(사진만 있는 글일 수 있다).
-    return stripped if stripped else text
+
+    age = _age_minutes(posted_at)
+    if age is None:
+        return out.strip() or text
+
+    for m in _REL_TOKEN_RE.finditer(out[:_HEADER_SCAN_CHARS]):
+        val, unit = int(m.group(1)), m.group(2)
+        shown = val * _UNIT_MIN[unit]
+        # 표시는 내림이라 실제 나이가 조금 더 크다. 단위 하나만큼 여유를 준다.
+        if shown <= age + _UNIT_MIN[unit] and age < shown + _UNIT_MIN[unit] * 2:
+            cut = out[m.end():].strip()
+            if cut:                      # 다 떼서 비면 원문을 지킨다
+                return cut
+    return out.strip() or text
 
 
 def harvest(account: str = "", limit: int = 0, headless: bool = True) -> list:

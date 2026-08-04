@@ -100,7 +100,37 @@ def validate(text: str, tcfg: dict) -> list:
         if b and b in body:
             problems.append(f"금칙어 '{b}'")
 
+    # 상투구 - 같은 계정이 매번 같은 말로 답글을 달면 그 자체가 광고 티다.
+    # ⚠ 프롬프트에 "쓰지 마라" 로 나열하는 것만으로는 안 막힌다(실측
+    #   2026-08-04): "미리 시뮬레이션 돌려보고" 를 금지했더니 "미리
+    #   시뮬레이션해보면" · "가볍게 시뮬레이션 돌려보기" 로 변형해 나왔다.
+    #   그래서 정규식으로 어간만 잡아 가드에서 재생성시킨다.
+    for pat, label in _CLICHE_PATTERNS:
+        if pat.search(body):
+            problems.append(f"상투구 '{label}'")
+
+    # 답글에 상대 핸들을 다시 붙이지 않는다. 이미 그 사람 글 밑이라
+    # 불필요하고, 사람이 쓴 답글에서는 잘 안 나오는 모양이다.
+    if re.search(r"@[A-Za-z0-9._]{2,}", body):
+        problems.append("답글에 멘션(@아이디) 포함")
+
+    # "미리집( https://... )" 처럼 괄호 안에 공백이 뜬 형태.
+    if re.search(r"\(\s+https?://|https?://[^\s)]*\s+\)", body):
+        problems.append("괄호 안 링크 공백")
+
     return problems
+
+
+# 어간만 잡는다. 조사·활용이 붙어도 걸리도록.
+_CLICHE_PATTERNS = [
+    (re.compile(r"미리\s*시뮬레이션"), "미리 시뮬레이션"),
+    (re.compile(r"시뮬레이션\s*(?:을\s*)?돌려"), "시뮬레이션 돌려"),
+    (re.compile(r"미리\s*배치해"), "미리 배치해"),
+    (re.compile(r"감\s*잡기\s*(?:편|좋)"), "감 잡기 편"),
+    (re.compile(r"실패\s*(?:가\s*)?없[어었]"), "실패 없어"),
+    (re.compile(r"훨씬\s*수월"), "훨씬 수월"),
+    (re.compile(r"미리\s*보고\s*시작"), "미리 보고 시작"),
+]
 
 
 def _load_prompt() -> str:
