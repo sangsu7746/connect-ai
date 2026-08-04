@@ -1,4 +1,6 @@
 import type { HomageCandidate } from '../types/homage'
+import { auth } from './firebase'
+import { fnUrl } from './firebaseTarget'
 
 /** 유튜브 videoId 는 11자 [A-Za-z0-9_-] 로 고정돼 있다 */
 const VIDEO_ID_RE = /^[A-Za-z0-9_-]{11}$/
@@ -55,9 +57,6 @@ export function parseYoutubeVideoId(input: string): string | null {
 
 export type { HomageCandidate }
 
-import { auth } from './firebase'
-import { fnUrl } from './firebaseTarget'
-
 /** 검색 쿼터 소진 — 호출부가 URL·글 입구로 유도하기 위해 따로 구분한다 */
 export class YoutubeQuotaError extends Error {
   constructor(message = '오늘 자동검색 한도를 다 썼어요.') {
@@ -89,7 +88,12 @@ export async function searchAdVideos(q: string): Promise<HomageCandidate[]> {
     throw new Error('유튜브 검색에 실패했어요.')
   }
 
-  const data = await res.json()
+  let data
+  try {
+    data = await res.json()
+  } catch {
+    throw new Error('검색 결과를 파싱하지 못했어요.')
+  }
   return (data.items || []) as HomageCandidate[]
 }
 
@@ -119,9 +123,17 @@ export async function getVideoInfo(videoId: string): Promise<YoutubeVideoInfo> {
   })
 
   if (res.status === 404) throw new Error('영상을 찾을 수 없어요. 공개 영상인지 확인해주세요.')
+  if (res.status === 429) throw new YoutubeQuotaError()
   if (!res.ok) {
-    const detail = await res.text().catch(() => '')
-    throw new Error(detail || '영상 정보를 가져오지 못했어요.')
+    await res.text().catch(() => '')
+    throw new Error('영상 정보를 가져오지 못했어요.')
   }
-  return (await res.json()) as YoutubeVideoInfo
+
+  let data
+  try {
+    data = await res.json()
+  } catch {
+    throw new Error('영상 정보를 파싱하지 못했어요.')
+  }
+  return data as YoutubeVideoInfo
 }
