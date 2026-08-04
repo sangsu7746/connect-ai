@@ -88,6 +88,10 @@ export default defineConfig({
 
 - [ ] **Step 4: 러너가 실제로 도는지 확인하는 스모크 테스트**
 
+> ⚠️ 이 파일은 **임시**다. `vitest run` 은 테스트 파일이 0개면 실패하므로 러너 도입을
+> 검증할 최소 파일이 필요하다. Task 2 에서 진짜 테스트가 생기면 **삭제한다**
+> (Task 2 Step 7). 항구적으로 두면 아무것도 검증하지 않는 테스트가 남는다.
+
 `src/services/__smoke__/setup.test.ts`:
 
 ```ts
@@ -290,10 +294,20 @@ Expected: 에러 0.
 
 > `adStore` 는 zustand `persist` 를 쓴다. 기존 사용자의 localStorage 에는 `structureSource` 가 없어 `undefined` 로 복원된다. Task 9 의 분기는 `=== 'homage'` 로 판정하므로 `undefined` 는 자동으로 템플릿 경로가 된다 — 마이그레이션이 불필요하다. 이 점은 Task 12 에서 실제로 검증한다.
 
-- [ ] **Step 7: 커밋**
+- [ ] **Step 7: Task 1 의 임시 스모크 테스트를 삭제하고 커밋**
+
+`homage.test.ts` 가 러너 동작을 증명하므로 임시 파일은 역할이 끝났다. 남겨두면
+아무것도 검증하지 않는 테스트가 영구히 남는다.
 
 ```bash
-git add src/types/homage.ts src/types/homage.test.ts src/stores/adStore.ts
+rm -rf src/services/__smoke__
+npm test
+```
+
+Expected: `homage.test.ts` 2개 PASS, 스모크 테스트는 목록에서 사라진다.
+
+```bash
+git add -A src/types/homage.ts src/types/homage.test.ts src/stores/adStore.ts src/services/__smoke__
 git commit -m "feat(homage): 구조 전용 타입과 스토어 필드 추가"
 ```
 
@@ -2061,7 +2075,8 @@ Expected: 전부 PASS.
 
 ```js
 // persist 된 기존 상태에는 structureSource 가 없다 → undefined
-const s = JSON.parse(localStorage.getItem('ad-storage') || '{}')
+// (실제 zustand persist 키는 'adstudio-ad' — src/stores/adStore.ts 의 `name` 필드)
+const s = JSON.parse(localStorage.getItem('adstudio-ad') || '{}')
 console.log(s?.state?.adConcept?.structureSource)   // undefined 또는 'template' 둘 다 정상
 ```
 
@@ -2087,7 +2102,7 @@ Expected: 세 입구 모두 동일하게 스토리보드가 생성된다.
 대사가 뚜렷한 광고를 하나 골라 분석한 뒤 콘솔에서:
 
 ```js
-const s = JSON.parse(localStorage.getItem('ad-storage')).state.adConcept.homage.structure
+const s = JSON.parse(localStorage.getItem('adstudio-ad')).state.adConcept.homage.structure
 console.log(JSON.stringify(s))
 ```
 

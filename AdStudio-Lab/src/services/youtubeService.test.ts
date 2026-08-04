@@ -90,6 +90,21 @@ describe('searchAdVideos', () => {
     ;(fetch as any).mockResolvedValue({ ok: false, status: 502, text: async () => 'fail' })
     await expect(searchAdVideos('x')).rejects.toThrow(/검색/)
   })
+
+  // 회귀 테스트(Task 12 검증에서 발견): fetch 자체가 reject하면(서버 미가동·네트워크
+  // 단절·CORS 등) 브라우저 원문("Failed to fetch")이 아니라 한국어 안내가 나와야 한다.
+  it('fetch 자체가 실패하면(네트워크 단절) 브라우저 원문 대신 한국어 안내를 던진다', async () => {
+    ;(fetch as any).mockRejectedValue(new TypeError('Failed to fetch'))
+    await expect(searchAdVideos('x')).rejects.toThrow(/연결.*확인|다시 시도/)
+    await expect(searchAdVideos('x')).rejects.not.toThrow(/Failed to fetch/)
+  })
+
+  // fetch 예외를 감싸더라도, 응답을 받은 뒤의 429 → YoutubeQuotaError 구분은 그대로 살아
+  // 있어야 한다(대체 입구 유도 분기가 이 타입 구분에 의존한다).
+  it('네트워크 안내 도입 후에도 429 는 여전히 YoutubeQuotaError 로 구분된다', async () => {
+    ;(fetch as any).mockResolvedValue({ ok: false, status: 429, text: async () => '한도' })
+    await expect(searchAdVideos('x')).rejects.toBeInstanceOf(YoutubeQuotaError)
+  })
 })
 
 describe('getVideoInfo', () => {
@@ -117,5 +132,13 @@ describe('getVideoInfo', () => {
   it('429 는 YoutubeQuotaError 로 구분한다', async () => {
     ;(fetch as any).mockResolvedValue({ ok: false, status: 429, text: async () => '' })
     await expect(getVideoInfo('x'.repeat(11))).rejects.toBeInstanceOf(YoutubeQuotaError)
+  })
+
+  // 회귀 테스트(Task 12 검증에서 발견): searchAdVideos 와 동일한 네트워크 실패 처리가
+  // getVideoInfo(URL 입구)에도 있어야 한다 — 같은 postYoutubeFn 을 공유하므로 문구도 동일해야 한다.
+  it('fetch 자체가 실패하면(네트워크 단절) 브라우저 원문 대신 한국어 안내를 던진다', async () => {
+    ;(fetch as any).mockRejectedValue(new TypeError('Failed to fetch'))
+    await expect(getVideoInfo('x'.repeat(11))).rejects.toThrow(/연결.*확인|다시 시도/)
+    await expect(getVideoInfo('x'.repeat(11))).rejects.not.toThrow(/Failed to fetch/)
   })
 })

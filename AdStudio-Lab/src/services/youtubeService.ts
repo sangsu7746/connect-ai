@@ -65,22 +65,45 @@ export class YoutubeQuotaError extends Error {
   }
 }
 
-/** youtubeSearch 함수를 호출해 광고 후보를 받아온다 */
-export async function searchAdVideos(q: string): Promise<HomageCandidate[]> {
-  const query = (q || '').trim()
-  if (!query) return []
+/**
+ * 네트워크 자체가 끊겼을 때(서버 미가동·DNS 실패·CORS 차단 등) 보여줄 안내.
+ * ⚠️ 응답을 받은 뒤의 실패(상태코드 404/429/기타)는 각 호출부가 이미 자기 문맥에 맞는
+ *    한국어 문구로 처리한다 — 이 메시지는 오직 `fetch` 자체가 reject할 때, 즉 응답을
+ *    아예 받지 못했을 때만 쓰인다. searchAdVideos·getVideoInfo 양쪽에서 같은 문구를 써야
+ *    사용자가 어느 입구로 들어왔든 같은 안내(연결 확인·재시도)를 보게 된다.
+ */
+const NETWORK_ERROR_MESSAGE = '유튜브 서버에 연결하지 못했어요. 인터넷 연결을 확인하고 잠시 후 다시 시도해주세요.'
 
+/**
+ * youtubeSearch 함수에 인증 헤더를 붙여 POST 한다.
+ * `fetch` 가 던지는 예외만 여기서 잡아 한국어 안내로 바꾼다 — 응답 상태코드별 처리는
+ * 손대지 않고 그대로 호출부(searchAdVideos·getVideoInfo)로 넘긴다. `YoutubeQuotaError`
+ * 판정은 응답을 받은 "이후"에만 일어나므로 이 단계에서 삼켜질 일이 없다.
+ */
+async function postYoutubeFn(body: Record<string, unknown>): Promise<Response> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   try {
     const token = await auth.currentUser?.getIdToken()
     if (token) headers['Authorization'] = `Bearer ${token}`
   } catch { /* 토큰 발급 실패가 호출 자체를 막지는 않는다 — 서버가 401로 답한다 */ }
 
-  const res = await fetch(fnUrl('youtubeSearch'), {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ q: query }),
-  })
+  try {
+    return await fetch(fnUrl('youtubeSearch'), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    })
+  } catch {
+    throw new Error(NETWORK_ERROR_MESSAGE)
+  }
+}
+
+/** youtubeSearch 함수를 호출해 광고 후보를 받아온다 */
+export async function searchAdVideos(q: string): Promise<HomageCandidate[]> {
+  const query = (q || '').trim()
+  if (!query) return []
+
+  const res = await postYoutubeFn({ q: query })
 
   if (res.status === 429) throw new YoutubeQuotaError()
   if (!res.ok) {
@@ -110,17 +133,7 @@ export interface YoutubeVideoInfo {
  * videos.list 는 1유닛이라 검색(100유닛)과 달리 자주 불러도 부담이 없다.
  */
 export async function getVideoInfo(videoId: string): Promise<YoutubeVideoInfo> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  try {
-    const token = await auth.currentUser?.getIdToken()
-    if (token) headers['Authorization'] = `Bearer ${token}`
-  } catch { /* 서버가 401로 답한다 */ }
-
-  const res = await fetch(fnUrl('youtubeSearch'), {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ videoId }),
-  })
+  const res = await postYoutubeFn({ videoId })
 
   if (res.status === 404) throw new Error('영상을 찾을 수 없어요. 공개 영상인지 확인해주세요.')
   if (res.status === 429) throw new YoutubeQuotaError()
