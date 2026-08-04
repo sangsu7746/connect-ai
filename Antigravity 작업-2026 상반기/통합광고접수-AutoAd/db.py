@@ -309,10 +309,20 @@ def list_channels(platform=None, enabled_only=False) -> list:
         return [dict(r) for r in conn.execute(q, args)]
 
 
-# 이미 나갔거나 지금 나가는 중인 상태. 상한 계산에 둘 다 포함해야 한다.
+# 이미 나갔거나 지금 나가는 중인 상태. **상한 계산**에 둘 다 포함해야 한다.
 #  'posting' 을 빼면, 발행 중인 건이 아직 'posted' 가 아니라서
 #  같은 채널의 다음 요청이 상한을 그냥 통과한다(중복 게시).
 COUNTS_AS_POSTED = ("posted", "posting")
+
+# **간격 계산**에는 실제로 나간 것만 센다. 'posting' 은 아직 안 나갔다.
+#  ⚠ 실측(2026-08-04): 승인 10건을 연달아 누르자 전부 멈췄다.
+#    앞 건이 _space_out() 에서 자는 동안 뒤 건들이 'posting' 으로 바뀌었고,
+#    last_post_time() 이 그걸 '마지막 발행'으로 세면서 대기 시계가 계속
+#    앞으로 밀렸다 -> 자던 건이 영영 못 깨어난다. 재현:
+#      queued 3건 -> 첫 건 posting: last_post_time 10초 전
+#                 -> 막내도 posting: last_post_time 0초 전 (시계 리셋)
+#    상한(자리 점유)과 간격(마지막 실발행)은 목적이 달라 목록도 달라야 한다.
+COUNTS_FOR_SPACING = ("posted",)
 
 
 def posts_today(channel_id=None, exclude_id=None, platform=None) -> int:
@@ -352,10 +362,10 @@ def last_post_time(platform=None):
     platform: 그 플랫폼의 마지막 발행만 본다.
       발행 간격은 '한 계정이 연달아 올리는 것처럼 보이지 않게' 하는 장치다.
       플랫폼을 안 나누면 밴드에 올린 직후 페이스북 발행이 이유 없이 늦춰진다."""
-    marks = ",".join("?" * len(COUNTS_AS_POSTED))
+    marks = ",".join("?" * len(COUNTS_FOR_SPACING))
     q = (f"SELECT MAX(COALESCE(posted_at, created_at)) t FROM posts "
          f"WHERE status IN ({marks})")
-    args = list(COUNTS_AS_POSTED)
+    args = list(COUNTS_FOR_SPACING)
     if platform:
         q += " AND channel_id IN (SELECT id FROM channels WHERE platform=?)"
         args.append(platform)

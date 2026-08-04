@@ -201,10 +201,69 @@ def _seconds_since_last_post(platform: str = None) -> float:
     return min(cands) if cands else None
 
 
+def publish_interval(platform: str = None) -> tuple:
+    """그 플랫폼의 발행 간격(초) 범위.
+
+    쓰레드 답글은 남의 글에 붙으므로 내 담벼락 게시물보다 촘촘하면 안 된다.
+    그래서 별도 설정을 둔다(THREADS_REPLY_INTERVAL_*). 예전엔 _space_out 이
+    공용값(90~300)만 봐서 이 설정이 아무 데도 안 쓰이고 있었다.
+
+    ⚠ POST_INTERVAL_MAX <= 0 은 '간격을 두지 마라'는 전역 신호로 취급한다.
+      플랫폼별 값이 이걸 무시하면, 그 신호를 믿고 있던 쪽이 조용히 몇 분씩
+      자게 된다 — 실측(2026-08-04): 이 함수가 쓰레드 전용 값을 읽도록 바꾸자
+      POST_INTERVAL 을 0 으로 막아 둔 기존 테스트가 267초를 자기 시작했다
+      (전체 스위트 35초 → 8분). 운영에서 이 값을 0 으로 두는 것은 '지금은
+      간격 없이 내보낸다'는 뜻이므로 플랫폼을 가릴 이유도 없다."""
+    if config.POST_INTERVAL_MAX <= 0:
+        return 0, 0
+    if platform == "threads":
+        return config.THREADS_REPLY_INTERVAL_MIN, config.THREADS_REPLY_INTERVAL_MAX
+    return config.POST_INTERVAL_MIN, config.POST_INTERVAL_MAX
+
+
+def next_free_slot(platform: str = None):
+    """이 플랫폼에서 다음으로 발행해도 되는 가장 이른 시각(datetime).
+
+    두 가지를 함께 본다.
+      · 마지막 **실제** 발행 시각 (db.last_post_time — posting 은 제외)
+      · 이미 **예약**돼 있는 같은 플랫폼 발행 중 가장 늦은 것
+
+    예약분을 안 보면, 승인을 연달아 누를 때 전부 '지금'으로 예약돼
+    한꺼번에 나간다(간격 장치가 무력화된다)."""
+    import datetime as _dt
+    lo, hi = publish_interval(platform)
+    gap = _dt.timedelta(seconds=random.randint(min(lo, hi), max(lo, hi)))
+    now = _dt.datetime.now()
+
+    earliest = now
+    last = db.last_post_time(platform)
+    if last:
+        earliest = max(earliest, last + gap)
+
+    try:
+        import scheduler
+        for j in scheduler.get_scheduler().get_jobs():
+            run_at = getattr(j, "next_run_time", None)
+            if not run_at or not str(j.id).startswith("publish:"):
+                continue
+            run_at = run_at.replace(tzinfo=None)
+            # 이 플랫폼 건인지 확인 — creative_id 로 채널을 되짚는다.
+            args = getattr(j, "args", ()) or ()
+            if args and platform:
+                row = _load_creative_channel(args[0])
+                if not row or row["platform"] != platform:
+                    continue
+            earliest = max(earliest, run_at + gap)
+    except Exception:
+        # 스케줄러가 안 떠 있으면(스크립트 실행 등) 예약분은 없는 것으로 본다.
+        pass
+    return earliest
+
+
 def _space_out(platform: str = None):
     """직전 발행과 최소 간격을 둔다. 연달아 나가면 기계임이 드러난다."""
     key = platform or ""
-    lo, hi = config.POST_INTERVAL_MIN, config.POST_INTERVAL_MAX
+    lo, hi = publish_interval(platform)
     if hi <= 0:
         _LAST_POST_AT[key] = time.time()
         return
@@ -334,20 +393,21 @@ def intake_url(channel: dict, campaign: dict) -> str:
     utm = campaign.get("utm") or campaign.get("title", "")
     q = urlencode({"channel": f"{channel['platform']}_{channel['id']}", "utm": utm})
 
+    # 짧은 추적 경로가 가능하면 업종을 가리지 않고 그걸 쓴다.
+    # ⚠ 긴 리다이렉트 주소(…adClick?c=…&u=https%3A%2F%2F목적지)를 프롬프트에 주면
+    #   LLM 이 u= 안의 목적지를 풀어 '깨끗한' 주소를 본문에 적어버린다(실측).
+    #   그러면 사람은 추적되지 않는 링크를 누르고, _caption_text 가 추적 링크를
+    #   하나 더 붙여 한 글에 링크가 둘 생긴다. 짧은 경로엔 풀어낼 u= 가 없다.
+    tp = track_path(campaign)
+    if "/" in tp:
+        return "https://" + tp
+
     if config.INTAKE_TARGET == "loan_app":
         dest = f"{config.PUBLIC_BASE}/intake?{q}"
     else:
         site = (config.BRAND_SITE or "").strip()
         if not site:
             return ""      # 보낼 곳이 없으면 링크를 넣지 않는다(가짜 주소보다 낫다)
-        # 우리 사이트로 보내는 경우엔 짧은 추적 경로를 쓴다.
-        # ⚠ 긴 리다이렉트 주소(…adClick?c=…&u=https%3A%2F%2F목적지)를 프롬프트에 주면
-        #   LLM 이 u= 안의 목적지를 풀어 '깨끗한' 주소를 본문에 적어버린다(실측).
-        #   그러면 사람은 추적되지 않는 링크를 누르고, _caption_text 가 추적 링크를
-        #   하나 더 붙여 한 글에 링크가 둘 생긴다. 짧은 경로엔 풀어낼 u= 가 없다.
-        tp = track_path(campaign)
-        if "/" in tp:
-            return "https://" + tp
         if not site.startswith("http"):
             site = "https://" + site
         dest = f"{site}?{q}"
@@ -375,12 +435,23 @@ def track_path(campaign: dict) -> str:
     db.add_click() 이 그대로 받는다 — 매핑 테이블이 필요 없다.
 
     BRAND_SITE 가 없으면 빈 문자열(호출부가 폴백을 쓴다)."""
-    site = re.sub(r"^https?://", "", (config.BRAND_SITE or "").strip()).rstrip("/")
+    # 사람을 실제로 보내는 사이트를 기준으로 삼는다.
+    # ⚠ 대출 업종은 BRAND_SITE 가 비어 있고(접수폼으로 보내므로) 목적지가
+    #   PUBLIC_BASE 다. 그걸 안 보면 대출 광고만 긴 adClick 주소가 나간다.
+    site = (config.BRAND_SITE or "").strip()
+    if not site and config.INTAKE_TARGET == "loan_app":
+        site = config.PUBLIC_BASE or ""
+    site = re.sub(r"^https?://", "", site.strip()).rstrip("/")
     key = str(campaign.get("track_key") or "").strip()
     if not site:
         return ""
     if not re.fullmatch(r"[0-9]+-[0-9]+", key):
         return site          # 추적 키가 없으면 추적 없이 사이트 주소만
+    # rewrite 를 올리지 않은 사이트에는 짧은 경로를 쓰지 않는다.
+    # 클릭을 못 세는 정도가 아니라, Vercel 처럼 404 를 주는 곳에서는
+    # 광고를 누른 사람이 오류 페이지를 보게 된다(실측: mirizip.com).
+    if site.lower() not in config.TRACK_SITES:
+        return site
     return f"{site}/{config.TRACK_PREFIX}/{key}"
 
 
@@ -398,11 +469,18 @@ def creative_form(channel: dict) -> str:
 def make_caption(campaign: dict, channel: dict, product_title: str, copy_fn=None) -> dict:
     form_url = intake_url(channel, campaign)
     form = creative_form(channel)
+    # ⚠ 채널의 topic/tone 은 그 채널을 '처음 분류했을 때'의 값이다.
+    #   업종(profile_key)만 바꾸고 이 값을 그대로 두면, 예를 들어 대출 채널이던
+    #   밴드가 adstudio 로 바뀌어도 topic 은 '부동산 담보대출' 로 남아 있어
+    #   AI 광고영상 광고에 대출 문구가 실린다(실측: 4건 전부 대출 카피).
+    #   광고할 상품은 캠페인·업종이 정한다. 채널은 '누구에게·어떤 말투로'만 준다.
+    subject = (campaign.get("product") or product_title
+               or config.PROFILE_NAME or channel.get("topic") or "")
     profile = {
         "platform": channel["platform"],
         "audience": channel.get("audience"),
         "tone": channel.get("tone"),
-        "topic": channel.get("topic"),
+        "topic": subject,
         "form_url": form_url,            # 프롬프트 {form_url} 치환용
         "form": form,
         # 콘텐츠형 프롬프트가 쓰는 값들.
@@ -412,8 +490,12 @@ def make_caption(campaign: dict, channel: dict, product_title: str, copy_fn=None
                       or config.BRAND_SITE or config.BRAND_COMPANY,
         "styles": campaign.get("styles", ""),
     }
+    # 상품명이 비면 프롬프트의 '상품:' 칸이 빈칸으로 들어가고, LLM 은 남은 단서인
+    # 채널 topic 에만 의존하게 된다. 업종 이름이라도 반드시 채운다.
+    camp = dict(campaign)
+    camp["product"] = subject
     try:
-        cap = copy_engine.generate_copy(campaign, profile, _llm=copy_fn)
+        cap = copy_engine.generate_copy(camp, profile, _llm=copy_fn)
     except Exception as e:
         print(f"[orchestrator] 카피 생성 실패({type(e).__name__}) → 폴백 캡션 사용")
         cap = _fallback_caption(campaign, channel, product_title)

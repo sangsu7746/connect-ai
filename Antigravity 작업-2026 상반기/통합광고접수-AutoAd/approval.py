@@ -50,6 +50,18 @@ def pending() -> list:
 
 
 # ── 내부 헬퍼 ───────────────────────────────────────────────
+def _is_threads(approval_id: int) -> bool:
+    """이 승인 건이 쓰레드 답글인가. 판단이 안 되면 False(기존 경로 유지)."""
+    try:
+        with db.get_conn() as conn:
+            row = conn.execute(
+                "SELECT c.kind FROM approvals a JOIN creatives c ON c.id=a.creative_id "
+                "WHERE a.id=?", (approval_id,)).fetchone()
+        return bool(row) and row["kind"] == "threads_reply"
+    except Exception:
+        return False
+
+
 def _creative_of(approval_id: int):
     with db.get_conn() as conn:
         r = conn.execute("SELECT creative_id FROM approvals WHERE id=?",
@@ -82,6 +94,35 @@ def decide(approval_id: int, decision: str, reviewer: str = "operator",
     decision = (decision or "").lower()
 
     if decision == "approved":
+        # 쓰레드 답글은 즉시 발행하지 않고 예약한다.
+        #
+        # ⚠ 실측(2026-08-04): 승인 10건을 연달아 누르자 콘솔이 통째로 멈췄다.
+        #   publish_creative() 는 발행 잠금을 쥔 채 _space_out() 에서 최대
+        #   300초를 잔다. 승인 요청이 그 대기를 그대로 기다리므로, 두 번째
+        #   버튼부터는 앞 건이 깰 때까지 응답이 없다. 10건이면 콘솔이 수십 분
+        #   먹통이 되고, 그동안 크롬이 계속 쌓인다.
+        #
+        #   밴드·페북은 하루 몇 건이라 이 구조로 버텼지만 답글은 성격이 다르다.
+        #   사람이 화면에서 죽 훑으며 여러 건을 연달아 누르는 게 정상 사용이다.
+        #   그래서 승인은 '예약했다'고 즉시 답하고, 실제 발행은 스케줄러가
+        #   간격을 지켜 하나씩 처리한다(재시작해도 JobStore 로 복구된다).
+        # ⚠ dry_run=None 은 '실발행'이 아니라 '설정값을 따르라'는 뜻이다.
+        #   publish_creative() 와 같은 방식으로 풀어야 한다. 이걸 not dry_run
+        #   으로 쓰면 드라이런에서도 예약 경로를 타 스케줄러가 뜬다(테스트가
+        #   느려지고, 실제로는 나가지도 않을 건을 예약해 둔다).
+        _dry = config.GLOBAL_DRY_RUN if dry_run is None else bool(dry_run)
+        if _is_threads(approval_id) and not _dry:
+            try:
+                run_at = orchestrator.next_free_slot("threads")
+                info = orchestrator.approve_and_schedule(
+                    approval_id, run_at, reviewer=reviewer)
+                return {"ok": True, "decision": "approved", "scheduled": True,
+                        "published": False, "run_at": info["run_at"],
+                        "reason": f"{run_at.strftime('%H:%M:%S')} 발행 예약됨"}
+            except Exception as e:
+                # 스케줄러가 없는 환경(스크립트 등)이면 기존 즉시 발행으로.
+                print(f"[approval] 예약 실패({type(e).__name__}) - 즉시 발행으로 대체")
+
         res = orchestrator.approve_and_publish(approval_id, reviewer=reviewer, dry_run=dry_run)
         return {"ok": True, "decision": "approved",
                 "published": bool(getattr(res, "ok", False)),
