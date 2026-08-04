@@ -69,7 +69,7 @@ async function fetchProxyOnce(requestBody: string): Promise<Response> {
  * 처리를 마친 요청이 중복 실행돼 이중 과금될 위험이 있다. 실제 API 오류(4xx/5xx 응답)는 재시도해도
  * 결과가 달라지지 않으므로 마찬가지로 대상에서 제외한다.
  */
-async function callProxy({ provider, apiKey, method, endpoint, headers = {}, body }: ProxyRequestParams) {
+export async function callProxy({ provider, apiKey, method, endpoint, headers = {}, body }: ProxyRequestParams) {
   const requestBody = JSON.stringify({ provider, apiKey, method, endpoint, headers, payload: body })
 
   let response: Response
@@ -241,7 +241,7 @@ async function resolveGeminiModels(apiKey: string): Promise<{ text: string; imag
   return geminiModelPromise
 }
 
-async function geminiTextEndpoint(apiKey: string): Promise<string> {
+export async function geminiTextEndpoint(apiKey: string): Promise<string> {
   const { text } = await resolveGeminiModels(apiKey)
   return `${GEMINI_API_BASE}/models/${text}:generateContent?key=${apiKey}`
 }
@@ -257,7 +257,7 @@ async function geminiImageEndpoint(apiKey: string): Promise<string> {
  * part가 붙기도 한다 — parts[0]만 읽으면 정작 답(JSON)이 든 뒷부분을 놓쳐 "형식을 이해하지
  * 못했어요" 오류가 난다. 그래서 thought part는 걸러내고 나머지 텍스트를 모두 이어 붙인다.
  */
-function geminiText(data: any): string {
+export function geminiText(data: any): string {
   const parts = data?.candidates?.[0]?.content?.parts
   if (!Array.isArray(parts)) return ''
   return parts
