@@ -221,7 +221,12 @@ THREADS_REPLY_INTERVAL_MAX = int(os.getenv("THREADS_REPLY_INTERVAL_MAX", "600"))
 # 같은 사람에게 반복 답글이 붙는 것이 신고로 가는 가장 빠른 경로다.
 THREADS_AUTHOR_COOLDOWN_DAYS = int(os.getenv("THREADS_AUTHOR_COOLDOWN_DAYS", "30"))
 # 오래된 글의 답글은 아무도 보지 않는다. 노출 없는 리스크일 뿐이다.
-THREADS_POST_MAX_AGE_MIN = int(os.getenv("THREADS_POST_MAX_AGE_MIN", "90"))
+# ⚠ 실측(2026-08-04 첫 실수집)에서 90분은 너무 좁았다 - 13건 중 10건이
+#   이 필터에서 버려졌다. 추천 피드는 최신순이 아니라 반응순이라 하루 지난
+#   글도 상위에 계속 노출된다(실제 피드에 1일·20시간·18시간짜리가 나란히
+#   떠 있었다). '오래된 글은 아무도 안 본다'는 전제가 이 피드에는 안 맞는다.
+#   24시간으로 넓힌다.
+THREADS_POST_MAX_AGE_MIN = int(os.getenv("THREADS_POST_MAX_AGE_MIN", "1440"))
 THREADS_REPLY_MAX_CHARS = int(os.getenv("THREADS_REPLY_MAX_CHARS", "280"))
 
 

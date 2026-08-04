@@ -161,9 +161,44 @@ def _parse(html: str) -> list:
         cleaned = [t for t in cleaned if t]
         text = re.sub(r"\s{2,}", " ", " ".join(cleaned)).strip()
 
+        # 카드 머리의 '작성자명 + 상대시각' 을 떼어낸다.
+        # 실측(2026-08-04 첫 실수집): 본문이 "yonhap_news 39분 경쟁이 치열한..."
+        # 처럼 들어왔다 - 작성자 링크와 시각 표시도 dir="auto" 스팬이라 본문에
+        # 같이 붙는다. gate 가 점수를 매기고 LLM 이 읽는 게 원문이어야 한다.
+        #
+        # 위 Finding 7 의 블록리스트와 다른 점: 여기서 지우는 두 값은 추측이
+        # 아니라 이 카드에서 방금 뽑아낸 자기 데이터(handle)와, 시각 표시라는
+        # 위치가 고정된 패턴이다. 게다가 머리 부분에서만 뗀다 - 본문 중간의
+        # 같은 문자열은 건드리지 않는다.
+        text = _strip_card_header(text, handle)
+
         posts.append(RawPost(url=url, author=f"@{handle}",
                              text=text, posted_at=posted_at))
     return posts
+
+
+# 상대시각 표시 - "39분", "3시간", "1일", "2주 전" 등. 머리에서만 뗀다.
+_REL_TIME_RE = re.compile(r"^\s*\d+\s*(?:초|분|시간|일|주|개월|달|년)\s*(?:전)?\s*")
+
+
+def _strip_card_header(text: str, handle: str) -> str:
+    """본문 앞에 붙어 온 '작성자명 + 상대시각' 을 뗀다.
+
+    둘 다 있을 수도, 하나만 있을 수도, 없을 수도 있어서 순서대로 한 번씩
+    시도한다. 없으면 그대로 둔다 - 못 떼는 것보다 본문을 깎는 게 나쁘다."""
+    if not text:
+        return text
+    out = text
+    # 표시명이 핸들과 다를 수 있으므로 핸들로 시작할 때만 뗀다.
+    if handle and out.lower().startswith(handle.lower()):
+        out = out[len(handle):].lstrip()
+    out = _REL_TIME_RE.sub("", out, count=1)
+    # 시각이 작성자명보다 앞에 오는 배치도 있어 한 번 더 본다.
+    if handle and out.lower().startswith(handle.lower()):
+        out = out[len(handle):].lstrip()
+    stripped = out.strip()
+    # 다 떼고 나니 빈 문자열이면 원문을 돌려준다(사진만 있는 글일 수 있다).
+    return stripped if stripped else text
 
 
 def harvest(account: str = "", limit: int = 0, headless: bool = True) -> list:
