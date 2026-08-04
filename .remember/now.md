@@ -1,13 +1,5 @@
 
-## 19:02 | feat/adstudio-youtube-homage
-Fixed interval calc to exclude posting status (prevented timer resets), refactored thread approval from blocking to scheduler-based queuing, corrected dry_run condition logic in `approval.py`.
-## 19:20 | feat/adstudio-youtube-homage
-Fixed test slowdown (8m → 31.7s) by treating `POST_INTERVAL_MAX <= 0` globally as no-interval flag in `orchestrator.py`; 146 tests pass.
-## 19:23 | feat/adstudio-youtube-homage
-Tasks 1-4 complete (vitest, types/store, schema, URL parsing); Task 4: added regression tests for `parseYoutubeVideoId` edge-case safety; Task 5 started.
-## 19:43 | feat/adstudio-youtube-homage
-Task 5: validated `buildSceneDurations` regression tests; discovered plan bugs (missed `SCENE_SEC_HARD_MAX` absorption step, wrong expected vals), implementer corrected both.
-## 19:44 | feat/adstudio-youtube-homage
-Fixed interval timer bug (overcounting `posting`), approval-button blocking (switched to scheduled publishing), unused `THREADS_REPLY_INTERVAL` constant; 146 tests pass in 31.7s; remain: real-publish retry, browser reuse measurement.
-## 20:27 | feat/adstudio-youtube-homage
-Fixed API key placement (.env.example→.env for security), validated Naver & Claude APIs (Claude required credit charge), verified E2E pipeline with real news (Google/Naver search→planning→card render→PNG/ZIP).
+## 20:40 | feat/adstudio-youtube-homage
+Installed Stable Diffusion WebUI v1.0.0-pre to D:/sd-webui w/ DreamShaper_8 model; configured webui-user.bat & ran first-run setup.
+## 20:52 | feat/adstudio-youtube-homage
+Fixed Task 5–7 bugs: `splitLongest` hook/CTA unprotected (a1c9f061a), API key in error logs (045ed7415), 429 undistinguished in getVideoInfo (86654959a); 6/12 complete.
