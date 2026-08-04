@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Link2, PenLine, AlertCircle, Loader2 } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -50,6 +50,21 @@ export default function A5b_Reference() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
+  // 진행 중이던 분석이 나중에 끝나도 스토어에 반영되지 않게 막는 취소 플래그.
+  // commit() 은 컴포넌트 상태가 아니라 전역 스토어(setAdConcept)를 직접 건드리므로,
+  // 언마운트(=backToTemplate 로 탈출하거나 다른 경로로 화면을 떠남) 후에도 진행 중이던
+  // build() 프라미스는 계속 실행된다 — ref 로 "이 인스턴스는 끝났다"를 표시해 결과를 버린다.
+  const cancelledRef = useRef(false)
+  useEffect(() => () => { cancelledRef.current = true }, [])
+
+  // 분석 없이 직접 진입(새로고침 등)한 경우 자료 업로드부터 — 이 저장소의 A3~A5 화면과 동일한 관례
+  useEffect(() => {
+    if (!analysis) navigate('/source', { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  if (!analysis) return null
+
   const runSearch = async () => {
     setError(''); setNotice(''); setBusy(true); setShown(PAGE_SIZE)
     try {
@@ -71,11 +86,25 @@ export default function A5b_Reference() {
     setError(''); setBusy(true)
     try {
       const patch = await build()
+      // 분석이 도는 사이 사용자가 "그냥 템플릿에서 고르기"로 탈출했다면, 늦게 도착한
+      // 결과는 절대 스토어에 반영하지 않는다 — 탈출이 최종 상태여야 한다.
+      if (cancelledRef.current) return
       setAdConcept({ structureSource: 'homage', structureId: HOMAGE_STRUCTURE_ID, ...patch })
       navigate('/concept')
     } catch (e) {
-      setError(e instanceof Error ? e.message : '분석에 실패했어요.')
-    } finally { setBusy(false) }
+      if (cancelledRef.current) return
+      // getVideoInfo(URL 입구)와 searchAdVideos(검색)는 같은 유튜브 API 쿼터를 공유한다.
+      // 검색 쿼터가 소진돼 URL 탭으로 유도됐는데 거기서도 막히면, 남은 유일한 안전한
+      // 입구인 '설명'으로 다시 유도한다 — 빨간 에러로 막다른 길을 만들지 않는다.
+      if (e instanceof YoutubeQuotaError) {
+        setNotice('오늘 자동검색 한도를 다 썼어요. 설명으로 진행해주세요.')
+        setTab('describe')
+      } else {
+        setError(e instanceof Error ? e.message : '분석에 실패했어요.')
+      }
+    } finally {
+      if (!cancelledRef.current) setBusy(false)
+    }
   }
 
   const pickVideo = (c: HomageCandidate) => commit(async () => ({
@@ -126,6 +155,9 @@ export default function A5b_Reference() {
   }))
 
   const backToTemplate = () => {
+    // 먼저 취소 플래그부터 세운다 — 아래 setAdConcept 이후 언마운트되기 전에, 이 시점 이후로
+    // 끝나는 commit() 의 build() 결과가 조용히 오마주 상태를 되살리지 못하게 막는다.
+    cancelledRef.current = true
     setAdConcept({ structureSource: 'template', structureId: '', homage: undefined })
     navigate('/concept')
   }
@@ -140,7 +172,7 @@ export default function A5b_Reference() {
       <div style={{ display: 'flex', gap: 8 }}>
         {([['search', '검색으로 찾기', Search], ['url', 'URL 넣기', Link2], ['describe', '글로 설명', PenLine]] as const)
           .map(([id, label, Icon]) => (
-            <button key={id} onClick={() => { setTab(id); setError(''); }}
+            <button key={id} onClick={() => { setTab(id); setError(''); setNotice(''); }}
               className={clsx('btn btn-sm', tab === id ? 'btn-primary' : 'btn-outline')}>
               <Icon size={14} /> {label}
             </button>
@@ -152,7 +184,7 @@ export default function A5b_Reference() {
           <div style={{ display: 'flex', gap: 8 }}>
             <input value={query} onChange={e => setQuery(e.target.value)}
               placeholder="예: 수분크림 화장품 광고" style={{ flex: 1 }}
-              onKeyDown={e => { if (e.key === 'Enter') runSearch() }} />
+              onKeyDown={e => { if (e.key === 'Enter' && !busy && query.trim()) runSearch() }} />
             <button className="btn btn-primary" onClick={runSearch} disabled={busy || !query.trim()}>
               {busy ? <Loader2 size={14} className="animate-spin" /> : '검색'}
             </button>
