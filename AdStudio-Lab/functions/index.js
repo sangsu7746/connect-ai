@@ -479,3 +479,130 @@ exports.generateAd = functions.https.onRequest((req, res) => {
     }
   });
 });
+
+// ════════════════════════════════════════════════════════════════
+// AdStudio 오마주: 유튜브 광고 검색
+// ════════════════════════════════════════════════════════════════
+
+/** 캐시 수명 7일 — 유튜브 약관이 캐시 데이터를 30일 내 갱신·삭제하도록 요구한다 */
+const YT_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+/**
+ * 한 번에 25개를 받아둔다. search.list 는 결과 개수와 무관하게 비용이 같으므로
+ * (하루 약 100회 한도), 25개를 받아 5개씩 보여주면 "다른 후보 보기"가 공짜가 된다.
+ */
+const YT_MAX_RESULTS = 25;
+
+/** 검색어 → 캐시 문서 id (Firestore 문서 id 제약을 피해 해시로 만든다) */
+function ytCacheKey(q) {
+  return require('crypto').createHash('sha1').update(q).digest('hex');
+}
+
+/** ISO8601 duration(PT1M30S) → 초. videos.list 가 이 형식으로 준다 */
+function ytParseDuration(iso) {
+  const m = /^P(?:\d+D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso || '');
+  if (!m) return 0;
+  return (+(m[1] || 0)) * 3600 + (+(m[2] || 0)) * 60 + (+(m[3] || 0));
+}
+
+exports.youtubeSearch = functions.https.onRequest((req, res) => {
+  return cors(req, res, async () => {
+    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+
+    const uid = await verifyBearer(req);
+    if (!uid) return res.status(401).send('검색은 로그인 후 이용할 수 있어요.');
+
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    if (!apiKey) return res.status(503).send('서버에 YouTube API 키가 설정되지 않았어요.');
+
+    const fetchFn = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
+
+    // ── 모드 2: 단일 영상 정보 조회 (직접 URL 입력 검증용) ──
+    // videos.list 는 1유닛이라 search.list(100유닛)와 달리 부담이 없다.
+    // 사용자가 2시간짜리 영상을 붙여넣으면 Gemini 무료 한도(하루 8시간 분량)를
+    // 한 번에 태우므로, 분석 전에 길이를 먼저 확인한다.
+    const videoId = String((req.body || {}).videoId || '').trim();
+    if (videoId) {
+      if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) return res.status(400).send('영상 id 형식이 올바르지 않아요.');
+      try {
+        const r = await fetchFn('https://www.googleapis.com/youtube/v3/videos'
+          + `?part=snippet,contentDetails&id=${videoId}&key=${apiKey}`);
+        if (!r.ok) return res.status(502).send('영상 정보를 가져오지 못했어요.');
+        const d = await r.json();
+        const item = (d.items || [])[0];
+        if (!item) return res.status(404).send('영상을 찾을 수 없어요. 공개 영상인지 확인해주세요.');
+        return res.json({
+          videoId,
+          title: item.snippet.title,
+          channelTitle: item.snippet.channelTitle,
+          thumbnailUrl: (item.snippet.thumbnails.medium || item.snippet.thumbnails.default || {}).url || '',
+          durationSec: ytParseDuration(item.contentDetails.duration),
+        });
+      } catch (e) {
+        console.error('youtubeSearch(videoId) 실패:', e);
+        return res.status(502).send('영상 정보를 가져오지 못했어요.');
+      }
+    }
+
+    // ── 모드 1: 검색 ──
+    const q = String((req.body || {}).q || '').trim();
+    if (!q) return res.status(400).send('검색어가 필요해요.');
+
+    const db = admin.firestore();
+    const ref = db.collection('youtubeSearchCache').doc(ytCacheKey(q));
+
+    try {
+      const snap = await ref.get();
+      if (snap.exists) {
+        const data = snap.data();
+        if (data.fetchedAt && Date.now() - data.fetchedAt < YT_CACHE_TTL_MS) {
+          return res.json({ items: data.items || [], cached: true });
+        }
+      }
+    } catch (e) {
+      console.warn('youtubeSearch: 캐시 조회 실패, 원본 호출로 진행', e);
+    }
+
+    const url = 'https://www.googleapis.com/youtube/v3/search'
+      + `?part=snippet&type=video&videoEmbeddable=true&maxResults=${YT_MAX_RESULTS}`
+      + `&q=${encodeURIComponent(q)}&key=${apiKey}`;
+
+    try {
+      const r = await fetchFn(url);
+      if (r.status === 403) {
+        // 쿼터 소진과 키 문제가 둘 다 403 으로 온다. 본문으로 구분한다.
+        const body = await r.text();
+        if (/quota/i.test(body)) {
+          return res.status(429).send('오늘 자동검색 한도를 다 썼어요.');
+        }
+        console.error('youtubeSearch: 403', body.slice(0, 300));
+        return res.status(503).send('유튜브 검색을 사용할 수 없어요.');
+      }
+      if (!r.ok) {
+        console.error('youtubeSearch: HTTP', r.status);
+        return res.status(502).send('유튜브 검색에 실패했어요.');
+      }
+
+      const data = await r.json();
+      const items = (data.items || [])
+        .filter(it => it.id && it.id.videoId)
+        .map(it => ({
+          videoId: it.id.videoId,
+          title: it.snippet.title,
+          channelTitle: it.snippet.channelTitle,
+          thumbnailUrl: (it.snippet.thumbnails.medium || it.snippet.thumbnails.default || {}).url || '',
+          publishedAt: it.snippet.publishedAt,
+        }));
+
+      try {
+        await ref.set({ q, items, fetchedAt: Date.now() });
+      } catch (e) {
+        console.warn('youtubeSearch: 캐시 저장 실패 (응답은 정상 반환)', e);
+      }
+
+      return res.json({ items, cached: false });
+    } catch (e) {
+      console.error('youtubeSearch 실패:', e);
+      return res.status(502).send('유튜브 검색에 실패했어요.');
+    }
+  });
+});
