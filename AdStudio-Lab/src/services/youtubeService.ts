@@ -54,3 +54,74 @@ export function parseYoutubeVideoId(input: string): string | null {
 }
 
 export type { HomageCandidate }
+
+import { auth } from './firebase'
+import { fnUrl } from './firebaseTarget'
+
+/** 검색 쿼터 소진 — 호출부가 URL·글 입구로 유도하기 위해 따로 구분한다 */
+export class YoutubeQuotaError extends Error {
+  constructor(message = '오늘 자동검색 한도를 다 썼어요.') {
+    super(message)
+    this.name = 'YoutubeQuotaError'
+  }
+}
+
+/** youtubeSearch 함수를 호출해 광고 후보를 받아온다 */
+export async function searchAdVideos(q: string): Promise<HomageCandidate[]> {
+  const query = (q || '').trim()
+  if (!query) return []
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  try {
+    const token = await auth.currentUser?.getIdToken()
+    if (token) headers['Authorization'] = `Bearer ${token}`
+  } catch { /* 토큰 발급 실패가 호출 자체를 막지는 않는다 — 서버가 401로 답한다 */ }
+
+  const res = await fetch(fnUrl('youtubeSearch'), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ q: query }),
+  })
+
+  if (res.status === 429) throw new YoutubeQuotaError()
+  if (!res.ok) {
+    await res.text().catch(() => '')
+    throw new Error('유튜브 검색에 실패했어요.')
+  }
+
+  const data = await res.json()
+  return (data.items || []) as HomageCandidate[]
+}
+
+export interface YoutubeVideoInfo {
+  videoId: string
+  title: string
+  channelTitle: string
+  thumbnailUrl: string
+  durationSec: number
+}
+
+/**
+ * 단일 영상 정보(제목·길이)를 조회한다. 직접 URL 입력 시 분석 전에 부른다.
+ * videos.list 는 1유닛이라 검색(100유닛)과 달리 자주 불러도 부담이 없다.
+ */
+export async function getVideoInfo(videoId: string): Promise<YoutubeVideoInfo> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  try {
+    const token = await auth.currentUser?.getIdToken()
+    if (token) headers['Authorization'] = `Bearer ${token}`
+  } catch { /* 서버가 401로 답한다 */ }
+
+  const res = await fetch(fnUrl('youtubeSearch'), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ videoId }),
+  })
+
+  if (res.status === 404) throw new Error('영상을 찾을 수 없어요. 공개 영상인지 확인해주세요.')
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new Error(detail || '영상 정보를 가져오지 못했어요.')
+  }
+  return (await res.json()) as YoutubeVideoInfo
+}

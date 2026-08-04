@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest'
-import { buildSearchQuery, parseYoutubeVideoId } from './youtubeService'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { buildSearchQuery, parseYoutubeVideoId, searchAdVideos, YoutubeQuotaError } from './youtubeService'
+
+vi.mock('./firebase', () => ({ auth: { currentUser: { getIdToken: async () => 'tok' } } }))
+vi.mock('./firebaseTarget', () => ({ fnUrl: (n: string) => `https://fake/${n}` }))
 
 describe('buildSearchQuery', () => {
   it('제품군과 소분류를 합쳐 광고 검색어를 만든다', () => {
@@ -53,5 +56,38 @@ describe('parseYoutubeVideoId', () => {
     ['//youtube.com/watch?v=dQw4w9WgXcQ'],                 // 스킴 없는 protocol-relative URL
   ])('잘못된 입력은 null: %s', (input) => {
     expect(parseYoutubeVideoId(input)).toBeNull()
+  })
+})
+
+describe('searchAdVideos', () => {
+  beforeEach(() => { vi.stubGlobal('fetch', vi.fn()) })
+  afterEach(() => { vi.unstubAllGlobals() })
+
+  it('결과 배열을 돌려준다', async () => {
+    const items = [{ videoId: 'a'.repeat(11), title: 'T', channelTitle: 'C', thumbnailUrl: 'u', publishedAt: 'p' }]
+    ;(fetch as any).mockResolvedValue({ ok: true, status: 200, json: async () => ({ items, cached: false }) })
+    await expect(searchAdVideos('수분크림 광고')).resolves.toEqual(items)
+  })
+
+  it('Authorization 헤더에 ID 토큰을 싣는다', async () => {
+    ;(fetch as any).mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: [] }) })
+    await searchAdVideos('x')
+    const init = (fetch as any).mock.calls[0][1]
+    expect(init.headers.Authorization).toBe('Bearer tok')
+  })
+
+  it('429 는 YoutubeQuotaError 로 구분한다', async () => {
+    ;(fetch as any).mockResolvedValue({ ok: false, status: 429, text: async () => '한도' })
+    await expect(searchAdVideos('x')).rejects.toBeInstanceOf(YoutubeQuotaError)
+  })
+
+  it('빈 검색어는 호출 없이 빈 배열', async () => {
+    await expect(searchAdVideos('  ')).resolves.toEqual([])
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('기타 오류는 일반 Error', async () => {
+    ;(fetch as any).mockResolvedValue({ ok: false, status: 502, text: async () => 'fail' })
+    await expect(searchAdVideos('x')).rejects.toThrow(/검색/)
   })
 })
