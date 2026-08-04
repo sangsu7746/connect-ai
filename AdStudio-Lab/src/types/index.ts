@@ -324,6 +324,11 @@ export interface Project {
   createdAt: Date
   selectedLane?: Lane
   selectedGenre?: Genre
+  // 유튜브 오마주 모드로 만든 광고의 참고 영상 id (설계 §8 "참고 영상 링크 기록") — 저작권 이의
+  // 발생 시 어떤 광고가 어떤 영상을 오마주했는지 서버에서 추적할 수 있게 한다. 오마주가 아니거나
+  // (템플릿 모드) 설명 입력 방식(HomageReference.source === 'description')으로 만든 오마주는
+  // 실제 영상이 없어 undefined다.
+  homageVideoId?: string
   // "내 작업" 목록 썸네일용 소형 이미지(약 200px) — 원본 사진과 별개로 저장돼 목록 조회 시
   // 사진 서브컬렉션을 추가로 읽지 않아도 되게 한다
   thumbUrl?: string

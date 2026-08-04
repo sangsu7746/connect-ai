@@ -1906,8 +1906,12 @@ export async function generateStoryboardScenes(project: Project, persons: Person
     // 균등 분배하면 오마주의 핵심인 완급이 사라진다.
     homageScenes = resampleHomageScenes(homageStructure.scenes, desiredCount)
     sceneCount = homageScenes.length
-    // 구도(누가/무엇이 등장하는지=subjectRefs) 참고용으로만 템플릿 풀을 빌린다 — 대사/설명
-    // 텍스트는 여기서 가져오지 않는다(4번에서 homageScenes 기반으로 별도 파생한다)
+    // ⚠️ chosen은 이 분기에서 인물 구도(subjectRefs) 파생에 절대 쓰지 않는다 — HOMAGE_STRUCTURE_ID가
+    // AD_CONCEPT_TEMPLATES에 미등록이라 pool은 항상 DEFAULT_CONCEPT_TEMPLATE(로맨틱 커플 템플릿,
+    // subjectRefs가 전부 person_1/person_2)로 귀결된다. 그 subjectRefs를 그대로 빌리면 제품 단독
+    // 컷(subjectRole:'product')에까지 인물이 강제로 들어간다(final-fix-report C1). 아래 chosen.map은
+    // durations/content와 길이만 맞추는 자리표시자일 뿐이고, 실제 subjectRefs는 homageScenes[i]의
+    // subjectRole에서 직접 파생한다(person → ['person_1'], 그 외 → []).
     chosen = Array.from({ length: sceneCount }, (_, i) => pool[i % pool.length])
     durations = buildSceneDurations(durationSec, sceneCount, homageScenes.map(s => s.durationSec))
   } else {
@@ -2090,17 +2094,28 @@ export async function generateStoryboardScenes(project: Project, persons: Person
     : ''
 
   return chosen.map((tpl, i) => {
-    // 인물 지정 (relation이 solo인 경우 person_2가 있더라도 person_1로 교체) — 구도는 창작 영역이
-    // 아니라 항상 템플릿 원본 기준을 따른다. 광고 템플릿의 제품 단독 컷(subjectRefs 빈 배열)은
-    // 인물을 강제로 넣지 않는다.
-    let subjects = [...tpl.subjectRefs]
-    if (relation === 'solo') {
-      subjects = tpl.subjectRefs.length > 0 ? ['person_1'] : []
-    } else if (subjects.length > 1 && persons.length > subjects.length) {
-      // 템플릿은 "여러 명이 함께" 나오는 그룹 씬으로 설계됐는데(subjectRefs.length > 1) 실제
-      // 선택 인원이 템플릿 가정(2명)보다 많으면(가족 3~4명, 친구 3~6명 등) 전원을 반영한다 —
-      // 안 그러면 person_3 이후로 선택한 배우는 어떤 씬에도 영원히 등장하지 못한다
-      subjects = persons.map(p => p.label)
+    let subjects: string[]
+    if (isHomage && homageScenes) {
+      // ⚠️ 오마주 모드는 tpl.subjectRefs를 절대 쓰지 않는다 — tpl은 항상 DEFAULT_CONCEPT_TEMPLATE
+      // (개인 영상용 로맨틱 커플 템플릿)로 귀결되므로 subjectRefs가 전부 person_1/person_2다. 그걸
+      // 그대로 쓰면 레퍼런스가 고른 제품 단독 컷(subjectRole:'product' 등)에까지 인물이 강제로
+      // 들어간다. 실제 구도는 homageScenes[i].subjectRole(레퍼런스에서 뽑은 값)에서 직접 파생한다 —
+      // 인물이 등장하는 컷('person')만 person_1을 넣고, 나머지(product/environment/text/abstract)는
+      // 비워서 AI 가상배우 묘사가 붙지 않게 한다(아래 adActorModifier 조건이 이 배열 길이를 본다).
+      subjects = homageScenes[i].subjectRole === 'person' ? ['person_1'] : []
+    } else {
+      // 인물 지정 (relation이 solo인 경우 person_2가 있더라도 person_1로 교체) — 구도는 창작 영역이
+      // 아니라 항상 템플릿 원본 기준을 따른다. 광고 템플릿의 제품 단독 컷(subjectRefs 빈 배열)은
+      // 인물을 강제로 넣지 않는다.
+      subjects = [...tpl.subjectRefs]
+      if (relation === 'solo') {
+        subjects = tpl.subjectRefs.length > 0 ? ['person_1'] : []
+      } else if (subjects.length > 1 && persons.length > subjects.length) {
+        // 템플릿은 "여러 명이 함께" 나오는 그룹 씬으로 설계됐는데(subjectRefs.length > 1) 실제
+        // 선택 인원이 템플릿 가정(2명)보다 많으면(가족 3~4명, 친구 3~6명 등) 전원을 반영한다 —
+        // 안 그러면 person_3 이후로 선택한 배우는 어떤 씬에도 영원히 등장하지 못한다
+        subjects = persons.map(p => p.label)
+      }
     }
 
     // 영문 비주얼 프롬프트를 정교하게 재조합 (배경/자연현상/광고톤은 선택 안 했으면(빈 문자열) 그냥 생략)

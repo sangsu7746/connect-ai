@@ -13,6 +13,14 @@ const MIN_DESCRIPTION_LEN = 10
  */
 class GeminiKeyMissingError extends Error {}
 
+/**
+ * sanitizeHomageStructure(homageSchema.ts)가 던지는 스키마 검증 실패를 재시도 스킵 판정에
+ * 쓰기 위한 전용 타입. "씬이 너무 적어요" 같은 실패는 응답 형식이 흔들린 게 아니라 입력
+ * (영상/설명)에 대해 구조적으로 참인 판정이라 같은 입력을 다시 분석해도 같은 결론이 난다 —
+ * 재시도는 성공 확률을 전혀 올리지 못하면서 영상분석 비용(Gemini 호출)만 2배로 만든다.
+ */
+class HomageSchemaValidationError extends Error {}
+
 /** ```json 펜스나 앞뒤 잡소리를 걷어내고 JSON 본문만 남긴다 */
 function extractJson(text: string): string {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/)
@@ -47,7 +55,15 @@ async function runGeminiOnce(parts: unknown[]): Promise<HomageStructure> {
   } catch {
     throw new Error('오마주 구조를 분석하지 못했어요. 다른 영상을 골라보세요.')
   }
-  return sanitizeHomageStructure(parsed)
+  try {
+    return sanitizeHomageStructure(parsed)
+  } catch (e) {
+    // 원래 안내 문구(예: "오마주 구조의 씬이 너무 적어요 (2개). 다른 영상을 골라주세요.")는
+    // 그대로 사용자에게 보여줄 만하므로 유지하되, 재시도 스킵 판정을 위해 타입만 바꿔 던진다.
+    throw new HomageSchemaValidationError(
+      e instanceof Error ? e.message : '오마주 구조가 올바르지 않아요.'
+    )
+  }
 }
 
 /**
@@ -61,12 +77,15 @@ async function runGeminiOnce(parts: unknown[]): Promise<HomageStructure> {
  *    - QuotaExhaustedError(aiAdapters.ts): 일일 무료 쿼터 소진(Gemini 429/RESOURCE_EXHAUSTED
  *      포함). 이 앱은 하루 요청 수 제한(GEMINI_FREE_TEXT_RPD)이 있어, 쿼터 소진 상태에서
  *      재시도하면 남은 쿼터를 헛되이 태울 뿐 절대 성공하지 않는다.
+ *    - HomageSchemaValidationError: sanitizeHomageStructure 의 스키마/개수 검증 실패. 같은
+ *      입력을 다시 분석해도 같은 결론이 나는 결정론적 판정이라, 재시도해도 성공하지 않고
+ *      영상분석 비용만 2배가 된다.
  */
 async function runGemini(parts: unknown[]): Promise<HomageStructure> {
   try {
     return await runGeminiOnce(parts)
   } catch (e) {
-    if (e instanceof GeminiKeyMissingError || e instanceof QuotaExhaustedError) throw e
+    if (e instanceof GeminiKeyMissingError || e instanceof QuotaExhaustedError || e instanceof HomageSchemaValidationError) throw e
     return await runGeminiOnce(parts)
   }
 }

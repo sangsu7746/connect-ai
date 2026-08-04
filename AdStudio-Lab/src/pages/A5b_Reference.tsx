@@ -5,9 +5,10 @@ import { clsx } from 'clsx'
 import { useAdStore } from '../stores/adStore'
 import { AD_CATEGORIES } from '../utils/adConcepts'
 import {
-  buildSearchQuery, parseYoutubeVideoId, searchAdVideos, getVideoInfo, YoutubeQuotaError,
+  buildSearchQuery, extractProductType, parseYoutubeVideoId, searchAdVideos, getVideoInfo, YoutubeQuotaError,
 } from '../services/youtubeService'
 import { analyzeFromVideo, analyzeFromDescription } from '../services/homageAnalyzer'
+import { presentableErrorMessage } from '../utils/errorMessage'
 import { HOMAGE_STRUCTURE_ID } from '../types/homage'
 import type { HomageCandidate } from '../types/homage'
 
@@ -31,14 +32,9 @@ export default function A5b_Reference() {
     .find(c => c.id === adConcept.categoryMain)?.subs
     ?.find(s => s.id === adConcept.categorySub)?.label ?? ''
 
-  // 제품군은 productName 의 마지막 낱말로 어림잡는다 ("미리집 수분크림" → "수분크림").
-  //
-  // ⚠️ 스펙 §6-1 은 Gemini 로 일반명사를 추출하라고 했으나, 여기서는 휴리스틱을 쓴다.
-  //    이유: 조립 결과가 편집 가능한 입력창에 그대로 노출되므로, 빗나가도 사용자가
-  //    한 번에 고칠 수 있다. 첫 화면을 띄우는 데 LLM 왕복을 넣으면 체감 지연만 생긴다.
-  //    한국어 상품명은 "브랜드 + 제품군" 어순이 지배적이라 마지막 낱말이 대체로 맞는다.
-  //    실사용에서 빗나가는 비율이 높으면 그때 Gemini 추출로 승격한다.
-  const guessedType = (analysis?.productName || '').trim().split(/\s+/).pop() || ''
+  // 제품군은 productName 의 마지막 낱말로 어림잡는다("미리집 수분크림" → "수분크림") — 단, 그
+  // 낱말이 용량·수량 표기("50ml", "2개입")면 건너뛴다. 상세 근거는 extractProductType 참고.
+  const guessedType = extractProductType(analysis?.productName || '')
 
   const [tab, setTab] = useState<Tab>('search')
   const [query, setQuery] = useState(buildSearchQuery(guessedType, subLabel))
@@ -84,7 +80,9 @@ export default function A5b_Reference() {
         setNotice('오늘 자동검색 한도를 다 썼어요. URL 붙여넣기나 직접 설명으로 진행하세요.')
         setTab('url')
       } else {
-        setError(e instanceof Error ? e.message : '검색에 실패했어요.')
+        // callProxy 등 하위 레이어가 던지는 원문 영어 에러(예: `Proxy error (400): {"error":...`)를
+        // 그대로 노출하지 않는다 — A5_Concept.tsx와 같은 가드(짧고 한글 섞인 문장만 통과)를 쓴다.
+        setError(presentableErrorMessage(e, '검색에 실패했어요.'))
       }
     } finally { setBusy(false) }
   }
@@ -108,7 +106,7 @@ export default function A5b_Reference() {
         setNotice('오늘 자동검색 한도를 다 썼어요. 설명으로 진행해주세요.')
         setTab('describe')
       } else {
-        setError(e instanceof Error ? e.message : '분석에 실패했어요.')
+        setError(presentableErrorMessage(e, '분석에 실패했어요.'))
       }
     } finally {
       if (!cancelledRef.current) setBusy(false)

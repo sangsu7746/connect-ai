@@ -1487,7 +1487,8 @@ ${referenceScenes.map((s, i) => `씬 ${i + 1}: 설명="${s.descKo}" / 대사="${
 
 ${dialogueInstruction}
 ${modelInstruction}
-keyframePromptEn에는 반드시 이 제품("${context.productName}")이 시각적으로 어떻게 보이는지 구체적으로 묘사해 넣으세요. 실존 유명인, 경쟁 브랜드명, 과장 광고성 허위 문구는 절대 포함하지 마세요.
+keyframePromptEn에는 반드시 이 제품("${context.productName}")이 시각적으로 어떻게 보이는지 구체적으로 묘사해 넣으세요.
+[금지 사항 — descKo·dialogueKo·keyframePromptEn 모든 필드 공통] 실존 유명인, 경쟁 브랜드명, 과장 광고성 허위 문구는 어떤 필드에도 절대 포함하지 마세요.
 
 [비주얼 방향]
 이 광고의 룩은 "${context.visualStyleKo || '클린 브라이트'}"입니다. 영어 키워드: ${context.visualStyleEn || 'bright clean commercial look'}

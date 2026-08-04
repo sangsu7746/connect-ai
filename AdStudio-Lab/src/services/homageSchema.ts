@@ -21,6 +21,28 @@ function clampText(value: unknown, max: number): string {
   return value.trim().slice(0, max)
 }
 
+/** 따옴표·문장 종결부호(마침표·느낌표·물음표·말줄임표 등) */
+const SENTENCE_PUNCTUATION_RE = /["'“”‘’「」『』.!?。！？…]/
+
+/**
+ * clampText와 같지만, 문장부호(따옴표·마침표·느낌표·물음표 등)가 하나라도 들어 있으면
+ * 아예 빈 문자열로 버린다.
+ *
+ * ⚠️ emotionBeat("긴장 고조" 같은 감정 단계)는 구절이지 문장이 아니다. 자르기(clampText)만으로는
+ *    "그만 좀 해!" 처럼 원본 대사를 그대로 옮긴 짧은 문장이 40자 이내면 그대로 통과해 생성
+ *    프롬프트(buildHomageFlowText → structureFlow → 광고 각본 프롬프트)까지 흘러갈 수 있다
+ *    (I4). 문장부호가 있는지만 보고 통째로 버리는 게 "일부만 지우기"보다 안전하다 — 부분
+ *    편집은 원본 어순·표현을 남길 수 있지만 완전 폐기는 그럴 여지가 없다. 잘라내기 *전에*
+ *    원문 전체를 검사한다 — 안 그러면 EMOTION_BEAT_MAX(40자) 뒤에 붙은 문장부호를 놓친다.
+ *    overallArc는 한 줄 요약이라 문장이어도 되므로 이 검사를 적용하지 않고 clampText를 그대로 쓴다.
+ */
+function clampPhraseText(value: unknown, max: number): string {
+  if (typeof value !== 'string') return ''
+  const trimmed = value.trim()
+  if (SENTENCE_PUNCTUATION_RE.test(trimmed)) return ''
+  return trimmed.slice(0, max)
+}
+
 /**
  * LLM 이 돌려준 원시 응답을 신뢰할 수 있는 HomageStructure 로 정제한다.
  *
@@ -52,7 +74,7 @@ export function sanitizeHomageStructure(raw: unknown): HomageStructure {
         shotType: pickEnum(src.shotType, SHOT_TYPES, 'medium'),
         cameraMove: pickEnum(src.cameraMove, CAMERA_MOVES, 'static'),
         subjectRole: pickEnum(src.subjectRole, SUBJECT_ROLES, 'product'),
-        emotionBeat: clampText(src.emotionBeat, EMOTION_BEAT_MAX),
+        emotionBeat: clampPhraseText(src.emotionBeat, EMOTION_BEAT_MAX),
         transition: pickEnum(src.transition, TRANSITIONS, 'cut'),
       }
     })

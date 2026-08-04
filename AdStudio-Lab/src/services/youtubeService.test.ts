@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { buildSearchQuery, parseYoutubeVideoId, searchAdVideos, getVideoInfo, YoutubeQuotaError } from './youtubeService'
+import {
+  buildSearchQuery, extractProductType, parseYoutubeVideoId, searchAdVideos, getVideoInfo, YoutubeQuotaError,
+} from './youtubeService'
 
 vi.mock('./firebase', () => ({ auth: { currentUser: { getIdToken: async () => 'tok' } } }))
 vi.mock('./firebaseTarget', () => ({ fnUrl: (n: string) => `https://fake/${n}` }))
@@ -27,6 +29,45 @@ describe('buildSearchQuery', () => {
 
   it('제품군과 소분류가 같으면 한 번만 넣는다', () => {
     expect(buildSearchQuery('화장품', '화장품')).toBe('화장품 광고')
+  })
+})
+
+// ── I2(Important) 최종 리뷰: 검색어 기본값이 용량/수량 토큰을 집는다 ──────────
+// 한국 상품명은 "브랜드 + 제품군 + 용량/수량"(예: "미리집 수분크림 50ml") 순서가 지배적이라
+// 마지막 낱말을 그대로 쓰면 제품군이 아니라 포장 단위가 검색어에 들어간다. search.list 는
+// 1회 100유닛에 전체 사용자 합계 하루 약 100회뿐이라, 기본값이 나쁘면 사용자가 검색어를
+// 고쳐 두 번 검색하게 돼 공용 한도가 반토막 난다.
+describe('extractProductType', () => {
+  it('용량 토큰(ml)으로 끝나면 그 앞 낱말을 제품군으로 쓴다', () => {
+    expect(extractProductType('미리집 수분크림 50ml')).toBe('수분크림')
+  })
+
+  it('용량+수량 토큰이 연달아 있으면 둘 다 건너뛴다', () => {
+    expect(extractProductType('ABC 세럼 30ml 2개입')).toBe('세럼')
+  })
+
+  it.each([
+    ['브랜드 크림 100g', '크림'],
+    ['브랜드 영양제 500kg', '영양제'],
+    ['브랜드 토너 1.5L', '토너'],
+    ['브랜드 알약 30정', '알약'],
+    ['브랜드 마스크팩 10매', '마스크팩'],
+    ['브랜드 유산균 60포', '유산균'],
+  ])('%s → %s', (input, expected) => {
+    expect(extractProductType(input)).toBe(expected)
+  })
+
+  it('용량 토큰이 없으면 기존처럼 마지막 낱말을 그대로 쓴다', () => {
+    expect(extractProductType('나이키 러닝화')).toBe('러닝화')
+  })
+
+  it('상품명이 용량 토큰 하나뿐이면(앞 낱말이 없으면) 그대로 쓴다 — 더 나은 대안이 없다', () => {
+    expect(extractProductType('50ml')).toBe('50ml')
+  })
+
+  it('빈 문자열은 빈 문자열을 돌려준다', () => {
+    expect(extractProductType('')).toBe('')
+    expect(extractProductType('   ')).toBe('')
   })
 })
 
@@ -105,6 +146,19 @@ describe('searchAdVideos', () => {
     ;(fetch as any).mockResolvedValue({ ok: false, status: 429, text: async () => '한도' })
     await expect(searchAdVideos('x')).rejects.toBeInstanceOf(YoutubeQuotaError)
   })
+
+  // T7 승격(Important) 최종 리뷰: 401(로그인 필요)·503(서버에 키 미설정)은 초기 운영에서
+  // 가장 흔한 상태인데도 범용 "검색에 실패했어요"로 뭉개져 사용자가 뭘 해야 할지 알 수
+  // 없었다. 각각 다음 행동을 알려주는 문구여야 한다.
+  it('401 은 로그인을 안내한다', async () => {
+    ;(fetch as any).mockResolvedValue({ ok: false, status: 401, text: async () => '' })
+    await expect(searchAdVideos('x')).rejects.toThrow(/로그인/)
+  })
+
+  it('503 은 서버 설정 문제를 안내한다(사용자 재시도/문의로 유도)', async () => {
+    ;(fetch as any).mockResolvedValue({ ok: false, status: 503, text: async () => '' })
+    await expect(searchAdVideos('x')).rejects.toThrow(/서버|설정/)
+  })
 })
 
 describe('getVideoInfo', () => {
@@ -132,6 +186,18 @@ describe('getVideoInfo', () => {
   it('429 는 YoutubeQuotaError 로 구분한다', async () => {
     ;(fetch as any).mockResolvedValue({ ok: false, status: 429, text: async () => '' })
     await expect(getVideoInfo('x'.repeat(11))).rejects.toBeInstanceOf(YoutubeQuotaError)
+  })
+
+  // T7 승격(Important) 최종 리뷰: getVideoInfo(URL 입구)도 searchAdVideos 와 같은 서버 함수를
+  // 공유하므로 401/503 안내가 동일하게 있어야 한다.
+  it('401 은 로그인을 안내한다', async () => {
+    ;(fetch as any).mockResolvedValue({ ok: false, status: 401, text: async () => '' })
+    await expect(getVideoInfo('x'.repeat(11))).rejects.toThrow(/로그인/)
+  })
+
+  it('503 은 서버 설정 문제를 안내한다(사용자 재시도/문의로 유도)', async () => {
+    ;(fetch as any).mockResolvedValue({ ok: false, status: 503, text: async () => '' })
+    await expect(getVideoInfo('x'.repeat(11))).rejects.toThrow(/서버|설정/)
   })
 
   // 회귀 테스트(Task 12 검증에서 발견): searchAdVideos 와 동일한 네트워크 실패 처리가

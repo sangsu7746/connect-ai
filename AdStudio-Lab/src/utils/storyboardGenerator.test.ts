@@ -269,6 +269,116 @@ describe('오마주 모드 — 폴백 초기값이 로맨틱 템플릿과 무관
   })
 })
 
+// ── 최종 리뷰 C1(Critical) 회귀 테스트 ────────────────────────────────
+// 배경: HOMAGE_STRUCTURE_ID('ad_homage')가 AD_CONCEPT_TEMPLATES에 미등록이라 pool은 항상
+// DEFAULT_CONCEPT_TEMPLATE로 귀결되고, 그 템플릿의 subjectRefs는 전부 ['person_1']/['person_2']다.
+// 수정 전에는 이 subjectRefs를 그대로 빌려 썼기 때문에, 오마주 레퍼런스가 고른 제품 단독 컷
+// (subjectRole:'product'/'environment'/'text'/'abstract')에까지 인물이 강제로 들어갔다 —
+// A6_Storyboard.tsx의 자세 검출(expectedCount = subjectRefs.length)이 어긋나 유료 키프레임
+// 재생성이 낭비되고, AI 가상배우 묘사가 제품 클로즈업에 잘못 붙었다. 이제 subjectRefs는
+// homageScenes[i].subjectRole에서 직접 파생된다: 'person' → ['person_1'], 그 외 → [].
+describe('오마주 모드 — subjectRefs 는 homageScenes.subjectRole 에서 파생된다 (C1 최종 리뷰 Critical)', () => {
+  it('subjectRole 이 product/environment 인 씬은 subjectRefs 가 빈 배열이다 (템플릿 subjectRefs 무시)', async () => {
+    mockAdState.current = {
+      // HOMAGE_SCENES_FIXTURE: environment, product, product — 사람이 없는 씬만 있다
+      adConcept: makeHomageAdConcept(),
+      analysis: AD_ANALYSIS_FIXTURE,
+      config: AD_CONFIG_FIXTURE,
+      aiActor: AI_ACTOR_FIXTURE,
+    }
+    mockGetKey.mockResolvedValue('fake-gemini-key')
+    mockGenerateAdStoryboardScenes.mockResolvedValue([
+      { descKo: '도입', dialogueKo: '', keyframePromptEn: 'wide shot', motionPromptEn: 'static' },
+      { descKo: '제품 등장', dialogueKo: '', keyframePromptEn: 'medium shot', motionPromptEn: 'push in' },
+      { descKo: '마무리', dialogueKo: '', keyframePromptEn: 'close shot', motionPromptEn: 'static' },
+    ])
+
+    // persons=[]: 광고 프로젝트는 실제 인물 사진 없이(AI 가상배우) 진행하는 경우가 흔하다
+    const scenes = await generateStoryboardScenes(makeProject(), [])
+    expect(scenes).toHaveLength(3)
+    expect(scenes[0].subjectRefs).toEqual([]) // environment
+    expect(scenes[1].subjectRefs).toEqual([]) // product
+    expect(scenes[2].subjectRefs).toEqual([]) // product
+  })
+
+  it("subjectRole 이 'person' 인 씬만 ['person_1'] 이고, 나머지는 빈 배열이다", async () => {
+    const scenesWithPerson: HomageScene[] = [
+      { seq: 1, durationSec: 3, shotType: 'wide', cameraMove: 'static', subjectRole: 'environment', emotionBeat: '도입', transition: 'cut' },
+      { seq: 2, durationSec: 3, shotType: 'medium', cameraMove: 'push_in', subjectRole: 'product', emotionBeat: '고조', transition: 'cut' },
+      { seq: 3, durationSec: 3, shotType: 'close', cameraMove: 'static', subjectRole: 'person', emotionBeat: '마무리', transition: 'cut' },
+    ]
+    mockAdState.current = {
+      adConcept: {
+        ...makeHomageAdConcept(),
+        homage: {
+          ...HOMAGE_REFERENCE_FIXTURE,
+          structure: { ...HOMAGE_STRUCTURE_FIXTURE, scenes: scenesWithPerson },
+        },
+      },
+      analysis: AD_ANALYSIS_FIXTURE,
+      config: AD_CONFIG_FIXTURE,
+      aiActor: AI_ACTOR_FIXTURE,
+    }
+    mockGetKey.mockResolvedValue('fake-gemini-key')
+    mockGenerateAdStoryboardScenes.mockResolvedValue([
+      { descKo: '도입', dialogueKo: '', keyframePromptEn: 'wide shot', motionPromptEn: 'static' },
+      { descKo: '제품 등장', dialogueKo: '', keyframePromptEn: 'medium shot', motionPromptEn: 'push in' },
+      { descKo: '인물 등장', dialogueKo: '', keyframePromptEn: 'close shot', motionPromptEn: 'static' },
+    ])
+
+    const scenes = await generateStoryboardScenes(makeProject(), [])
+    expect(scenes[0].subjectRefs).toEqual([])
+    expect(scenes[1].subjectRefs).toEqual([])
+    expect(scenes[2].subjectRefs).toEqual(['person_1'])
+  })
+
+  it('제품 단독 컷(subjectRefs 빈 배열)에는 AI 가상배우 프롬프트가 붙지 않는다', async () => {
+    mockAdState.current = {
+      adConcept: makeHomageAdConcept(),
+      analysis: AD_ANALYSIS_FIXTURE,
+      config: AD_CONFIG_FIXTURE,
+      aiActor: AI_ACTOR_FIXTURE,
+    }
+    mockGetKey.mockResolvedValue('fake-gemini-key')
+    mockGenerateAdStoryboardScenes.mockResolvedValue([
+      { descKo: '도입', dialogueKo: '', keyframePromptEn: 'wide shot', motionPromptEn: 'static' },
+      { descKo: '제품 등장', dialogueKo: '', keyframePromptEn: 'medium shot', motionPromptEn: 'push in' },
+      { descKo: '마무리', dialogueKo: '', keyframePromptEn: 'close shot', motionPromptEn: 'static' },
+    ])
+
+    // persons=[] 이라 buildAiActorEn(AI_ACTOR_FIXTURE)이 adActorModifier 후보가 된다 —
+    // subjectRefs 가 빈 배열인 씬(전부)에는 이 문구가 절대 붙으면 안 된다
+    const scenes = await generateStoryboardScenes(makeProject(), [])
+    for (const s of scenes) {
+      expect(s.subjectRefs).toEqual([])
+      expect(s.keyframePromptEn).not.toContain('generic model face not resembling any real celebrity')
+    }
+  })
+})
+
+describe('템플릿 모드 — subjectRefs 동작은 오마주 도입 전과 동일하다 (회귀 방지, C1)', () => {
+  it('relation=solo 템플릿 모드에서 subjectRefs 는 템플릿 원본을 그대로 따른다(인물 컷=[person_1], 제품 컷=[])', async () => {
+    mockAdState.current = {
+      adConcept: makeTemplateAdConcept(),
+      analysis: AD_ANALYSIS_FIXTURE,
+      config: AD_CONFIG_FIXTURE,
+      aiActor: AI_ACTOR_FIXTURE,
+    }
+    mockGetKey.mockResolvedValue(null) // 템플릿 모드는 키 없이도 조용히 템플릿 원문으로 완성된다
+
+    // ad_problem 템플릿 풀(adConcepts.ts, 총 6씬)의 subjectRefs 원본 그대로:
+    // [person_1], [], [], [person_1], [], [person_1]
+    // durationSec=18 → desiredCount=round(18/3)=6=pool.length 이라 풀 전체가 그대로 쓰인다
+    const project = makeProject({ conceptId: 'ad_problem', relation: 'solo', durationSec: 18 })
+    const scenes = await generateStoryboardScenes(project, [])
+
+    expect(scenes).toHaveLength(6)
+    expect(scenes.map(s => s.subjectRefs)).toEqual([
+      ['person_1'], [], [], ['person_1'], [], ['person_1'],
+    ])
+  })
+})
+
 describe('템플릿 모드 — 기존 조용한 폴백 동작은 그대로다 (회귀 방지)', () => {
   it('Gemini 키가 없어도 예외 없이 템플릿 원문으로 조용히 완성된다', async () => {
     mockAdState.current = {

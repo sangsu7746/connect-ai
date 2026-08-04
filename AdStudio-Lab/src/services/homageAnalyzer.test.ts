@@ -102,6 +102,25 @@ describe('analyzeFromVideo', () => {
     expect(callProxy).toHaveBeenCalledTimes(1)
   })
 
+  // M4(Minor) 최종 리뷰: sanitizeHomageStructure(homageSchema.ts)의 스키마 검증 실패(예: 씬 개수
+  // 부족)는 응답 형식이 흔들린 게 아니라 입력에 대해 결정론적으로 참인 판정이라, 같은 입력을
+  // 다시 분석해도 같은 결론이 난다. 재시도는 성공 확률을 올리지 못하면서 영상분석 비용만
+  // 2배로 만들어서는 안 된다.
+  it('스키마 검증 실패(씬 개수 부족)는 재시도하지 않고 즉시 던진다 (1회만 호출)', async () => {
+    const tooFewScenesJson = JSON.stringify({
+      scenes: [
+        { seq: 1, durationSec: 3, shotType: 'wide', cameraMove: 'static', subjectRole: 'environment', emotionBeat: '평온', transition: 'cut' },
+      ],
+      pacing: 'fast',
+      overallArc: '짧은 영상',
+    })
+    // mockResolvedValue(지속형)라도 재시도가 스킵되면 1회만 호출된다 — 혹시 재시도가 일어나도
+    // 같은 응답이라 결과는 똑같이 실패하지만, 호출 횟수로 재시도 여부를 명확히 구분한다.
+    callProxy.mockResolvedValue({ text: tooFewScenesJson })
+    await expect(analyzeFromVideo('dQw4w9WgXcQ')).rejects.toThrow(/씬이 너무 적/)
+    expect(callProxy).toHaveBeenCalledTimes(1)
+  })
+
   it('프롬프트에 저작권 지시문(구조만 · 대사·브랜드명 금지)이 실려 나간다', async () => {
     callProxy.mockResolvedValue({ text: goodJson })
     await analyzeFromVideo('dQw4w9WgXcQ')

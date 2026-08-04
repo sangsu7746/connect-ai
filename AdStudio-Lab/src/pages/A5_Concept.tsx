@@ -6,6 +6,7 @@ import { useAdStore } from '../stores/adStore'
 import { useProjectStore } from '../stores/projectStore'
 import { useUserStore } from '../stores/userStore'
 import { generateStoryboardScenes } from '../utils/storyboardGenerator'
+import { presentableErrorMessage } from '../utils/errorMessage'
 import {
   AD_CATEGORIES, AD_EMPHASIS_GROUPS, AD_STRUCTURES, AD_TONES, AD_VISUAL_STYLES,
   CATEGORY_DEFAULT_STRUCTURE, ANALYSIS_TONE_MAP,
@@ -70,11 +71,16 @@ export default function A5_Concept() {
     setError('')
     setIsGenerating(true)
     try {
+      const isHomage = adConcept.structureSource === 'homage'
       const updated = {
         ...currentProject,
         conceptId: adConcept.structureId,
         durationSec: config.duration,
         dialogueMode: 'auto' as const,
+        // 설계 §8 "참고 영상 링크 기록" — 완성된 프로젝트에 참고 영상 id를 남겨 저작권 이의 발생 시
+        // 추적 가능하게 한다. 템플릿 모드거나 설명 입력(source:'description')으로 만든 오마주는
+        // 실제 영상이 없으므로 undefined로 명시해 이전에 남아있던 값(모드 전환 이전)도 정리한다.
+        homageVideoId: isHomage ? adConcept.homage?.videoId : undefined,
       }
       updateProject(updated)
 
@@ -99,9 +105,7 @@ export default function A5_Concept() {
       // 템플릿 모드는 대부분의 실패를 이 함수 내부에서 이미 조용히 템플릿 폴백으로 처리하므로
       // (Gemini 실패 시 콘솔 경고만 남기고 계속 진행) 이 catch까지 도달하는 경우가 드물어
       // 기존 동작(범용 문구)이 그대로 유지된다.
-      const msg = e instanceof Error ? e.message.trim() : ''
-      const presentable = msg.length > 0 && msg.length <= 200 && /[가-힣]/.test(msg)
-      setError(presentable ? msg : '스토리보드 생성에 실패했어요. 잠시 후 다시 시도해주세요.')
+      setError(presentableErrorMessage(e, '스토리보드 생성에 실패했어요. 잠시 후 다시 시도해주세요.'))
     } finally {
       setIsGenerating(false)
     }
@@ -185,7 +189,14 @@ export default function A5_Concept() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         <button
           className={clsx('btn btn-sm', adConcept.structureSource !== 'homage' ? 'btn-primary' : 'btn-outline')}
-          onClick={() => setAdConcept({ structureSource: 'template', homage: undefined, structureId: '' })}
+          onClick={() => setAdConcept(
+            // 오마주 → 템플릿으로 실제로 전환할 때만 이전 선택(homage/structureId)을 지운다.
+            // 이미 템플릿 모드인데 이 버튼(이미 활성 상태로 보임)을 다시 눌러도 사용자가 고른
+            // structureId가 조용히 지워져 canProceed가 꺼지는 일이 없어야 한다.
+            adConcept.structureSource === 'homage'
+              ? { structureSource: 'template', homage: undefined, structureId: '' }
+              : { structureSource: 'template' }
+          )}
         >
           템플릿에서 고르기
         </button>
