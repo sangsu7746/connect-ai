@@ -1,3 +1,3 @@
 
-## 06:15 | feat/adstudio-youtube-homage
-Integrated Stable Diffusion w/ CardNews app for auto background gen; resolved 3 env-specific setup issues (NoDefaultCurrentDirectoryInExePath, pip isolation, setuptools); SD WebUI running via start-api.bat launcher; all 3 app status indicators (Claude/Naver/SD) active.
+## 08:32 | feat/adstudio-youtube-homage
+Reduced showcase tiles 4→2 (halving img gen w/ rotating techniques); automated flyer detection from folder (vs manual registry.py edits); full flow tested.
