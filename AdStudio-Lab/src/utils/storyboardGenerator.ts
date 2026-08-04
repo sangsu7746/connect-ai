@@ -4,6 +4,9 @@ import { GeminiAdapter, type GeneratedStoryboardScene } from '../services/aiAdap
 import { AD_CONCEPT_TEMPLATES, AD_TONES, AD_STRUCTURES, AD_EMPHASIS_LABELS, AD_CLARITY_BASE, AD_VISUAL_STYLES, buildAiActorKo, buildAiActorEn } from './adConcepts'
 import { useAdStore } from '../stores/adStore'
 import { translateSceneTextDetailed, detectTextLocale } from '../services/localizationService'
+import { resampleHomageScenes } from './homageResampler'
+import { HOMAGE_STRUCTURE_ID } from '../types/homage'
+import type { HomageStructure, HomageScene } from '../types/homage'
 
 const RELATION_KO: Record<Relation, string> = {
   solo: '혼자',
@@ -1833,6 +1836,19 @@ export function buildSceneDurations(durationSec: number, sceneCount: number, wei
 }
 
 /**
+ * 오마주 구조를 Gemini 프롬프트용 한 줄 흐름 설명으로 바꾼다.
+ *
+ * ⚠️ 여기에 원본 대사를 넣지 않는다 — HomageStructure 에 애초에 그런 필드가 없다.
+ *    샷 문법과 감정 단계만 전달하고, 실제 대사는 제품 분석 결과에서 창작된다.
+ */
+function buildHomageFlowText(structure: HomageStructure, scenes: HomageScene[]): string {
+  const beats = scenes
+    .map((s, i) => `${i + 1}) ${s.shotType}/${s.cameraMove} · ${s.subjectRole} · ${s.emotionBeat || '-'}`)
+    .join('  →  ')
+  return `[${structure.pacing} 페이싱] ${structure.overallArc}\n${beats}`
+}
+
+/**
  * 프로젝트 설정을 바탕으로 세밀하고 정교한 스토리보드 씬 배열을 생성합니다.
  * 씬 개수는 durationSec ÷ 씬당 목표 길이(3초)로 역산하고, 컨셉 템플릿 풀 크기 안에서 자른다 —
  * 즉 영상 길이를 길게 선택할수록 (풀에 여유가 있는 한) 서사 비트가 더 많은 씬으로 반영된다.
@@ -1840,14 +1856,40 @@ export function buildSceneDurations(durationSec: number, sceneCount: number, wei
 export async function generateStoryboardScenes(project: Project, persons: Person[]): Promise<Scene[]> {
   const { conceptId, styleId, backgroundId, phenomenonId, relation, durationSec } = project
 
+  // 오마주 모드면 레퍼런스에서 뽑은 구조를 씬 뼈대로 쓴다.
+  // ⚠️ homage 인데 structure 가 없으면 조용히 DEFAULT_CONCEPT_TEMPLATE 으로 흘러가면 안 된다 —
+  //    사용자가 명시적으로 고른 모드라 템플릿으로 바꿔치기하면 "왜 내가 고른 영상 느낌이 안 나지"가 된다.
+  const adStateEarly = useAdStore.getState()
+  const isHomage = adStateEarly.adConcept?.structureSource === 'homage'
+  const homageStructure = adStateEarly.adConcept?.homage?.structure
+
+  if (isHomage && !homageStructure) {
+    throw new Error('오마주 구조가 없어요. 레퍼런스를 다시 선택해주세요.')
+  }
+
   // 1. 해당 컨셉 아이디의 템플릿 풀 가져오기 — 광고 구성(ad_*)은 adConcepts의 광고 템플릿 뱅크에서
   const pool = CONCEPT_TEMPLATES[conceptId] || AD_CONCEPT_TEMPLATES[conceptId] || DEFAULT_CONCEPT_TEMPLATE
 
   // 2. 요청된 영상 길이에 맞춰 필요한 씬 개수를 정하고(최소 3개), 풀 크기 안으로 자른다
   const desiredCount = Math.max(3, Math.round(durationSec / SCENE_SEC_TARGET))
-  const sceneCount = Math.min(desiredCount, pool.length)
-  const chosen = pool.slice(0, sceneCount)
-  const durations = buildSceneDurations(durationSec, chosen.length)
+
+  let sceneCount: number
+  let chosen: typeof pool
+  let durations: number[]
+
+  if (isHomage && homageStructure) {
+    // 레퍼런스 씬 수를 목표에 맞춰 리샘플링하고, 그 상대 길이를 가중치로 넘긴다.
+    // 균등 분배하면 오마주의 핵심인 완급이 사라진다.
+    const homageScenes = resampleHomageScenes(homageStructure.scenes, desiredCount)
+    sceneCount = homageScenes.length
+    // 텍스트 뼈대는 템플릿 풀에서 빌려오되(길이만 맞춤), 실제 내용은 아래 Gemini 창작으로 덮인다
+    chosen = Array.from({ length: sceneCount }, (_, i) => pool[i % pool.length])
+    durations = buildSceneDurations(durationSec, sceneCount, homageScenes.map(s => s.durationSec))
+  } else {
+    sceneCount = Math.min(desiredCount, pool.length)
+    chosen = pool.slice(0, sceneCount)
+    durations = buildSceneDurations(durationSec, chosen.length)
+  }
 
   // 3. 프로젝트 특성(인원 구성 등)에 맞게 가공 및 스타일/배경/자연현상 프롬프트 데코레이터 적용
   // (표정은 씬마다 스토리·대사에 이미 자연스럽게 녹아 있어 전역 덧붙임을 없앴다 — 컨셉/씬별 내용과
@@ -1888,8 +1930,12 @@ export async function generateStoryboardScenes(project: Project, persons: Person
                 toneKo: AD_TONES.find(t => t.id === adState.adConcept.tone)?.label || '활기찬',
                 visualStyleKo: AD_VISUAL_STYLES.find(v => v.id === adState.adConcept.visualStyle)?.label || '클린 브라이트',
                 visualStyleEn: AD_VISUAL_STYLES.find(v => v.id === adState.adConcept.visualStyle)?.promptEn || '',
-                structureLabel: AD_STRUCTURES.find(s => s.id === conceptId)?.label || conceptId,
-                structureFlow: AD_STRUCTURES.find(s => s.id === conceptId)?.flow || '',
+                structureLabel: isHomage
+                  ? '레퍼런스 오마주'
+                  : (AD_STRUCTURES.find(s => s.id === conceptId)?.label || conceptId),
+                structureFlow: isHomage && homageStructure
+                  ? buildHomageFlowText(homageStructure, resampleHomageScenes(homageStructure.scenes, sceneCount))
+                  : (AD_STRUCTURES.find(s => s.id === conceptId)?.flow || ''),
                 sceneCount,
                 durationSec,
                 hasModel: persons.length > 0,
