@@ -92,7 +92,16 @@ export default function A5_Concept() {
       navigate('/storyboard')
     } catch (e) {
       console.error('스토리보드 생성 실패:', e)
-      setError('스토리보드 생성에 실패했어요. 잠시 후 다시 시도해주세요.')
+      // generateStoryboardScenes가 오마주 모드에서 명시적으로 던지는 안내 메시지(예: "Gemini API
+      // 키가 있어야 합니다")는 다음 행동을 알려주므로 그대로 보여준다. 그 외의 원인 불명 예외(런타임
+      // 버그·raw 네트워크 오류 등)까지 그대로 노출하면 기술적인 문구가 화면에 뜰 수 있으니, 사용자에게
+      // 보여줄 만한 형태(짧고 한국어 문장)일 때만 통과시키고 아니면 기존 범용 문구로 폴백한다.
+      // 템플릿 모드는 대부분의 실패를 이 함수 내부에서 이미 조용히 템플릿 폴백으로 처리하므로
+      // (Gemini 실패 시 콘솔 경고만 남기고 계속 진행) 이 catch까지 도달하는 경우가 드물어
+      // 기존 동작(범용 문구)이 그대로 유지된다.
+      const msg = e instanceof Error ? e.message.trim() : ''
+      const presentable = msg.length > 0 && msg.length <= 200 && /[가-힣]/.test(msg)
+      setError(presentable ? msg : '스토리보드 생성에 실패했어요. 잠시 후 다시 시도해주세요.')
     } finally {
       setIsGenerating(false)
     }
@@ -172,8 +181,39 @@ export default function A5_Concept() {
 
       {/* 축 3. 스토리 구성 */}
       <label style={sectionLabel}>3. 스토리 구성</label>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <button
+          className={clsx('btn btn-sm', adConcept.structureSource !== 'homage' ? 'btn-primary' : 'btn-outline')}
+          onClick={() => setAdConcept({ structureSource: 'template', homage: undefined, structureId: '' })}
+        >
+          템플릿에서 고르기
+        </button>
+        <button
+          className={clsx('btn btn-sm', adConcept.structureSource === 'homage' ? 'btn-primary' : 'btn-outline')}
+          onClick={() => navigate('/reference')}
+        >
+          유튜브 오마주
+        </button>
+      </div>
+
+      {adConcept.structureSource === 'homage' && adConcept.homage && (
+        <div style={{ padding: 12, borderRadius: 8, background: 'rgba(124,58,255,0.10)', marginBottom: 12 }}>
+          <strong style={{ fontSize: 13 }}>
+            {adConcept.homage.title || (adConcept.homage.source === 'description' ? '내가 설명한 느낌' : '선택한 영상')}
+          </strong>
+          <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
+            {adConcept.homage.structure.scenes.length}씬 · {adConcept.homage.structure.pacing} 페이싱
+            {adConcept.homage.structure.overallArc ? ` · ${adConcept.homage.structure.overallArc}` : ''}
+          </p>
+          <button className="btn btn-sm btn-outline" style={{ marginTop: 8 }} onClick={() => navigate('/reference')}>
+            레퍼런스 바꾸기
+          </button>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-        {AD_STRUCTURES.map(s => (
+        {adConcept.structureSource !== 'homage' && AD_STRUCTURES.map(s => (
           <button
             key={s.id}
             onClick={() => setAdConcept({ structureId: s.id })}

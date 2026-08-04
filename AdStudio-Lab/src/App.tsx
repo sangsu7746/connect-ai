@@ -14,6 +14,7 @@ import A3AdConcept from './pages/A3_AdConcept'
 import A4Actor from './pages/A4_Actor'
 import A4Upload from './pages/A4_Upload'
 import A5Concept from './pages/A5_Concept'
+import A5bReference from './pages/A5b_Reference'
 import A6Storyboard from './pages/A6_Storyboard'
 import A8Progress from './pages/A8_Progress'
 import A9Result from './pages/A9_Result'
@@ -153,6 +154,11 @@ export default function App() {
       {/* [5] 컨셉 선택 (오마주 S3 그대로) */}
       <Route element={<AppShell headerProps={{ showBack: true, title: '컨셉 선택' }} hideBottomNav />}>
         <Route path="/concept" element={<A5Concept />} />
+      </Route>
+
+      {/* [5b] 유튜브 오마주 — 레퍼런스 영상 선택 */}
+      <Route element={<AppShell headerProps={{ showBack: true, title: '레퍼런스 선택' }} hideBottomNav />}>
+        <Route path="/reference" element={<A5bReference />} />
       </Route>
 
       {/* [6] 스토리보드 + [7] 영상모델 설정 (오마주 S4 그대로) */}
