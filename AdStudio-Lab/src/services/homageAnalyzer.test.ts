@@ -1,10 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+// 실제 aiAdapters.ts 의 QuotaExhaustedError 와 형태(provider, message)를 맞춘 목 —
+// homageAnalyzer.ts 가 instanceof 로 판별하므로 목도 진짜 클래스여야 한다.
+// vi.mock 팩토리는 import 그래프 해석 시점(파일의 다른 top-level 문보다 먼저)에 실행되므로,
+// 그 안에서 직접 참조할 값은 vi.hoisted 로 만들어야 한다(그냥 top-level class 는 TDZ 에 걸린다).
+const { MockQuotaExhaustedError } = vi.hoisted(() => {
+  class MockQuotaExhaustedError extends Error {
+    constructor(public provider: string, message: string) {
+      super(message)
+      this.name = 'QuotaExhaustedError'
+    }
+  }
+  return { MockQuotaExhaustedError }
+})
+
 const callProxy = vi.fn()
 vi.mock('./aiAdapters', () => ({
   callProxy: (...a: unknown[]) => callProxy(...a),
   geminiTextEndpoint: async () => 'https://fake/gen',
   geminiText: (d: any) => d.text,
+  QuotaExhaustedError: MockQuotaExhaustedError,
 }))
 vi.mock('../stores/keysStore', () => ({
   KeyVault: { getKey: async () => 'FAKE_KEY' },
@@ -77,6 +92,24 @@ describe('analyzeFromVideo', () => {
     await expect(analyzeFromVideo('dQw4w9WgXcQ')).rejects.toThrow()
     expect(callProxy).toHaveBeenCalledTimes(2)
   })
+
+  it('쿼터 소진 오류는 재시도하지 않고 즉시 던진다 (1회만 호출)', async () => {
+    // mockRejectedValue(지속형)이 아니라 Once 를 쓴다 — 재시도가 실제로 스킵됐는지
+    // 검증하는 게 목적이므로, 혹시라도 재시도가 일어나면 두 번째 호출은 기본 동작(undefined
+    // 반환)으로 떨어져 테스트가 명확하게 실패하게 만든다.
+    callProxy.mockRejectedValueOnce(new MockQuotaExhaustedError('gemini', 'Gemini 무료 쿼터를 오늘치 다 썼어요.'))
+    await expect(analyzeFromVideo('dQw4w9WgXcQ')).rejects.toThrow(/쿼터/)
+    expect(callProxy).toHaveBeenCalledTimes(1)
+  })
+
+  it('프롬프트에 저작권 지시문(구조만 · 대사·브랜드명 금지)이 실려 나간다', async () => {
+    callProxy.mockResolvedValue({ text: goodJson })
+    await analyzeFromVideo('dQw4w9WgXcQ')
+    const parts = callProxy.mock.calls[0][0].body.contents[0].parts
+    const allText = parts.filter((p: any) => typeof p.text === 'string').map((p: any) => p.text).join('\n')
+    expect(allText).toContain('Do NOT transcribe or paraphrase')
+    expect(allText).toContain('brand names')
+  })
 })
 
 describe('analyzeFromDescription', () => {
@@ -102,5 +135,14 @@ describe('analyzeFromDescription', () => {
   it('설명이 너무 짧으면 막는다', async () => {
     await expect(analyzeFromDescription('짧')).rejects.toThrow(/조금 더 자세히/)
     expect(callProxy).not.toHaveBeenCalled()
+  })
+
+  it('프롬프트에 저작권 지시문(구조만 · 대사·브랜드명 금지)이 실려 나간다', async () => {
+    callProxy.mockResolvedValue({ text: goodJson })
+    await analyzeFromDescription('아무 설명이나 상관없어요')
+    const parts = callProxy.mock.calls[0][0].body.contents[0].parts
+    const allText = parts.filter((p: any) => typeof p.text === 'string').map((p: any) => p.text).join('\n')
+    expect(allText).toContain('Do NOT transcribe or paraphrase')
+    expect(allText).toContain('brand names')
   })
 })

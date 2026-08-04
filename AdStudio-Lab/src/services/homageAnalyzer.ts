@@ -1,10 +1,17 @@
-import { callProxy, geminiTextEndpoint, geminiText } from './aiAdapters'
+import { callProxy, geminiTextEndpoint, geminiText, QuotaExhaustedError } from './aiAdapters'
 import { KeyVault, useKeysStore } from '../stores/keysStore'
 import { sanitizeHomageStructure, HOMAGE_JSON_SCHEMA_HINT } from './homageSchema'
 import { parseYoutubeVideoId } from './youtubeService'
 import type { HomageStructure } from '../types/homage'
 
 const MIN_DESCRIPTION_LEN = 10
+
+/**
+ * 키 미등록을 재시도 스킵 판정에 쓰기 위한 전용 오류 타입.
+ * 문자열 메시지 정규식 매칭 대신 instanceof 로 판별해, 나중에 메시지 문구가
+ * 바뀌어도(예: 안내문 수정) 재시도 스킵 로직이 조용히 깨지지 않게 한다.
+ */
+class GeminiKeyMissingError extends Error {}
 
 /** ```json 펜스나 앞뒤 잡소리를 걷어내고 JSON 본문만 남긴다 */
 function extractJson(text: string): string {
@@ -17,7 +24,7 @@ function extractJson(text: string): string {
 
 async function runGeminiOnce(parts: unknown[]): Promise<HomageStructure> {
   const apiKey = await KeyVault.getKey('gemini')
-  if (!apiKey) throw new Error('Gemini 키가 필요해요. 키 페이지에서 등록해주세요.')
+  if (!apiKey) throw new GeminiKeyMissingError('Gemini 키가 필요해요. 키 페이지에서 등록해주세요.')
 
   const data = await callProxy({
     provider: 'gemini',
@@ -48,14 +55,18 @@ async function runGeminiOnce(parts: unknown[]): Promise<HomageStructure> {
  * 성공하는 경우가 많다. 두 번 다 실패하면 사용자에게 알리고 선택지를 준다
  * (조용히 템플릿으로 폴백하지 않는다 — 사용자가 명시적으로 고른 모드다).
  *
- * ⚠️ 키 없음처럼 재시도가 무의미한 오류는 즉시 던진다.
+ * ⚠️ 재시도가 무의미한 오류는 즉시 던진다 — 타입으로 판별한다(문자열 매칭 금지,
+ *    메시지 문구가 바뀌면 조용히 깨지는 것을 막기 위해):
+ *    - GeminiKeyMissingError: 키 미등록. 재시도해도 똑같이 실패한다.
+ *    - QuotaExhaustedError(aiAdapters.ts): 일일 무료 쿼터 소진(Gemini 429/RESOURCE_EXHAUSTED
+ *      포함). 이 앱은 하루 요청 수 제한(GEMINI_FREE_TEXT_RPD)이 있어, 쿼터 소진 상태에서
+ *      재시도하면 남은 쿼터를 헛되이 태울 뿐 절대 성공하지 않는다.
  */
 async function runGemini(parts: unknown[]): Promise<HomageStructure> {
   try {
     return await runGeminiOnce(parts)
   } catch (e) {
-    const msg = e instanceof Error ? e.message : ''
-    if (/키가 필요해요/.test(msg)) throw e
+    if (e instanceof GeminiKeyMissingError || e instanceof QuotaExhaustedError) throw e
     return await runGeminiOnce(parts)
   }
 }
