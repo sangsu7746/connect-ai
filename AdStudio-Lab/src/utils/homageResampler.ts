@@ -67,8 +67,19 @@ function splitLongest(scenes: HomageScene[]): HomageScene[] {
     }]
   }
 
-  let idx = 0
-  for (let i = 1; i < scenes.length; i++) {
+  // mergeShortestMiddle 과 동일하게 첫 씬(훅)·마지막 씬(CTA)은 분할 대상에서 뺀다 — 안 그러면
+  // CTA 가 둘로 갈려 새 마지막 씬이 되고 shotType 까지 좁아진다(이 파일 상단 docstring이 하는 약속).
+  // 씬이 3개 미만이면 보호할 중간 구간 자체가 없다(first > last) — 그럴 땐 전체에서 고르는
+  // 폴백을 쓴다. 안 그러면 분할 후보가 하나도 안 남아 resampleHomageScenes 의
+  // while(work.length < target) 이 끝나지 않는다.
+  const first = 1
+  const last = scenes.length - 2
+  const hasProtectedMiddle = first <= last
+  const from = hasProtectedMiddle ? first : 0
+  const to = hasProtectedMiddle ? last : scenes.length - 1
+
+  let idx = from
+  for (let i = from; i <= to; i++) {
     if (scenes[i].durationSec > scenes[idx].durationSec) idx = i
   }
 

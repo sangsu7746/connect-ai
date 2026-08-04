@@ -27,18 +27,22 @@ beforeAll(async () => {
 })
 
 describe('buildSceneDurations 회귀', () => {
+  // 이 함수는 (durationSec, sceneCount) 만으로 완전히 결정론적이다. 합계·개수만 비교하면
+  // remainder 분배 순서나 HARD_MAX 흡수 순서가 나중에 바뀌어도 우연히 통과할 수 있으므로,
+  // 배열 자체를 비교한다. 기대 배열은 추측이 아니라 현재(수정 전과 바이트 단위로 동일한)
+  // 구현을 실제로 실행해서 얻은 값이다.
   it.each([
-    [15, 5, 15],
-    [30, 10, 30],
-    [60, 20, 60],
+    [15, 5, [3, 3, 3, 3, 3]],
+    [30, 10, [3, 3, 3, 3, 3, 3, 3, 3, 3, 3]],
+    [60, 20, [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]],
     // 씬당 최대 4초(SCENE_SEC_SOFT_MAX) 클램프로 1단계에서 못 채운 나머지는
     // 2단계에서 SCENE_SEC_HARD_MAX(6초)까지 흡수한다 — 이 기존 안전장치 때문에
-    // 15초/3씬은 12초로 줄지 않고 15초 그대로 유지된다([6,5,4]).
-    [15, 3, 15],
-  ])('weights 없이 호출하면 기존 동작을 유지한다 (%i초 %i씬)', (dur, count, expectedTotal) => {
+    // 15초/3씬은 12초로 줄지 않고 15초 그대로 유지된다.
+    [15, 3, [6, 5, 4]],
+  ])('weights 없이 호출하면 기존 동작을 유지한다 (%i초 %i씬)', (dur, count, expected) => {
     const out = buildSceneDurations(dur, count)
-    expect(out).toHaveLength(count)
-    expect(out.reduce((a, b) => a + b, 0)).toBe(expectedTotal)
+    expect(out).toEqual(expected)
+    expect(out.reduce((a, b) => a + b, 0)).toBe(expected.reduce((a, b) => a + b, 0))
   })
 })
 

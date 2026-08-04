@@ -57,4 +57,17 @@ describe('resampleHomageScenes', () => {
   it('입력이 3개 미만이어도 목표 개수를 채운다', () => {
     expect(resampleHomageScenes([scene(1, 6), scene(2, 6)], 4)).toHaveLength(4)
   })
+
+  // 리뷰에서 재현된 Critical 회귀: splitLongest 가 전체 배열을 스캔해 CTA(마지막 씬)가
+  // 최장이면 그걸 쪼갰다. 이 파일 상단 docstring의 "첫 씬(훅)과 마지막 씬(마무리)은
+  // 병합·분할 대상에서 항상 제외한다" 약속을 어긴 것 — 늘릴 때도 지켜야 한다.
+  it('늘릴 때도 CTA(마지막 씬)가 가장 길면 쪼개지 않고 보존한다', () => {
+    const input = [scene(1, 3, 'environment'), scene(2, 3), scene(3, 20, 'text')]
+    const out = resampleHomageScenes(input, 4)
+    expect(out).toHaveLength(4)
+    const cta = out[out.length - 1]
+    expect(cta.emotionBeat).toBe('beat3')
+    expect(cta.durationSec).toBe(20)
+    expect(cta.shotType).toBe('medium') // 쪼개졌다면 뒤 조각의 shotType 이 좁아졌을 것
+  })
 })
