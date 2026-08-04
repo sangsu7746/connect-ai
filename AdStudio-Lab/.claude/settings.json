@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(sleep 3 && cat /tmp/vite_dev4.log)",
+      "Read(//tmp/**)",
+      "mcp__playwright__browser_network_requests"
+    ]
+  }
+}
