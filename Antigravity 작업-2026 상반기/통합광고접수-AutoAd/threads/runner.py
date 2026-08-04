@@ -51,20 +51,25 @@ def ensure_channel(account: str) -> int:
     return db.add_channel("threads", ref, name=f"쓰레드 {ref}", audience="consumer")
 
 
-def _ensure_campaign() -> int:
+def _ensure_campaign(profile_key: str = "") -> int:
     """'쓰레드 답글' 상시 캠페인 1건(멱등)."""
     with db.get_conn() as conn:
         row = conn.execute(
             "SELECT id FROM campaigns WHERE title=? LIMIT 1", ("쓰레드 답글",)).fetchone()
         if row:
             return row["id"]
-    return db.add_campaign("쓰레드 답글", goal="유입", product=config.PROFILE_KEY)
+    return db.add_campaign("쓰레드 답글", goal="유입",
+                           product=profile_key or config.PROFILE_KEY)
 
 
 def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> dict:
     """1회차 실행. 반환값은 대시보드·로그가 그대로 쓴다."""
     account = account or config.THREADS_ACCOUNT
-    tcfg = gate.threads_config(profile if profile is not None else config.PROFILE)
+    # 활성 프로필(AUTOAD_PROFILE)이 아니라 쓰레드 전용 프로필을 쓴다.
+    # 서버는 대출 업종으로 떠 있어도 쓰레드는 미리집으로 돌 수 있어야 한다.
+    prof = profile if profile is not None else config.threads_profile()
+    tcfg = gate.threads_config(prof)
+    profile_key = prof.get("key") or config.PROFILE_KEY
     if dry_run is None:
         dry_run = not (config.THREADS_ENABLED and not config.GLOBAL_DRY_RUN)
 
@@ -113,7 +118,7 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
     # 를 못 읽으면(경로 오류 등) 여기서 예외가 그대로 터진다.
     try:
         channel_id = ensure_channel(account)
-        campaign_id = _ensure_campaign()
+        campaign_id = _ensure_campaign(profile_key)
         verdicts = gate.screen(posts, tcfg)
     except Exception as e:
         stats["errors"].append(_cp949_safe(f"준비 단계 실패({type(e).__name__}): {e}"))
@@ -186,7 +191,7 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
 
         for post, verdict in zip(posts, verdicts):
             try:
-                target_id = db.threads_target_upsert(post, config.PROFILE_KEY)
+                target_id = db.threads_target_upsert(post, profile_key)
 
                 if not verdict.passed:
                     if verdict.retryable:
@@ -253,7 +258,7 @@ def run_once(account: str = "", profile: dict = None, dry_run: bool = None) -> d
                     "target_excerpt": (post.text or "")[:120],
                     "score": verdict.score,
                     "angle": verdict.angle,
-                    "profile_key": config.PROFILE_KEY,
+                    "profile_key": profile_key,
                     "brand": tcfg.get("brand", ""),
                     "guard_notes": reply.guard_notes,
                 }, kind="threads_reply")

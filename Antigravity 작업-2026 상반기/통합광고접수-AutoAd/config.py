@@ -203,6 +203,11 @@ INTAKE_TARGET = (PROFILE.get("intake") or {}).get("target", "none")
 THREADS_ENABLED = os.getenv("THREADS_ENABLED", "0") == "1"
 # 쿠키 파일명을 결정한다. login.py --account 에 쓴 값과 반드시 같아야 한다.
 THREADS_ACCOUNT = _secret("THREADS_ACCOUNT")
+# 쓰레드 답글이 쓸 업종 프로필. 비우면 활성 프로필(AUTOAD_PROFILE)을 따른다.
+# ⚠ AUTOAD_PROFILE 을 바꾸면 밴드·페북·카카오 캠페인까지 전부 그 업종으로 바뀐다.
+#   쓰레드만 다른 업종으로 돌리려고 그걸 건드리면 돌고 있던 광고가 갈아엎힌다.
+#   그래서 쓰레드 전용 창구를 따로 둔다. (예: 대출 캠페인은 그대로, 쓰레드만 mirizip)
+THREADS_PROFILE = _secret("THREADS_PROFILE")
 THREADS_DAILY_LIMIT = int(os.getenv("THREADS_DAILY_LIMIT", "20"))
 # 자동 발행분 전용 상한. 총 상한과 분리하는 이유 —
 # 자동분은 사람이 안 본 채 나간다. gate 가 오작동해 전부 고득점을 주면
@@ -218,6 +223,18 @@ THREADS_AUTHOR_COOLDOWN_DAYS = int(os.getenv("THREADS_AUTHOR_COOLDOWN_DAYS", "30
 # 오래된 글의 답글은 아무도 보지 않는다. 노출 없는 리스크일 뿐이다.
 THREADS_POST_MAX_AGE_MIN = int(os.getenv("THREADS_POST_MAX_AGE_MIN", "90"))
 THREADS_REPLY_MAX_CHARS = int(os.getenv("THREADS_REPLY_MAX_CHARS", "280"))
+
+
+def threads_profile() -> dict:
+    """쓰레드 파이프라인이 쓸 업종 프로필 dict.
+
+    THREADS_PROFILE 이 비었거나 활성 프로필과 같으면 이미 로드된 PROFILE 을
+    그대로 준다(파일을 두 번 읽지 않는다). 로드에 실패하면 예외를 그대로
+    올린다 — 조용히 대출 프로필로 떨어지면 인테리어 글에 대부중개 상호가
+    붙은 답글이 나간다."""
+    if THREADS_PROFILE and THREADS_PROFILE != PROFILE_KEY:
+        return _profiles.load(THREADS_PROFILE)
+    return PROFILE
 THREADS_HARVEST_LIMIT = int(os.getenv("THREADS_HARVEST_LIMIT", "60"))
 
 REQUIRED_SECRETS = ["ANTHROPIC_API_KEY"]  # P1 진입 시 최소 필요
