@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { AppLocale } from '../types'
+import type { HomageReference } from '../types/homage'
 
 // Gemini 분석 결과 — 광고 컨셉의 원천 데이터
 export interface AdAnalysis {
@@ -35,11 +36,15 @@ export interface AdConceptSelection {
   structureId: string    // 스토리 구성 id (ad_*) — project.conceptId로 저장된다
   tone: string           // 톤&무드 id
   visualStyle: string    // 비주얼 스타일(룩) id — 조명·질감의 방향을 정한다
+  /** 구성의 출처. 'template' 이면 기존 경로를 그대로 탄다(회귀 불변) */
+  structureSource: 'template' | 'homage'
+  /** structureSource === 'homage' 일 때만 존재 */
+  homage?: HomageReference
 }
 
 const DEFAULT_AD_CONCEPT: AdConceptSelection = {
   categoryMain: '', categorySub: '', emphasis: [], structureId: '', tone: 'energetic',
-  visualStyle: 'clean_bright',
+  visualStyle: 'clean_bright', structureSource: 'template',
 }
 
 // AI 가상 배우 기본 프로필 — 값 정의는 utils/adConcepts.ts (AI_ACTOR_*)
