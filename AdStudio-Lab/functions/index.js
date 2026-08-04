@@ -2,6 +2,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
 const { EdgeTTS } = require("edge-tts-universal");
+const crypto = require("crypto");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -494,7 +495,22 @@ const YT_MAX_RESULTS = 25;
 
 /** 검색어 → 캐시 문서 id (Firestore 문서 id 제약을 피해 해시로 만든다) */
 function ytCacheKey(q) {
-  return require('crypto').createHash('sha1').update(q).digest('hex');
+  return crypto.createHash('sha1').update(q).digest('hex');
+}
+
+/**
+ * 에러 객체를 로그에 안전하게 남기기 위한 정리.
+ * node-fetch@3 는 네트워크 레벨 실패(DNS·타임아웃·connection reset 등)에서
+ * `FetchError`를 던지는데, 그 message 에 요청 URL 전체 — 즉 우리가 붙인
+ * `&key=${apiKey}` 까지 — 가 그대로 들어간다. 에러 객체를 통째로 console.error
+ * 에 넘기면 흔한 네트워크 장애 한 번에 서버 소유 YouTube API 키가 Cloud
+ * Functions 로그에 평문으로 남으므로, 여기서 apiKey 문자열을 무조건 제거한 뒤에만
+ * 로그로 내보낸다.
+ */
+function ytSafeErr(e, apiKey) {
+  const rawMessage = String((e && e.message) || e || '');
+  const message = apiKey ? rawMessage.split(apiKey).join('[REDACTED]') : rawMessage;
+  return { name: e && e.name, code: e && e.code, type: e && e.type, message };
 }
 
 /** ISO8601 duration(PT1M30S) → 초. videos.list 가 이 형식으로 준다 */
@@ -526,6 +542,15 @@ exports.youtubeSearch = functions.https.onRequest((req, res) => {
       try {
         const r = await fetchFn('https://www.googleapis.com/youtube/v3/videos'
           + `?part=snippet,contentDetails&id=${videoId}&key=${apiKey}`);
+        if (r.status === 403) {
+          // 검색 모드와 동일하게: 쿼터 소진과 키 문제가 둘 다 403 으로 온다. 본문으로 구분한다.
+          const body = await r.text();
+          if (/quota/i.test(body)) {
+            return res.status(429).send('오늘 자동검색 한도를 다 썼어요.');
+          }
+          console.error('youtubeSearch(videoId): 403', body.slice(0, 300));
+          return res.status(503).send('유튜브 검색을 사용할 수 없어요.');
+        }
         if (!r.ok) return res.status(502).send('영상 정보를 가져오지 못했어요.');
         const d = await r.json();
         const item = (d.items || [])[0];
@@ -538,7 +563,8 @@ exports.youtubeSearch = functions.https.onRequest((req, res) => {
           durationSec: ytParseDuration(item.contentDetails.duration),
         });
       } catch (e) {
-        console.error('youtubeSearch(videoId) 실패:', e);
+        // apiKey 가 쿼리스트링에 있으므로 원본 에러 객체를 그대로 로깅하지 않는다 (ytSafeErr 참고).
+        console.error('youtubeSearch(videoId) 실패:', ytSafeErr(e, apiKey));
         return res.status(502).send('영상 정보를 가져오지 못했어요.');
       }
     }
@@ -594,14 +620,25 @@ exports.youtubeSearch = functions.https.onRequest((req, res) => {
         }));
 
       try {
-        await ref.set({ q, items, fetchedAt: Date.now() });
+        // expireAt: Firestore TTL 정책용 필드. 이 필드를 저장해두는 것만으로는
+        // 문서가 자동 삭제되지 않는다 — Firebase 콘솔에서 youtubeSearchCache
+        // 컬렉션에 이 필드를 TTL 필드로 지정하는 정책을 별도로 걸어야
+        // (유튜브 약관이 요구하는) 30일 내 삭제가 실제로 이뤄진다. 코드에서
+        // 직접 삭제하지는 않는다.
+        await ref.set({
+          q,
+          items,
+          fetchedAt: Date.now(),
+          expireAt: admin.firestore.Timestamp.fromMillis(Date.now() + YT_CACHE_TTL_MS),
+        });
       } catch (e) {
         console.warn('youtubeSearch: 캐시 저장 실패 (응답은 정상 반환)', e);
       }
 
       return res.json({ items, cached: false });
     } catch (e) {
-      console.error('youtubeSearch 실패:', e);
+      // apiKey 가 쿼리스트링에 있으므로 원본 에러 객체를 그대로 로깅하지 않는다 (ytSafeErr 참고).
+      console.error('youtubeSearch 실패:', ytSafeErr(e, apiKey));
       return res.status(502).send('유튜브 검색에 실패했어요.');
     }
   });
