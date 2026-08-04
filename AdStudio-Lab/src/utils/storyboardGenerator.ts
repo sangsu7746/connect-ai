@@ -5,7 +5,6 @@ import { AD_CONCEPT_TEMPLATES, AD_TONES, AD_STRUCTURES, AD_EMPHASIS_LABELS, AD_C
 import { useAdStore } from '../stores/adStore'
 import { translateSceneTextDetailed, detectTextLocale } from '../services/localizationService'
 import { resampleHomageScenes } from './homageResampler'
-import { HOMAGE_STRUCTURE_ID } from '../types/homage'
 import type { HomageStructure, HomageScene } from '../types/homage'
 
 const RELATION_KO: Record<Relation, string> = {
@@ -1849,6 +1848,27 @@ function buildHomageFlowText(structure: HomageStructure, scenes: HomageScene[]):
 }
 
 /**
+ * Gemini 창작 이전의 초기값(그리고 만에 하나 이 값이 최종 결과까지 새는 경우의 최후 방어선)을
+ * 오마주 구조 자체에서 파생시킨다.
+ *
+ * ⚠️ DEFAULT_CONCEPT_TEMPLATE(개인 영상용 로맨틱 커플 대사, 예: "기억해줘, 우리의 시간.")를 절대
+ *    재사용하지 않는다 — HOMAGE_STRUCTURE_ID는 AD_CONCEPT_TEMPLATES에 의도적으로 미등록이라 오마주
+ *    모드의 씬 풀(pool)은 항상 DEFAULT_CONCEPT_TEMPLATE로 귀결된다. 그 원문 대사를 그대로 순환시키면
+ *    (예: 수분크림 광고인데) 제품과 무관한 로맨틱 문구가 반복 재생되는 사고가 난다.
+ * dialogueKo는 항상 빈 문자열로 둔다 — generateStoryboardScenes가 오마주 모드에서 Gemini 실패 시
+ *    명시적으로 예외를 던지므로 정상 경로에서는 이 값이 최종 결과에 도달하지 않아야 하지만, 혹시
+ *    새더라도 아래쪽 "대사 보증" 안전망(대사가 전부 비었을 때만 발동)이 정상 작동하게 하기 위함이다.
+ */
+export function buildHomageFallbackScene(scene: HomageScene, index: number): GeneratedStoryboardScene {
+  return {
+    descKo: `${index + 1}번째 컷 · ${scene.shotType} 샷 · ${scene.subjectRole} 중심${scene.emotionBeat ? ` · ${scene.emotionBeat}` : ''}`,
+    dialogueKo: '',
+    keyframePromptEn: `${scene.shotType} shot, ${scene.cameraMove} camera movement, subject: ${scene.subjectRole}`,
+    motionPromptEn: `${scene.cameraMove} camera movement`,
+  }
+}
+
+/**
  * 프로젝트 설정을 바탕으로 세밀하고 정교한 스토리보드 씬 배열을 생성합니다.
  * 씬 개수는 durationSec ÷ 씬당 목표 길이(3초)로 역산하고, 컨셉 템플릿 풀 크기 안에서 자른다 —
  * 즉 영상 길이를 길게 선택할수록 (풀에 여유가 있는 한) 서사 비트가 더 많은 씬으로 반영된다.
@@ -1876,13 +1896,18 @@ export async function generateStoryboardScenes(project: Project, persons: Person
   let sceneCount: number
   let chosen: typeof pool
   let durations: number[]
+  // isHomage && homageStructure 일 때만 채워진다. 아래 콘텐츠 폴백(4번)과 Gemini 프롬프트용
+  // structureFlow 계산이 이 값을 재사용한다 — resampleHomageScenes를 다시 부르면 두 계산이
+  // (지금은 순수·결정론적이라 우연히 같지만) 나중에 함수가 바뀔 때 서로 어긋날 수 있다.
+  let homageScenes: HomageScene[] | undefined
 
   if (isHomage && homageStructure) {
     // 레퍼런스 씬 수를 목표에 맞춰 리샘플링하고, 그 상대 길이를 가중치로 넘긴다.
     // 균등 분배하면 오마주의 핵심인 완급이 사라진다.
-    const homageScenes = resampleHomageScenes(homageStructure.scenes, desiredCount)
+    homageScenes = resampleHomageScenes(homageStructure.scenes, desiredCount)
     sceneCount = homageScenes.length
-    // 텍스트 뼈대는 템플릿 풀에서 빌려오되(길이만 맞춤), 실제 내용은 아래 Gemini 창작으로 덮인다
+    // 구도(누가/무엇이 등장하는지=subjectRefs) 참고용으로만 템플릿 풀을 빌린다 — 대사/설명
+    // 텍스트는 여기서 가져오지 않는다(4번에서 homageScenes 기반으로 별도 파생한다)
     chosen = Array.from({ length: sceneCount }, (_, i) => pool[i % pool.length])
     durations = buildSceneDurations(durationSec, sceneCount, homageScenes.map(s => s.durationSec))
   } else {
@@ -1898,23 +1923,43 @@ export async function generateStoryboardScenes(project: Project, persons: Person
   const backgroundModifier = getBackgroundPromptModifier(backgroundId)
   const phenomenonModifier = getNaturalPhenomenonModifier(phenomenonId)
 
-  // 4. 대사/설명/프롬프트 텍스트 — 템플릿 원문을 기본값(폴백)으로 두고, Gemini 키가 있으면
-  // 같은 인물 구성·전개를 유지한 채 매번 새로 창작한 텍스트로 교체를 시도한다. 실패하면
-  // (키 없음/네트워크 오류/응답 형식 불일치) 조용히 템플릿 원문으로 되돌아간다 — 파이프라인은
-  // 절대 깨지지 않는다(이 앱의 다른 AI 폴백들과 동일한 원칙).
-  let content: GeneratedStoryboardScene[] = chosen.map(tpl => ({
-    descKo: tpl.descKo,
-    dialogueKo: tpl.dialogueKo,
-    keyframePromptEn: tpl.keyframePromptEn,
-    motionPromptEn: tpl.motionPromptEn,
-  }))
+  // 4. 대사/설명/프롬프트 텍스트 — 기본값(폴백)을 먼저 채우고, Gemini 키가 있으면 같은 인물
+  // 구성·전개를 유지한 채 매번 새로 창작한 텍스트로 교체를 시도한다.
+  // 템플릿 모드는 실패하면(키 없음/네트워크 오류/응답 형식 불일치) 조용히 폴백 원문으로
+  // 되돌아간다 — 파이프라인은 절대 깨지지 않는다(이 앱의 다른 AI 폴백들과 동일한 원칙).
+  // ⚠️ 오마주 모드는 폴백 원문의 출처부터 다르다 — pool은 항상 DEFAULT_CONCEPT_TEMPLATE(로맨틱
+  // 커플 대사)로 귀결되므로 그 텍스트를 쓰지 않고 homageScenes에서 중립적으로 파생시킨다. 게다가
+  // 오마주 모드는 이 폴백이 최종 결과가 되는 일이 아예 없어야 한다 — Gemini가 실패하면 아래에서
+  // 조용히 넘어가지 않고 명시적으로 예외를 던진다(이 폴백은 어디까지나 이중 방어선).
+  let content: GeneratedStoryboardScene[] = homageScenes
+    ? homageScenes.map(buildHomageFallbackScene)
+    : chosen.map(tpl => ({
+        descKo: tpl.descKo,
+        dialogueKo: tpl.dialogueKo,
+        keyframePromptEn: tpl.keyframePromptEn,
+        motionPromptEn: tpl.motionPromptEn,
+      }))
 
   // 광고 프로젝트(ad_* 구성)면 제품 분석 결과 + 4축 컨셉을 반영한 광고 각본 창작을 시도한다
   const adState = useAdStore.getState()
   const isAdProject = conceptId.startsWith('ad_') && !!adState.analysis
 
   const geminiKey = await KeyVault.getKey('gemini')
+
+  // ⚠️ 오마주 모드는 애초에 레퍼런스 분석 단계(homageAnalyzer)에서 Gemini 키를 요구해야만
+  // 진입할 수 있는 흐름이다 — 여기서 키를 요구하는 건 새로운 부담이 아니라 일관성이다. 여기서
+  // 키가 없다는 건 호출 사이 어딘가에서 키가 지워졌다는 뜻이므로, 조용히 4번의 중립 폴백으로
+  // 넘어가지 않고 사용자에게 명시적으로 알린다(Task 9 리뷰 Critical — 로맨틱 템플릿 유출 방지의
+  // 정상 경로 쪽 방어선. 4번의 중립 폴백은 그래도 새는 경우를 무해하게 만드는 두 번째 방어선).
+  if (isHomage && !geminiKey) {
+    throw new Error('오마주 모드는 Gemini API 키가 있어야 각본을 만들 수 있어요. 설정에서 Gemini 키를 등록한 뒤 다시 시도하거나, 템플릿 모드로 전환해주세요.')
+  }
+
   if (geminiKey) {
+    // isValid가 false인 경우(형식 불일치)를 try 블록 밖에서 처리하기 위한 플래그 — try 안에서
+    // 바로 throw하면 아래 catch가 그 예외까지 삼켜서 "조용히 템플릿으로 대체" 로그를 다시
+    // 찍어버린다. try/catch가 완전히 끝난 뒤에 판단해야 원인별로 정확한 메시지를 유지할 수 있다.
+    let homageResultInvalid = false
     try {
       const llmScenes = await withTimeout(
         isAdProject
@@ -1933,8 +1978,8 @@ export async function generateStoryboardScenes(project: Project, persons: Person
                 structureLabel: isHomage
                   ? '레퍼런스 오마주'
                   : (AD_STRUCTURES.find(s => s.id === conceptId)?.label || conceptId),
-                structureFlow: isHomage && homageStructure
-                  ? buildHomageFlowText(homageStructure, resampleHomageScenes(homageStructure.scenes, sceneCount))
+                structureFlow: isHomage && homageStructure && homageScenes
+                  ? buildHomageFlowText(homageStructure, homageScenes)
                   : (AD_STRUCTURES.find(s => s.id === conceptId)?.flow || ''),
                 sceneCount,
                 durationSec,
@@ -1957,11 +2002,21 @@ export async function generateStoryboardScenes(project: Project, persons: Person
         && llmScenes.every(s => s.descKo?.trim() && s.keyframePromptEn?.trim() && s.motionPromptEn?.trim())
       if (isValid) {
         content = llmScenes
+      } else if (isHomage) {
+        homageResultInvalid = true
+        console.warn('오마주 각본 생성 결과 형식이 예상과 달라요:', llmScenes)
       } else {
         console.warn('Gemini 응답 형식이 예상과 달라 템플릿으로 대체합니다:', llmScenes)
       }
     } catch (e) {
+      if (isHomage) {
+        console.error('오마주 스토리보드 생성 실패:', e)
+        throw new Error('오마주 각본을 만들지 못했어요. 다시 시도하거나 템플릿 모드로 전환해주세요.')
+      }
       console.warn('Gemini 스토리보드 생성 실패, 템플릿으로 대체합니다:', e)
+    }
+    if (homageResultInvalid) {
+      throw new Error('오마주 각본 생성 결과가 올바르지 않았어요. 다시 시도하거나 템플릿 모드로 전환해주세요.')
     }
   }
 

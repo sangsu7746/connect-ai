@@ -1,4 +1,7 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest'
+import type { HomageScene, HomageStructure, HomageReference } from '../types/homage'
+import type { Project } from '../types'
+import type { AdConceptSelection, AdAnalysis, AdConfig, AiActorProfile } from '../stores/adStore'
 
 // storyboardGenerator.ts 는 keysStore.ts/aiAdapters.ts 를 거쳐 services/firebase.ts 를 끌어오는데,
 // 그 파일은 모듈 최상단에서 initializeApp/initializeAppCheck(reCAPTCHA, DOM 필요)를 실제로 실행하고,
@@ -15,15 +18,42 @@ vi.mock('../services/firebase', () => ({
 }))
 vi.mock('firebase/auth', () => ({ onAuthStateChanged: () => () => {} }))
 
+// 아래 3개 모듈도 같은 이유(무거운 초기화·indexedDB 등 node 환경에 없는 브라우저 API)로 통째로
+// 목(mock)한다. 특히 KeyVault.getKey 는 실제로는 indexedDB 를 열어서(openDB) 값을 읽는데, node
+// 환경엔 indexedDB 자체가 없어 실제 구현을 부르면 무조건 실패한다 — generateStoryboardScenes 를
+// 실제로 호출해서 테스트하려면 이 세 지점을 반드시 목으로 대체해야 한다.
+const mockGetKey = vi.hoisted(() => vi.fn<(provider: string) => Promise<string | null>>())
+vi.mock('../stores/keysStore', () => ({
+  KeyVault: { getKey: mockGetKey },
+}))
+
+const mockGenerateAdStoryboardScenes = vi.hoisted(() => vi.fn())
+const mockGenerateStoryboardScenesLLM = vi.hoisted(() => vi.fn())
+vi.mock('../services/aiAdapters', () => ({
+  GeminiAdapter: {
+    generateAdStoryboardScenes: mockGenerateAdStoryboardScenes,
+    generateStoryboardScenes: mockGenerateStoryboardScenesLLM,
+  },
+}))
+
+// adStore 는 진짜 zustand persist(localStorage) 스토어라 node 환경에서의 동작이 불확실하다 —
+// 테스트마다 결정론적으로 상태를 갈아끼우기 위해 getState() 만 흉내 낸 얇은 목으로 대체한다.
+const mockAdState = vi.hoisted(() => ({ current: {} as Record<string, unknown> }))
+vi.mock('../stores/adStore', () => ({
+  useAdStore: { getState: () => mockAdState.current },
+}))
+
 // firebaseTarget.ts 는 위 목과 무관하게 aiAdapters.ts 가 직접 임포트하며, 모듈 최상단에서
 // window.location.hostname 을 읽는다 — node 환경엔 window 가 없으므로 최소 스텁을 채운다.
 // 정적 import 는 다른 모든 코드보다 먼저 끌어올려져 스텁이 무의미해지므로, 동적 import 로 미룬다.
 let buildSceneDurations: (durationSec: number, sceneCount: number, weights?: number[]) => number[]
+let generateStoryboardScenes: (project: Project, persons: import('../types').Person[]) => Promise<import('../types').Scene[]>
+let buildHomageFallbackScene: (scene: HomageScene, index: number) => { descKo: string; dialogueKo: string; keyframePromptEn: string; motionPromptEn: string }
 
 beforeAll(async () => {
   const g = globalThis as { window?: unknown }
   g.window ??= { location: { hostname: 'localhost' } }
-  ;({ buildSceneDurations } = await import('./storyboardGenerator'))
+  ;({ buildSceneDurations, generateStoryboardScenes, buildHomageFallbackScene } = await import('./storyboardGenerator'))
 })
 
 describe('buildSceneDurations 회귀', () => {
@@ -68,5 +98,229 @@ describe('buildSceneDurations 가중치', () => {
 
   it('가중치가 전부 0이면 균등 분배로 폴백한다', () => {
     expect(buildSceneDurations(9, 3, [0, 0, 0])).toEqual(buildSceneDurations(9, 3))
+  })
+})
+
+// ── Task 9 리뷰 Critical 회귀 테스트 ──────────────────────────────────
+// 배경: HOMAGE_STRUCTURE_ID('ad_homage')는 AD_CONCEPT_TEMPLATES에 의도적으로 미등록이라, 오마주
+// 모드의 씬 풀(pool)은 항상 DEFAULT_CONCEPT_TEMPLATE(개인 영상용 로맨틱 커플 대사, 예:
+// "기억해줘, 우리의 시간.")로 귀결된다. Gemini 각본 생성이 (키 없음/실패/형식 불일치로) 조용히
+// 폴백하던 기존 로직 그대로였다면, 이 로맨틱 대사가 아무 제품과 무관하게 최종 영상에 그대로
+// 노출됐을 것이다. 이 회귀를 두 겹으로 막는다 — (1) 오마주 모드는 Gemini 실패 시 조용히 넘어가지
+// 않고 명시적으로 예외를 던진다, (2) 혹시 새더라도 폴백 초기값 자체가 로맨틱 문구를 담지 않는다.
+
+const HOMAGE_SCENES_FIXTURE: HomageScene[] = [
+  { seq: 1, durationSec: 3, shotType: 'wide', cameraMove: 'static', subjectRole: 'environment', emotionBeat: '도입', transition: 'cut' },
+  { seq: 2, durationSec: 3, shotType: 'medium', cameraMove: 'push_in', subjectRole: 'product', emotionBeat: '고조', transition: 'cut' },
+  { seq: 3, durationSec: 3, shotType: 'close', cameraMove: 'static', subjectRole: 'product', emotionBeat: '마무리', transition: 'cut' },
+]
+
+const HOMAGE_STRUCTURE_FIXTURE: HomageStructure = {
+  scenes: HOMAGE_SCENES_FIXTURE,
+  pacing: 'medium',
+  overallArc: '문제 제기 → 제품 등장 → 마무리',
+}
+
+const HOMAGE_REFERENCE_FIXTURE: HomageReference = {
+  source: 'url',
+  structure: HOMAGE_STRUCTURE_FIXTURE,
+  analyzedAt: Date.now(),
+}
+
+const AD_ANALYSIS_FIXTURE: AdAnalysis = {
+  productName: '테스트 수분크림',
+  description: '순한 성분의 저자극 수분크림',
+  keyFeatures: ['24시간 보습', '저자극'],
+  targetAudience: '건성 피부 20대',
+  mainBenefit: '깊은 보습',
+  narration: '건조함, 이제 그만. 24시간 보습을 책임지는 수분크림.',
+  callToAction: '지금 만나보세요.',
+  tone: 'calm',
+}
+
+const AD_CONFIG_FIXTURE: AdConfig = {
+  duration: 15, musicMood: 'calm', voice: 'female', voiceVariety: false,
+  narrationLocale: 'ko', subtitles: true,
+}
+
+const AI_ACTOR_FIXTURE: AiActorProfile = { gender: 'female', age: '30s', vibe: 'friendly' }
+
+function makeHomageAdConcept(): AdConceptSelection {
+  return {
+    categoryMain: 'beauty', categorySub: 'skincare', emphasis: ['moisture'],
+    structureId: 'ad_homage', tone: 'calm', visualStyle: 'clean_bright',
+    structureSource: 'homage', homage: HOMAGE_REFERENCE_FIXTURE,
+  }
+}
+
+function makeTemplateAdConcept(): AdConceptSelection {
+  return {
+    categoryMain: 'beauty', categorySub: 'skincare', emphasis: ['moisture'],
+    structureId: 'ad_problem', tone: 'calm', visualStyle: 'clean_bright',
+    structureSource: 'template',
+  }
+}
+
+function makeProject(overrides: Partial<Project> = {}): Project {
+  return {
+    id: 'proj_1', userId: 'user_1', status: 'storyboard', relation: 'solo',
+    conceptId: 'ad_homage', styleId: 'cinematic', durationSec: 9,
+    dialogueMode: 'none', aspect: '9:16', createdAt: new Date(),
+    ...overrides,
+  }
+}
+
+beforeEach(() => {
+  mockGetKey.mockReset()
+  mockGenerateAdStoryboardScenes.mockReset()
+  mockGenerateStoryboardScenesLLM.mockReset()
+  mockAdState.current = {}
+})
+
+describe('오마주 모드 — Gemini 실패 시 조용한 폴백 금지 (Task 9 리뷰 Critical)', () => {
+  it('Gemini 키가 없으면 조용히 템플릿으로 넘어가지 않고 예외를 던진다', async () => {
+    mockAdState.current = {
+      adConcept: makeHomageAdConcept(),
+      analysis: AD_ANALYSIS_FIXTURE,
+      config: AD_CONFIG_FIXTURE,
+      aiActor: AI_ACTOR_FIXTURE,
+    }
+    mockGetKey.mockResolvedValue(null)
+
+    await expect(generateStoryboardScenes(makeProject(), [])).rejects.toThrow(/Gemini/)
+    // 키가 없으니 Gemini 호출 자체가 시도되면 안 된다
+    expect(mockGenerateAdStoryboardScenes).not.toHaveBeenCalled()
+  })
+
+  it('Gemini 호출이 실패(네트워크 오류 등)하면 조용히 템플릿으로 넘어가지 않고 예외를 던진다', async () => {
+    mockAdState.current = {
+      adConcept: makeHomageAdConcept(),
+      analysis: AD_ANALYSIS_FIXTURE,
+      config: AD_CONFIG_FIXTURE,
+      aiActor: AI_ACTOR_FIXTURE,
+    }
+    mockGetKey.mockResolvedValue('fake-gemini-key')
+    mockGenerateAdStoryboardScenes.mockRejectedValue(new Error('network down'))
+
+    await expect(generateStoryboardScenes(makeProject(), [])).rejects.toThrow()
+  })
+
+  it('Gemini 응답 형식이 올바르지 않으면 조용히 템플릿으로 넘어가지 않고 예외를 던진다', async () => {
+    mockAdState.current = {
+      adConcept: makeHomageAdConcept(),
+      analysis: AD_ANALYSIS_FIXTURE,
+      config: AD_CONFIG_FIXTURE,
+      aiActor: AI_ACTOR_FIXTURE,
+    }
+    mockGetKey.mockResolvedValue('fake-gemini-key')
+    // descKo가 빈 문자열이라 isValid 체크(모든 씬이 descKo/keyframePromptEn/motionPromptEn을
+    // 채워야 함)를 통과하지 못한다
+    mockGenerateAdStoryboardScenes.mockResolvedValue([
+      { descKo: '', dialogueKo: '', keyframePromptEn: '', motionPromptEn: '' },
+    ])
+
+    await expect(generateStoryboardScenes(makeProject(), [])).rejects.toThrow()
+  })
+
+  it('Gemini가 정상 응답하면 그 결과를 그대로 쓴다(오마주 모드도 정상 경로는 막지 않는다)', async () => {
+    mockAdState.current = {
+      adConcept: makeHomageAdConcept(),
+      analysis: AD_ANALYSIS_FIXTURE,
+      config: AD_CONFIG_FIXTURE,
+      aiActor: AI_ACTOR_FIXTURE,
+    }
+    mockGetKey.mockResolvedValue('fake-gemini-key')
+    const project = makeProject()
+    // resampleHomageScenes(3개 씬, desiredCount)가 durationSec=9, SCENE_SEC_TARGET=3 →
+    // desiredCount=3이라 그대로 3개로 리샘플된다
+    const llmResult = [
+      { descKo: '수분크림 도입부', dialogueKo: '건조함, 이제 그만.', keyframePromptEn: 'wide shot moisturizer', motionPromptEn: 'static' },
+      { descKo: '수분크림 사용 장면', dialogueKo: '24시간 보습.', keyframePromptEn: 'medium shot moisturizer', motionPromptEn: 'push in' },
+      { descKo: '수분크림 마무리', dialogueKo: '지금 만나보세요.', keyframePromptEn: 'close shot moisturizer', motionPromptEn: 'static' },
+    ]
+    mockGenerateAdStoryboardScenes.mockResolvedValue(llmResult)
+
+    const scenes = await generateStoryboardScenes(project, [])
+    expect(scenes).toHaveLength(3)
+    expect(scenes.map(s => s.descKo)).toEqual(llmResult.map(s => s.descKo))
+    // Gemini에 넘긴 구성 설명(structureFlow)에 오마주 씬의 샷 문법이 들어갔는지 확인 —
+    // resampleHomageScenes를 두 번(씬 계산용/flow 텍스트용) 따로 불러 결과가 어긋나면 이 값이
+    // sceneCount(3)와 안 맞을 수 있다
+    const callArgs = mockGenerateAdStoryboardScenes.mock.calls[0][1]
+    expect(callArgs.sceneCount).toBe(3)
+    expect(callArgs.structureLabel).toBe('레퍼런스 오마주')
+    expect(callArgs.structureFlow).toContain('wide/static')
+  })
+})
+
+describe('오마주 모드 — 폴백 초기값이 로맨틱 템플릿과 무관하다 (Task 9 리뷰 Critical, 이중 방어)', () => {
+  it('buildHomageFallbackScene은 DEFAULT_CONCEPT_TEMPLATE 로맨틱 대사를 담지 않고, dialogueKo는 항상 빈 문자열이다', () => {
+    for (const [i, scene] of HOMAGE_SCENES_FIXTURE.entries()) {
+      const fallback = buildHomageFallbackScene(scene, i)
+      expect(fallback.dialogueKo).toBe('')
+      expect(fallback.descKo).not.toContain('기억해줘')
+      expect(fallback.descKo).not.toContain('우리의 시간')
+      expect(fallback.descKo).not.toContain('모든 것이 변해도')
+      expect(fallback.keyframePromptEn).not.toMatch(/couple|romantic/i)
+      // 오마주 구조(샷 타입/피사체)에서 파생됐는지도 확인
+      expect(fallback.descKo).toContain(scene.shotType)
+      expect(fallback.descKo).toContain(scene.subjectRole)
+    }
+  })
+})
+
+describe('템플릿 모드 — 기존 조용한 폴백 동작은 그대로다 (회귀 방지)', () => {
+  it('Gemini 키가 없어도 예외 없이 템플릿 원문으로 조용히 완성된다', async () => {
+    mockAdState.current = {
+      adConcept: makeTemplateAdConcept(),
+      analysis: AD_ANALYSIS_FIXTURE,
+      config: AD_CONFIG_FIXTURE,
+      aiActor: AI_ACTOR_FIXTURE,
+    }
+    mockGetKey.mockResolvedValue(null)
+
+    const project = makeProject({ conceptId: 'ad_problem' })
+    const scenes = await generateStoryboardScenes(project, [])
+
+    expect(scenes.length).toBeGreaterThan(0)
+    // ad_problem 템플릿 풀의 실제 원문(제품 광고 문구)으로 조용히 채워졌다 — 예외 없음
+    expect(scenes[0].descKo).toContain('불편한 순간')
+    expect(mockGenerateAdStoryboardScenes).not.toHaveBeenCalled()
+  })
+
+  it('Gemini 호출이 실패해도 예외 없이 템플릿 원문으로 조용히 대체된다', async () => {
+    mockAdState.current = {
+      adConcept: makeTemplateAdConcept(),
+      analysis: AD_ANALYSIS_FIXTURE,
+      config: AD_CONFIG_FIXTURE,
+      aiActor: AI_ACTOR_FIXTURE,
+    }
+    mockGetKey.mockResolvedValue('fake-gemini-key')
+    mockGenerateAdStoryboardScenes.mockRejectedValue(new Error('network down'))
+
+    const project = makeProject({ conceptId: 'ad_problem' })
+    const scenes = await generateStoryboardScenes(project, [])
+
+    expect(scenes.length).toBeGreaterThan(0)
+    expect(scenes[0].descKo).toContain('불편한 순간')
+  })
+
+  it('structureSource가 undefined(기존 localStorage 사용자)여도 예외 없이 조용히 템플릿으로 완성된다', async () => {
+    // adConcept 자체에 structureSource 필드가 아예 없는 기존 사용자 상태를 흉내낸다
+    const legacyAdConcept = { ...makeTemplateAdConcept() } as Partial<AdConceptSelection>
+    delete legacyAdConcept.structureSource
+    mockAdState.current = {
+      adConcept: legacyAdConcept,
+      analysis: AD_ANALYSIS_FIXTURE,
+      config: AD_CONFIG_FIXTURE,
+      aiActor: AI_ACTOR_FIXTURE,
+    }
+    mockGetKey.mockResolvedValue(null)
+
+    const project = makeProject({ conceptId: 'ad_problem' })
+    const scenes = await generateStoryboardScenes(project, [])
+
+    expect(scenes.length).toBeGreaterThan(0)
+    expect(scenes[0].descKo).toContain('불편한 순간')
   })
 })
