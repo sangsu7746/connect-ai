@@ -7,3 +7,5 @@ Root cause found: UnicodeEncodeError (em dash in cp949 envs) in `_space_out()` s
 Found 2 more unsafe prints (orch.py:869,886), cleaned db for stuck jobs, added PYTHONIOENCODING=utf-8 defense, found scheduler.py tz bug (UTC strip vs convert causes 9h offset).
 ## 11:47 | feat/adstudio-youtube-homage
 Fixed race condition: added `_LAST_RESERVED_AT` memory to orch.py tracking reservations, updated `next_free_slot()` to check it, added repro test w/ isolation cleanup.
+## 12:42 | feat/adstudio-youtube-homage
+Validated race condition fix via mutation tests & full suite (151✓), real-world testing, handled incident (prior server active: 3 posts live, 1 safely failed), confirmed spacing now 6.8–9.7min vs. same-second; commit d0b1c6f96.
