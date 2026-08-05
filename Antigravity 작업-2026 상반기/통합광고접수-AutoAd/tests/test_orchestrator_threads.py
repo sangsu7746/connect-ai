@@ -195,3 +195,108 @@ def test_duplicate_approval_guard_still_fires_on_threads_path(temp_db, monkeypat
     assert second.blocked is True
     assert "이미 처리된" in (second.error or "")
     assert len(fake.calls) == 1   # 두 번째 호출은 adapter.post() 까지 가지 않았다
+
+
+# ── 4) next_free_slot() 이 이미 예약된 건을 실제로 보는가 ──────────
+def test_next_free_slot_sees_already_scheduled_jobs(temp_db, monkeypatch):
+    """실측(2026-08-05): scheduler.schedule_publish() 는 job id 를
+    f"pub-{creative_id}" 로 만드는데, next_free_slot() 은 "publish:"
+    접두사(콜론)를 찾고 있었다 — 하이픈/콜론이 달라 기존 예약을 단 하나도
+    못 찾았다. 그 결과 승인 6건을 30초 간격으로 연달아 누르면 예약도
+    30초 간격으로 겹쳐 잡혔다(의도는 THREADS_REPLY_INTERVAL 180~600초).
+    발행이 _PUBLISH_LOCK 을 쥔 채 진행되므로, 겹친 예약들이 락 하나를
+    놓고 줄줄이 대기하며 각 건의 스페이싱(최대 600초)+실제 게시 시간만큼씩
+    밀렸다 - '멈춘 것'이 아니라 '한 시간 넘게 순서를 기다리는 중'이었다.
+
+    이 테스트는 실제 scheduler.get_scheduler() 에 진짜 job 을 하나 등록해
+    두고, next_free_slot() 이 그 job 의 next_run_time 을 실제로 보고
+    간격을 벌리는지 확인한다 — job id 형식이 다시 어긋나면 이 테스트가
+    실패해야 한다."""
+    import datetime as dt
+    monkeypatch.setattr(orchestrator, "_LAST_RESERVED_AT", {})  # 테스트 간 오염 방지
+    import scheduler as sched_mod
+
+    monkeypatch.setattr(config, "THREADS_REPLY_INTERVAL_MIN", 300)
+    monkeypatch.setattr(config, "THREADS_REPLY_INTERVAL_MAX", 300)  # 고정값 - 흔들림 없이 검증
+
+    _, _, cid, _ = _make_threads_reply()
+
+    sched_mod.start()          # next_run_time 은 스케줄러가 돈 뒤에만 채워진다
+    s = sched_mod.get_scheduler()
+    try:
+        # scheduler.schedule_publish() 와 동일한 id 형식으로 실제 job 등록.
+        already_at = dt.datetime.now() + dt.timedelta(seconds=50)
+        s.add_job(sched_mod._publish_job, "date", run_date=already_at,
+                  args=[cid, True], id=f"pub-{cid}", replace_existing=True)
+
+        slot = orchestrator.next_free_slot("threads")
+
+        # 이미 예약된 job 이후로 최소 300초는 더 벌어져야 한다.
+        assert slot >= already_at.replace(tzinfo=None) + dt.timedelta(seconds=300)
+    finally:
+        try:
+            s.remove_job(f"pub-{cid}")
+        except Exception:
+            pass
+
+
+def test_next_free_slot_survives_a_job_that_already_fired_and_vanished(temp_db, monkeypatch):
+    """실측(2026-08-05)에서 실제로 터진 경쟁 상태를 재현한다.
+
+    최근 실제 발행이 오래전이면 첫 슬롯은 '거의 지금'으로 계산되는 게
+    맞다. 그런데 '거의 지금'으로 잡힌 job 은 APScheduler 가 즉시 실행
+    하고, date 트리거는 1회성이라 실행되는 순간 스토어에서 사라진다 -
+    직접 확인: 예약 0.57초 뒤 get_jobs() 가 이미 빈 목록이었다. db.
+    last_post_time() 은 그 job 이 '실제로 posted' 에 도달해야만 갱신
+    되는데, 그건 브라우저 발행이 끝나는 60~90초 뒤다. 그 사이 두 번째
+    호출은 스토어에서도 last_post_time 에서도 첫 job 을 못 보고, 똑같이
+    '거의 지금'을 받는다 - 승인 6건이 전부 같은 시각에 예약돼 락 하나를
+    놓고 줄줄이 대기한 실제 사고가 이렇게 났다.
+
+    이 테스트는 스케줄러/DB 를 건드리지 않고 재현한다: 스토어가 비어
+    있고(첫 job 이 이미 사라진 상태) db.last_post_time 도 옛날 값을
+    주는 상황에서, 직전 next_free_slot() 호출 자체가 두 번째 호출을
+    밀어내야 한다."""
+    monkeypatch.setattr(config, "THREADS_REPLY_INTERVAL_MIN", 300)
+    monkeypatch.setattr(orchestrator, "_LAST_RESERVED_AT", {})  # 테스트 간 오염 방지
+    monkeypatch.setattr(config, "THREADS_REPLY_INTERVAL_MAX", 300)
+    monkeypatch.setattr("db.last_post_time", lambda platform=None: None)  # 최근 발행 기록 없음
+    monkeypatch.setattr("scheduler.get_scheduler",
+                        lambda: type("S", (), {"get_jobs": lambda self: []})())
+
+    slot1 = orchestrator.next_free_slot("threads")
+    slot2 = orchestrator.next_free_slot("threads")
+
+    assert slot2 >= slot1 + __import__("datetime").timedelta(seconds=300)
+
+
+def test_next_free_slot_ignores_jobs_for_other_platforms(temp_db, monkeypatch):
+    """다른 플랫폼(band) 앞으로 예약된 job 은 threads 의 슬롯 계산에
+    영향을 주면 안 된다 - 서로 다른 계정·채널이 서로를 기다리게 만드는
+    건 간격 장치의 취지(그 계정이 기계처럼 안 보이게)와 무관하다."""
+    import datetime as dt
+    import scheduler as sched_mod
+
+    monkeypatch.setattr(orchestrator, "_LAST_RESERVED_AT", {})  # 테스트 간 오염 방지
+    monkeypatch.setattr(config, "POST_INTERVAL_MIN", 300)
+    monkeypatch.setattr(config, "POST_INTERVAL_MAX", 300)
+
+    _, _, band_cid, _ = _make_band_creative(
+        {"headline": "제목", "body": "본문", "cta": "문의"})
+
+    sched_mod.start()
+    s = sched_mod.get_scheduler()
+    try:
+        soon = dt.datetime.now() + dt.timedelta(seconds=20)
+        s.add_job(sched_mod._publish_job, "date", run_date=soon,
+                  args=[band_cid, True], id=f"pub-{band_cid}", replace_existing=True)
+
+        slot = orchestrator.next_free_slot("threads")
+
+        # band 앞 job 때문에 밀리면 안 된다 - 거의 '지금'이어야 한다.
+        assert slot < dt.datetime.now() + dt.timedelta(seconds=5)
+    finally:
+        try:
+            s.remove_job(f"pub-{band_cid}")
+        except Exception:
+            pass

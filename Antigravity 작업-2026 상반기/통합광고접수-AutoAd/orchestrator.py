@@ -18,6 +18,22 @@ import config
 import db
 import crosslock          # 밴드·페북 파이프라인이 클립보드를 두고 부딪히지 않게
 from content import registry, pamphlet, copy_engine
+
+
+def _cp949_safe_orch(s: str) -> str:
+    """cp949 콘솔에 그대로 찍혀도 죽지 않도록 인코딩 불가 문자를 이스케이프한다.
+
+    ⚠ 실측(2026-08-05): _space_out() 의 print() 에 낀 em dash 하나가
+      cp949 콘솔에서 UnicodeEncodeError 를 던졌다. _PUBLISH_LOCK 은
+      with 블록이라 예외가 나도 정상적으로 풀리지만, 그 앞에서 이미
+      db.update_post_status(post_id,"posting") 이 실행된 뒤였다 - 그
+      결과 발행 job 5개가 전부 '조용히 실패해 종료'됐는데 DB 상태만
+      'posting' 에 영구히 남아 겉보기엔 진행 중처럼 보였다(승인 콘솔
+      에서 수십 분을 기다려도 안 끝나는 것처럼 보인 원인). threads
+      패키지에 이미 같은 함수(reply_writer._cp949_safe)가 있지만,
+      orchestrator.py 는 band/facebook/kakao 도 다루는 범용 모듈이라
+      threads 패키지를 끌어오지 않고 여기 그대로 둔다."""
+    return s.encode("cp949", errors="backslashreplace").decode("cp949")
 from channels.base import PostResult
 from channels.band import BandAdapter
 from channels.facebook import FacebookAdapter
@@ -155,6 +171,27 @@ def stored_credential(platform: str, account: str) -> dict:
 # 페이스북 발행이 이유 없이 늦춰진다(서로 다른 계정인데도).
 _LAST_POST_AT = {}
 
+# next_free_slot() 이 방금 내준 슬롯을 플랫폼별로 기억한다.
+#
+# ⚠ 실측(2026-08-05): 최근 실제 발행이 오래전(1시간 이상)이면 첫 슬롯은
+#   '거의 지금'으로 계산된다 - 정상이다. 문제는 그 다음이다. '거의 지금'
+#   으로 잡힌 job 은 APScheduler 가 즉시 실행하고, "date" 트리거는 1회성
+#   이라 실행되는 순간 스토어에서 사라진다(직접 확인: 예약 0.57초 뒤
+#   get_jobs() 가 이미 빈 목록). 반면 db.last_post_time() 은 그 job 이
+#   '실제로 posted 상태에 도달'해야만 갱신되는데, 그건 브라우저 발행이
+#   끝나는 60~90초 뒤다. 그 사이(예약 직후 ~ 실제 posted 기록까지)
+#   next_free_slot() 은 그 job 을 스토어에서도, last_post_time 에서도
+#   못 본다 - 두 데이터 소스 모두에게 '존재하지 않는' 셈이 되어, 뒤이은
+#   승인 5건이 전부 같은 '거의 지금' 슬롯을 받았다(재현: 6건을 10초
+#   간격으로 승인 → job 1개가 _PUBLISH_LOCK 을 잡고 나머지 5개는 전부
+#   같은 시각에 예약돼 락 하나를 놓고 줄줄이 대기).
+#
+#   그래서 세 번째 정보원을 더한다 - '슬롯을 내준 시각' 그 자체를 여기
+#   즉시 기록한다. 실제 발행 완료를 기다리지 않으므로 이 틈을 못 놓친다.
+#   in-process 메모리라 서버 재시작 시 초기화되지만, 한 번의 승인 폭주
+#   (연달아 승인 누르는 상황) 안에서는 같은 프로세스로 처리되므로 충분하다.
+_LAST_RESERVED_AT = {}
+
 
 def _parse_hours(spec: str):
     """'9-21' 또는 '09:00-21:00' → (9, 21). 못 읽으면 None."""
@@ -244,7 +281,17 @@ def next_free_slot(platform: str = None):
         import scheduler
         for j in scheduler.get_scheduler().get_jobs():
             run_at = getattr(j, "next_run_time", None)
-            if not run_at or not str(j.id).startswith("publish:"):
+            # ⚠ 실측(2026-08-05): scheduler.schedule_publish() 는 job id 를
+            #   f"pub-{creative_id}" 로 만드는데(scheduler.py:79), 여기서는
+            #   "publish:" 접두사(콜론)를 찾고 있었다 — 하이픈/콜론이 달라
+            #   기존 예약을 단 하나도 못 찾았다. 그 결과 next_free_slot() 이
+            #   매번 '지금'에 가까운 시각을 돌려줬고, 승인을 30초 간격으로
+            #   6번 하자 예약도 30초 간격으로 잡혔다(의도는 180~600초).
+            #   실제 발행은 _PUBLISH_LOCK 을 쥔 채 진행되므로, 겹친 예약들이
+            #   락 하나를 놓고 줄줄이 대기하며 앞 건의 스페이싱 대기(최대
+            #   600초)+실제 게시 시간만큼씩 뒤로 밀렸다 — '멈춘 것'이 아니라
+            #   '한 시간 넘게 순서를 기다리는 중'이었다.
+            if not run_at or not str(j.id).startswith("pub-"):
                 continue
             run_at = run_at.replace(tzinfo=None)
             # 이 플랫폼 건인지 확인 — creative_id 로 채널을 되짚는다.
@@ -257,6 +304,15 @@ def next_free_slot(platform: str = None):
     except Exception:
         # 스케줄러가 안 떠 있으면(스크립트 실행 등) 예약분은 없는 것으로 본다.
         pass
+
+    # 세 번째 정보원 - 방금 내준 슬롯(아직 완료·심지어 시작도 안 됐을 수
+    # 있다). db.last_post_time() 도 스케줄러 스캔도 못 보는 '예약 직후 ~
+    # 실제 발행 완료 전' 구간을 이걸로 메운다.
+    reserved = _LAST_RESERVED_AT.get(platform or "")
+    if reserved:
+        earliest = max(earliest, reserved + gap)
+
+    _LAST_RESERVED_AT[platform or ""] = earliest
     return earliest
 
 
@@ -271,7 +327,11 @@ def _space_out(platform: str = None):
     elapsed = _seconds_since_last_post(platform)
     if elapsed is not None and elapsed < wait:
         left = int(wait - elapsed)
-        print(f"[orchestrator] 발행 간격 유지({platform or '전체'}) — {left}초 대기")
+        # 실측(2026-08-05): 이 줄의 em dash 가 cp949 콘솔에서 발행 job
+        # 5개를 통째로 죽인 적이 있다(_cp949_safe_orch 독스트링 참고).
+        # 문구를 고치는 것만으론 다음에 또 같은 실수를 못 막으므로,
+        # 여기서 인코딩 가능 여부와 무관하게 항상 필터를 거친다.
+        print(_cp949_safe_orch(f"[orchestrator] 발행 간격 유지({platform or '전체'}) - {left}초 대기"))
         time.sleep(left)
     _LAST_POST_AT[key] = time.time()
 
@@ -331,7 +391,7 @@ def ensure_login(adapter) -> tuple:
         return False, (f"세션 만료 + 저장된 계정 없음({acc or '기본계정'}) — "
                        f"`python login.py {adapter.platform} --account {acc or '<계정>'}` "
                        f"로 한 번 로그인하거나, 발행 프로그램에 계정을 등록하세요")
-    print(f"[login] 세션 만료 — 저장된 계정으로 자동 로그인 "
+    print(f"[login] 세션 만료 - 저장된 계정으로 자동 로그인 "
           f"({cred.get('name') or acc} / {cred['login_type']})")
     try:
         ok = adapter.login(cred={"password": cred["password"],
@@ -345,12 +405,12 @@ def ensure_login(adapter) -> tuple:
                        f"`python login.py {adapter.platform} --account {acc}` 로 "
                        f"한 번 직접 로그인해 주세요")
     adapter._login_at = time.time()
-    print(f"[login] 자동 로그인 성공 — {adapter.platform}/{acc}")
+    print(f"[login] 자동 로그인 성공 - {adapter.platform}/{acc}")
     return True, ""
 
 
 # ── 상품 선택 (성향 라우팅) ─────────────────────────────────
-def pick_product(channel: dict, campaign: dict) -> str:
+def pick_product(channel: dict, campaign: dict, used=None) -> str:
     """캠페인이 상품을 지정하면 그것, 아니면 채널 성향에 맞는 상품 중 하나.
 
     ⚠ 예전엔 늘 cands[0] 만 골라, 소비자 채널 140곳에 전부 같은 전단이 나갔다.
@@ -362,8 +422,26 @@ def pick_product(channel: dict, campaign: dict) -> str:
              if p.get("flyer")]
     if not cands:
         return "general"
-    idx = int(channel.get("id") or 0) % len(cands)
-    return cands[idx]["key"]
+    # ⚠ 쿨다운 중인 전단을 고르면 소재를 만들어놓고 발행 단계에서 막힌다.
+    #   (실측: 9건 중 6건이 '만들자마자 차단'이었다)
+    #   여기서 미리 빼야 만든 소재가 실제로 나간다.
+    plat = channel.get("platform", "band")
+    free = [p for p in cands
+            if not db.image_cooldown_left(
+                str(config.CREATIVES_DIR / f"tpl_{p['key']}_{plat}.png"),
+                config.CREATIVE_COOLDOWN_DAYS)]
+    if free:
+        cands = free          # 전부 쿨다운이면 어쩔 수 없이 원래 후보로(발행이 막아준다)
+    # 같은 캠페인 안에서 두 채널이 같은 전단을 고르면, 렌더 경로가 같아져
+    # 뒤엣것이 발행 단계에서 '같은 이미지'로 막힌다.
+    # ⚠ 남은 전단이 없으면 **소재를 만들지 않는다**(None 반환).
+    #   억지로 같은 전단을 배정해봐야 발행에서 막히고, 그때까지 카피 생성
+    #   비용만 나간다. 실측: 소비자용 전단 4종에 채널 9곳을 배정해 4건이 중복.
+    fresh = [p for p in cands if p["key"] not in (used or ())]
+    if not fresh:
+        return None
+    idx = int(channel.get("id") or 0) % len(fresh)
+    return fresh[idx]["key"]
 
 
 # ── 캡션 생성 (실패 시 폴백) ────────────────────────────────
@@ -545,8 +623,18 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
     #   전역으로 걸기 때문에 첫 건만 나가고 나머지가 전부 차단됐다.
     #   게이트를 푸는 게 아니라 소재를 다양화하는 것이 맞다 — 동일 이미지를 여러
     #   그룹에 뿌리는 것이 플랫폼이 가장 빨리 잡는 패턴이기 때문이다.
+    # ⚠ 0 부터 다시 시작하면 지난 캠페인이 만든 파일을 덮어쓴다. 경로가 같으니
+    #   쿨다운에 그대로 걸려, 만들자마자 발행이 막히는 소재가 된다(실측 4건).
+    def _free_from(fmt, start=0, limit=200):
+        for n in range(start, limit):
+            path = str(config.CREATIVES_DIR / fmt.format(n=n))
+            if not db.image_cooldown_left(path, config.CREATIVE_COOLDOWN_DAYS):
+                return n
+        return start
+
     show_n = 0                  # 콘텐츠형 격자 일련번호(모티프 조합이 달라진다)
     doc_n = 0                   # 광고형 카드 일련번호
+    used_products = set()       # 이번 캠페인에서 이미 쓴 전단
 
     out = []
     for ch in channels:
@@ -568,6 +656,10 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
                 # 주제 중심 모임에서는 배너가 광고로 읽혀 승인 대기·삭제 대상이 된다.
                 from content import showcase
                 try:
+                    # 쿨다운에 안 걸린 첫 번호부터 쓴다(지난 캠페인 파일을 덮지 않는다).
+                    show_n = _free_from(
+                        f"showcase_{config.PROFILE_KEY}_{ch['platform']}_v{{n}}.png",
+                        show_n)
                     out_img = config.CREATIVES_DIR / (
                         f"showcase_{config.PROFILE_KEY}_{ch['platform']}_v{show_n}.png")
                     s = showcase.make(profile_key=config.PROFILE_KEY,
@@ -583,6 +675,8 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
                           f"→ 이 채널은 광고형으로 대체")
 
             if image is None:
+                doc_n = _free_from(
+                    f"doc_{config.PROFILE_KEY}_{ch['platform']}_v{{n}}.png", doc_n)
                 out_img = config.CREATIVES_DIR / (
                     f"doc_{config.PROFILE_KEY}_{ch['platform']}_v{doc_n}.png")
                 r = pamphlet.render_from_doc(channel=ch["platform"],
@@ -592,7 +686,14 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
                 doc_n += 1
                 print(f"[orchestrator] 설명서 카드 #{doc_n} → {image}")
         else:
-            product_key = pick_product(ch, campaign)
+            product_key = pick_product(ch, campaign, used_products)
+            if not product_key:
+                # 이 채널 성향에 맞는 전단이 동났다(쿨다운 또는 이미 사용).
+                # 소재를 만들어도 발행에서 막히므로 여기서 멈춘다.
+                print(f"[orchestrator] {ch['name'][:26]}: 쓸 수 있는 전단 없음 → 건너뜀 "
+                      f"(전단을 늘리거나 쿨다운이 풀릴 때까지 대기)")
+                continue
+            used_products.add(product_key)
             tpl = registry.get(product_key)
             if not tpl.get("flyer"):
                 print(f"[orchestrator] {product_key}: 전단 JPG 없음 → 스킵(PSD 편집 P2)")
@@ -694,9 +795,9 @@ def publish_creative(creative_id: int, dry_run: bool = None):
     # 이미 켜져 있던 채널(과거에 켠 것)은 그 관문을 지나오지 않는다.
     # 발행 직전인 여기가 우회할 수 없는 마지막 지점이다.
     if db.is_demo_channel(row):
-        why = "데모 채널 — 실제로 존재하지 않는 주소라 실발행하지 않습니다"
+        why = "데모 채널 - 실제로 존재하지 않는 주소라 실발행하지 않습니다"
         db.update_post_status(post_id, "blocked", None, why)
-        print(f"[orchestrator] 발행 post#{post_id} [blocked] {row['name']}({platform}) — {why}")
+        print(f"[orchestrator] 발행 post#{post_id} [blocked] {row['name']}({platform}) - {why}")
         return PostResult(ok=False, blocked=True, error=why)
 
     # ── 실발행 ── 한 번에 하나만. 클립보드·창 포커스가 머신 전역 자원이라
@@ -708,8 +809,12 @@ def publish_creative(creative_id: int, dry_run: bool = None):
     with _PUBLISH_LOCK:
         def _block(why):
             db.update_post_status(post_id, "blocked", None, why)
+            # ⚠ why 는 아래 여러 호출부에서 오는데, cp949 로 인코딩 안 되는
+            # 문자(em dash 등)가 섞여 있으면 이 print() 자체가 죽는다 -
+            # 실측(2026-08-05)으로 같은 유형 사고를 여러 번 겪었다.
+            safe_why = _cp949_safe_orch(why)
             print(f"[orchestrator] 발행 post#{post_id} [blocked] {row['name']}"
-                  f"({platform}) — {why}")
+                  f"({platform}) - {safe_why}")
             return PostResult(ok=False, blocked=True, error=why)
 
         # 아래 검사들은 '광고가 안 나가는' 쪽으로 실패해야 한다. 계정을 잃는 것보다 낫다.
@@ -791,8 +896,11 @@ def publish_creative(creative_id: int, dry_run: bool = None):
 
     db.update_post_status(post_id, status, getattr(res, "perm_url", None),
                           getattr(res, "error", None))
+    # res.error 는 어댑터가 만든 값이다 - threads 답글이면 LLM 생성 실패
+    # 사유가 그대로 실릴 수 있어 cp949 필터를 반드시 거친다.
+    err = getattr(res, "error", None)
     print(f"[orchestrator] 발행 post#{post_id} [{status}] {row['name']}({platform})"
-          + (f" — {res.error}" if getattr(res, "error", None) else ""))
+          + (f" - {_cp949_safe_orch(err)}" if err else ""))
     return res
 
 
@@ -808,7 +916,7 @@ def approve_and_publish(approval_id: int, reviewer: str = "operator",
     #   승인 버튼을 두 번 누르는 것만으로 같은 밴드에 같은 글이 두 번 올라간다.
     #   발행은 되돌릴 수 없으므로 여기서 확실히 끊는다.
     if not db.decide_approval(approval_id, "approved", reviewer):
-        why = "이미 처리된 승인입니다 — 중복 발행을 막았습니다"
+        why = "이미 처리된 승인입니다 - 중복 발행을 막았습니다"
         print(f"[orchestrator] 승인#{approval_id} {why}")
         return PostResult(ok=False, blocked=True, error=why)
     return publish_creative(row["creative_id"], dry_run=dry_run)
