@@ -1,0 +1,1158 @@
+09:19:24 [hook] session-start: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 REMEMBER_DIR=D://.remember
+09:19:29 [hook] session-start: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 REMEMBER_DIR=D://.remember
+09:21:33 [hook] session-start: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 REMEMBER_DIR=D://.remember
+09:22:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:22:49 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:22:52 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+09:22:54 [extract] 585 exchanges (37 human)
+09:22:57 [haiku] calling (branch: main)
+09:23:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:23:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:23:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:23:44 [tokens] tokens: 9+25283cache→2689out ($0.285181)
+09:23:46 [validate] header time corrected to 09:22 (model wrote: ## 18:45 | main)
+09:23:47 [write] appended: ## 09:22 | main
+09:23:48 [write] position → 1227
+09:23:54 [ndc] now.md → today-2026-07-31.md
+09:23:56 [ndc] running (PID 23794)
+09:24:11 [ndc] tokens: 9+25283cache→651out ($0.012612)
+09:24:18 [ndc] 281→266b (-5%)
+09:24:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:25:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:25:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:25:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:26:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:30:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:30:52 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:31:12 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:31:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:31:22 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:31:24 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+09:31:26 [extract] 18 exchanges (1 human)
+09:31:27 [extract] 1 human msgs < 3, skip
+09:31:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:32:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:32:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:32:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:33:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:33:59 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:34:03 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+09:34:06 [extract] 28 exchanges (1 human)
+09:34:07 [extract] 1 human msgs < 3, skip
+09:34:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:34:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:34:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:35:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:36:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:36:15 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:36:17 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+09:36:18 [extract] 35 exchanges (1 human)
+09:36:18 [extract] 1 human < 3 but 35 exchanges >= 30, saving (agentic session)
+09:36:21 [haiku] calling (branch: main)
+09:36:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:36:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:36:42 [tokens] tokens: 9+25283cache→912out ($0.022072)
+09:36:43 [write] appended: ## 09:36 | main
+09:36:44 [write] position → 1331
+09:51:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:51:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:52:12 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:53:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:55:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:55:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:56:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:56:44 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:56:45 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+09:56:47 [extract] 17 exchanges (1 human)
+09:56:47 [extract] 1 human msgs < 3, skip
+09:57:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:57:52 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:58:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:58:54 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+09:58:55 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+09:58:56 [extract] 22 exchanges (1 human)
+09:58:56 [extract] 1 human msgs < 3, skip
+09:59:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:00:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:01:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:01:23 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:01:24 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+10:01:26 [extract] 27 exchanges (1 human)
+10:01:26 [extract] 1 human msgs < 3, skip
+10:01:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:01:56 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:02:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:02:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:04:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:04:11 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:04:12 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+10:04:13 [extract] 34 exchanges (1 human)
+10:04:13 [extract] 1 human < 3 but 34 exchanges >= 30, saving (agentic session)
+10:04:15 [haiku] calling (branch: main)
+10:04:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:04:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:04:45 [tokens] tokens: 9+25283cache→1841out ($0.030510)
+10:04:47 [write] appended: ## 10:04 | main
+10:04:48 [write] position → 1434
+10:05:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:06:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:06:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:08:04 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:14:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:15:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:16:12 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:16:19 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:16:20 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+10:16:21 [extract] 15 exchanges (1 human)
+10:16:21 [extract] 1 human msgs < 3, skip
+10:16:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+10:17:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:47:30 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:47:38 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:47:40 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+11:47:41 [extract] 22 exchanges (2 human)
+11:47:41 [extract] 2 human msgs < 3, skip
+11:48:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:48:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:49:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:49:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:49:47 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:49:50 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+11:49:53 [extract] 28 exchanges (2 human)
+11:49:53 [extract] 2 human msgs < 3, skip
+11:49:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:50:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:50:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:51:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:51:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:51:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:51:48 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:52:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:52:18 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:52:19 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+11:52:21 [extract] 40 exchanges (2 human)
+11:52:21 [extract] 2 human < 3 but 40 exchanges >= 30, saving (agentic session)
+11:52:24 [haiku] calling (branch: main)
+11:52:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:52:56 [tokens] tokens: 9+25283cache→2136out ($0.034950)
+11:52:57 [write] appended: ## 11:52 | main
+11:52:58 [write] position → 1561
+11:53:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:53:03 [ndc] now.md → today-2026-07-31.md
+11:53:05 [ndc] running (PID 58119)
+11:53:40 [ndc] tokens: 9+25283cache→3132out ($0.025176)
+11:53:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:53:44 [ndc] 503→473b (-5%)
+11:54:12 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:55:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:55:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:56:30 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:56:54 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:57:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:57:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:57:56 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:58:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:58:58 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:59:00 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+11:59:02 [extract] 19 exchanges (0 human)
+11:59:02 [extract] 0 human msgs < 3, skip
+11:59:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+11:59:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:00:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:00:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:00:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:01:17 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:01:19 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+12:01:20 [extract] 26 exchanges (0 human)
+12:01:20 [extract] 0 human msgs < 3, skip
+12:01:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:01:49 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:02:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:02:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:03:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:03:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:03:43 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:03:44 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+12:03:45 [extract] 34 exchanges (0 human)
+12:03:46 [extract] 0 human < 3 but 34 exchanges >= 30, saving (agentic session)
+12:03:48 [haiku] calling (branch: main)
+12:04:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:04:10 [tokens] tokens: 9+25283cache→1356out ($0.022872)
+12:04:11 [write] appended: ## 12:03 | main
+12:04:12 [write] position → 1668
+12:04:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:05:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:05:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:08:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:09:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:09:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:10:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:11:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:11:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:11:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:11:45 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:11:45 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:11:47 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+12:11:48 [extract] 20 exchanges (1 human)
+12:11:48 [extract] 1 human msgs < 3, skip
+12:12:01 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:12:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:12:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:13:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:13:56 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:14:34 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+12:14:36 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+12:14:37 [extract] 27 exchanges (1 human)
+12:14:37 [extract] 1 human msgs < 3, skip
+12:15:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:04:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:05:04 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:05:06 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+14:05:07 [extract] 33 exchanges (2 human)
+14:05:07 [extract] 2 human < 3 but 33 exchanges >= 30, saving (agentic session)
+14:05:09 [haiku] calling (branch: main)
+14:05:37 [tokens] tokens: 9+24429cache→1570out ($0.031443)
+14:05:38 [write] appended: ## 14:05 | main
+14:05:39 [write] position → 1766
+14:05:44 [ndc] now.md → today-2026-07-31.md
+14:05:45 [ndc] running (PID 62936)
+14:06:05 [ndc] tokens: 9+25283cache→1402out ($0.016404)
+14:06:08 [ndc] 419→317b (-24%)
+14:07:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:08:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:08:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:08:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:08:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:08:45 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:08:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:08:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:09:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:09:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:09:54 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:10:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:10:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:10:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:10:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:10:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:10:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:10:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:10:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:10:48 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:10:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:55 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:11:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:12:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:01 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:56 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:13:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:14:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:14:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:14:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:14:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:14:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:14:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:14:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:14:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:14:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:14:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:14:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:14:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:15:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:15:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:15:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:15:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:15:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:15:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:15:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:15:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:15:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:16:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:16:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:16:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:16:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:16:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:16:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:16:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:16:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:16:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:16:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:16:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:17:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:17:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:17:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:17:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:17:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:17:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:17:55 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:17:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:18:04 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:18:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:18:16 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:18:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:18:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:18:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:18:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:18:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:18:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:18:49 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:18:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:19:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:19:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:19:16 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:19:16 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:19:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:19:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:19:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:19:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:19:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:19:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:19:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:19:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:20:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:20:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:20:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:20:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:20:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:20:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:20:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:20:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:20:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:20:55 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:20:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:21:01 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:21:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:21:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:21:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:21:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:21:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:21:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:21:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:21:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:21:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:22:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:22:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:22:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:22:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:22:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:22:48 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:22:48 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:23:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:23:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:23:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:23:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:24:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:24:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:24:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:25:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:25:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:26:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:28:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:28:10 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:28:11 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+14:28:13 [extract] 17 exchanges (1 human)
+14:28:13 [extract] 1 human msgs < 3, skip
+14:28:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:29:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:30:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:30:35 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:30:37 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+14:30:38 [extract] 23 exchanges (1 human)
+14:30:38 [extract] 1 human msgs < 3, skip
+14:32:42 [hook] session-start: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 REMEMBER_DIR=D://.remember
+14:32:48 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:32:49 [force] bypassing cooldown + min msgs
+14:32:49 [extract] session 9921cdf0-05cb-4240-b8ac-b7089b31f086
+14:32:51 [extract] 588 exchanges (36 human)
+14:32:52 [haiku] calling (branch: main)
+14:33:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:33:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:33:25 [tokens] tokens: 9+25283cache→2182out ($0.282815)
+14:33:27 [write] appended: ## 14:32 | main
+14:33:28 [write] position → 1598
+14:33:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:34:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:34:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:34:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:12 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:26 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:31 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+14:52:33 [extract] 37 exchanges (3 human)
+14:52:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:41 [haiku] calling (branch: main)
+14:52:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:52 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:54 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:55 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:55 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:52:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:17 [tokens] tokens: 9+25283cache→1621out ($0.059136)
+14:53:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:23 [write] appended: ## 14:52 | main
+14:53:25 [write] position → 1957
+14:53:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:48 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:53:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:01 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:01 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:04 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:55 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:54:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:04 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:30 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:55:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:01 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:04 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:04 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:52 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:54 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:56:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:30 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:48 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:52 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:57:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:45 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:49 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:52 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:55 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:58:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:59:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:59:04 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:59:12 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:59:12 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:59:16 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:59:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:59:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:59:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+14:59:45 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:00:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:01:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:01:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:01:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:01:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:01:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:01:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:01:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:01:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:01:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:01:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:01:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:01 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:04 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:45 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:02:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:12 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:45 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:49 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:49 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:03:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:48 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:49 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:04:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:16 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:16 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:16 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:30 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:49 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:52 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:56 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:05:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:12 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:54 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:06:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:07:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:07:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:07:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:07:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:07:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:07:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:07:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:07:45 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:07:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:07:48 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:07:49 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:07:54 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:08:01 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:08:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:08:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:08:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:08:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:08:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:08:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:08:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:08:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:08:52 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:08:56 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:09:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:09:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:09:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:09:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:09:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:09:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:09:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:09:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:10:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:10:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:10:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:10:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:10:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:10:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:11:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:11:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:11:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:11:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:12:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:12:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:12:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:12:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:12:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:12:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:12:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:12:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:12:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:13:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:13:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:13:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:13:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:14:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:14:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:14:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:15:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:15:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:15:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:15:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:15:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:16:16 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:16:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:19:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:20:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:22:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:23:04 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:23:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+15:23:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+20:54:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+20:54:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+20:55:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+20:55:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+20:55:53 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+20:56:00 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+20:56:07 [extract] 14 exchanges (2 human)
+20:56:08 [extract] 2 human msgs < 3, skip
+20:56:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+20:57:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+20:58:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+20:58:41 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+20:58:42 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+20:58:43 [extract] 18 exchanges (2 human)
+20:58:43 [extract] 2 human msgs < 3, skip
+20:59:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+20:59:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:00:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:00:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:00:56 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:01:04 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:01:05 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+21:01:06 [extract] 25 exchanges (2 human)
+21:01:06 [extract] 2 human msgs < 3, skip
+21:01:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:01:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:01:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:02:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:02:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:02:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:03:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:03:20 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:03:21 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+21:03:23 [extract] 36 exchanges (2 human)
+21:03:23 [extract] 2 human < 3 but 36 exchanges >= 30, saving (agentic session)
+21:03:25 [haiku] calling (branch: main)
+21:03:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:04:07 [tokens] tokens: 9+24429cache→3117out ($0.061704)
+21:04:08 [write] appended: ## 21:03 | main
+21:04:09 [write] position → 2081
+21:04:15 [ndc] now.md → today-2026-07-31.md
+21:04:17 [ndc] running (PID 103910)
+21:04:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:05:05 [ndc] tokens: 9+25283cache→5055out ($0.035324)
+21:05:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:05:08 [ndc] 661→493b (-25%)
+21:05:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:06:04 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:07:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:07:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:07:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:07:45 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:07:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:07:54 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:07:55 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:07:55 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:07:56 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:08:01 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:08:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:08:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:08:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:08:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:08:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:08:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:08:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:08:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:08:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:08:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:09:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:09:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:10:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:10:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:10:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:10:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:10:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:10:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:10:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:10:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:10:49 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:10:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:10:55 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:10:56 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:11:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:11:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:11:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:11:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:11:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:11:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:11:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:11:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:12:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:12:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:12:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:12:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:13:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:13:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:13:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:13:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:13:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:13:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:14:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:14:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:14:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:14:29 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:14:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:14:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:14:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:15:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:15:01 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:15:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:15:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:15:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:16:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:16:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:18:12 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:18:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:18:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:18:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:18:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:18:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:18:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:49 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:19:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:30 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:30 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:45 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:20:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:31 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:45 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:45 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:48 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:21:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:14 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:22:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:23:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:23:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:23:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:23:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:23:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:23:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:23:48 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:23:52 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:23:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:23:54 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:23:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:48 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:48 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:49 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:56 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:24:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:07 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:47 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:25:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:13 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:18 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:21 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:27 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:36 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:40 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:42 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:45 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:26:58 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:10 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:16 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:23 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:28 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:27:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:20 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:26 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:30 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:38 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:44 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:54 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:28:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:03 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:04 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:06 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:16 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:22 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:24 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:30 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:29:46 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:30:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:30:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:30:16 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:30:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:30:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:30:35 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:30:54 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:30:57 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:31:04 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:31:15 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:31:25 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:31:41 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:32:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:32:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:32:41 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:32:42 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+21:32:43 [extract] 18 exchanges (1 human)
+21:32:43 [extract] 1 human msgs < 3, skip
+21:33:32 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:33:51 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:34:08 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:34:19 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:34:37 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:34:50 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:34:58 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:34:59 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+21:35:00 [extract] 27 exchanges (1 human)
+21:35:01 [extract] 1 human msgs < 3, skip
+21:35:09 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:35:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:36:02 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:36:17 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:36:34 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:36:59 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:37:05 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:37:06 [extract] session 7d5c42f6-c9d4-4a5a-873f-388e3a0b5bd3
+21:37:07 [extract] 35 exchanges (1 human)
+21:37:08 [extract] 1 human < 3 but 35 exchanges >= 30, saving (agentic session)
+21:37:09 [haiku] calling (branch: main)
+21:37:51 [tokens] tokens: 9+25283cache→3226out ($0.055627)
+21:37:52 [write] appended: ## 21:37 | main
+21:37:53 [write] position → 2186
+21:38:00 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:40:11 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:41:53 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:42:05 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:42:33 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:42:43 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+21:43:39 [hook] post-tool: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+22:42:04 [hook] session-start: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 REMEMBER_DIR=D://.remember
+22:42:22 [hook] session-start: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 REMEMBER_DIR=D://.remember
+22:42:48 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+22:42:52 [force] bypassing cooldown + min msgs
+22:42:53 [extract] session 9e93afd0-27e1-4362-adfc-6727fff746ba
+22:42:56 [extract] 2 exchanges (1 human)
+22:43:08 [haiku] calling (branch: main)
+22:43:26 [hook] save-session: PROJECT_DIR=D:/ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0 PYTHON=python3 REMEMBER_DIR=D://.remember
+22:43:30 [lock] another save holds the lock, skipping
+22:43:37 [tokens] tokens: 9+24429cache→393out ($0.014194)
+22:43:38 [haiku] SKIP — position → 5
