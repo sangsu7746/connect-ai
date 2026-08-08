@@ -1,3 +1,3 @@
 
-## 14:37 | feat/adstudio-youtube-homage
-Planned photo-only mode where photo count determines video length; mapped to existing `keyframeUrl`/`shotType` capabilities; investigating duration handling in AdConfig.
+## 17:14 | feat/adstudio-youtube-homage
+Photo mode duration: 7 photos = 21sec, chose tempo selector UI (option A), need to relax adStore.ts duration type constraint (currently 15|30|60 only).
