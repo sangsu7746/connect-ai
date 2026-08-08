@@ -1,3 +1,3 @@
 
-## 17:14 | feat/adstudio-youtube-homage
-Photo mode duration: 7 photos = 21sec, chose tempo selector UI (option A), need to relax adStore.ts duration type constraint (currently 15|30|60 only).
+## 20:58 | feat/adstudio-youtube-homage
+Investigating reuse of existing Photo[] subcoll (projects/{id}/photos/{photoId}) in projectService from homage-app era, checking Photo type def to confirm compatibility with 1MB Firestore doc limit.
