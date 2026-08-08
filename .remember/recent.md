@@ -1,5 +1,8 @@
 # Recent
 
+## 2026-08-08
+Photo-only mode for YouTube homage: mapped keyframe/shotType, validated 7-photo→21sec conversion, added tempo selector UI, relaxed duration constraints, verified Firestore subcollection type compat.
+
 ## 2026-08-07
 Promo docs + tone system (4 variants) validated with improved dark-contrast scrim (4.9×); SD offline resilience (auto-restore, alerts). Loan compliance (22 tests); channels 58→93, 23 ads published; membership verifier (58 FB, 65 enabled), language-script validator; fixed LAN, SD API, renderer.
 

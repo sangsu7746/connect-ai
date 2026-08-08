@@ -1,3 +1,3 @@
 
-## 07:03 | feat/adstudio-youtube-homage
-Inserted reg_no 2026-대구중구-0002 into profiles/loan.yaml and verified loan compliance gate passes.
+## 07:36 | feat/adstudio-youtube-homage
+Committed loan disclosure to profiles/loan.yaml (commit 216c47929), opened ad gate; started typo-fix workflow (5x 동록→등록); flagged Kakao ID (ds10000) addition.
