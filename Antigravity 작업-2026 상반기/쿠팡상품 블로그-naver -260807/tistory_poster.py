@@ -330,7 +330,11 @@ def build_html(post: dict, product: dict, affiliate_url: str = "",
         imgs = [main] + [u for u in imgs if u != main]
     imgs = [u for u in dict.fromkeys(imgs) if u and "/image/displayitem" not in u][:3]
     if upload_slots > 0:
-        imgs = ["{{IMG%d}}" % i for i in range(min(upload_slots, 3))]
+        # 자리표시자에 **원래 쿠팡 주소를 함께 담는다.**
+        # 업로드가 실패했을 때 되돌아갈 곳이 없으면 이미지가 통째로 사라진다 —
+        # 실제로 티스토리 10건이 이미지 0장으로 나갔다.
+        # 티스토리 업로드가 되면 대표이미지까지 잡히고, 안 되면 최소한 본문 이미지는 보인다.
+        imgs = ["{{IMG%d|%s}}" % (i, u) for i, u in enumerate(imgs[:min(upload_slots, 3)])]
 
     # 본문을 문단으로 쪼개고 링크·고지 줄은 걷어낸다(아래에서 다시 붙인다)
     paras = []
@@ -634,10 +638,20 @@ def upload_images(page, paths, log=print, timeout_s: int = 90) -> list:
 
 
 def _apply_uploaded(html: str, urls: list) -> str:
-    """{{IMG0}} 자리표시자를 업로드된 주소로 바꾼다. 못 채운 자리의 <p>는 통째로 지운다."""
-    for i, u in enumerate(urls):
-        html = html.replace("{{IMG%d}}" % i, u)
-    return re.sub(r"<p[^>]*>\s*<img[^>]*\{\{IMG\d+\}\}[^>]*>\s*</p>\s*", "", html)
+    """
+    `{{IMGn|폴백주소}}` 자리표시자를 실제 주소로 바꾼다.
+
+    업로드된 주소가 있으면 그것을 쓰고, 없으면 자리표시자에 담아 둔 쿠팡 주소로 되돌린다.
+    예전에는 못 채운 자리의 <p> 를 지웠는데, 업로드가 실패하자 본문 이미지가
+    전부 사라진 채로 10건이 발행됐다. 썸네일을 얻으려다 이미지를 잃는 건 손해다.
+    """
+    def repl(m):
+        i, fallback = int(m.group(1)), m.group(2)
+        return urls[i] if i < len(urls) and urls[i] else fallback
+
+    html = re.sub(r"\{\{IMG(\d+)\|([^}]*)\}\}", repl, html)
+    # 폴백 주소조차 비어 있던 자리는 어쩔 수 없이 지운다
+    return re.sub(r"<p[^>]*>\s*<img[^>]*src=\"\"[^>]*>\s*</p>\s*", "", html)
 
 
 EDIT_URL = f"https://{BLOG}.tistory.com/manage/newpost/{{id}}?type=post&returnURL=%2Fmanage%2Fposts"
