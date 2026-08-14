@@ -16,7 +16,7 @@ Stable Diffusion(ComfyUI) 생성 이미지로 릴스(9:16)와 롱폼 모션영�
 
 | 항목 | 결정 |
 |---|---|
-| 블로그 소스 | 네이버 블로그 검색 상위 글 |
+| 블로그 소스 | 네이버 블로그 검색 상위 글 + 구글 검색 상위 블로그 글(티스토리·브런치 등) |
 | 카테고리 | DataLab 트렌드 자동 (시드 키워드 풀 + 상승률 순위화, UI에서 시드 편집 가능) |
 | 리스트 뷰 | 카테고리별 탭으로 보기 + 글마다 보랏빛 점수 배지(0~4) |
 | 산출물 | 릴스 9:16 (30/60초) + 롱폼 16:9 (1/3/5/10분) |
@@ -33,7 +33,7 @@ Stable Diffusion(ComfyUI) 생성 이미지로 릴스(9:16)와 롱폼 모션영�
 [React 웹 UI (Vite, 포트 5175)]
         │ REST + 잡 폴링
 [FastAPI 서버 (Python, 포트 8792)]
-   ├─ 수집: 네이버 검색 API + DataLab
+   ├─ 수집: 네이버 검색 API + DataLab + 구글 CSE(폴백: Playwright)
    ├─ 크롤링: Playwright 본문 수집 (폴백 체인)
    ├─ 진단: purple_cow 블로그판 (4문항 → 보랏빛 점수)
    ├─ 대본: Gemini (보랏빛소 지침 + GEO) → guardrails 숫자 대조
@@ -77,16 +77,17 @@ D:\블로그 리뉴얼 릴스 제작기\
   web\                    React 19 + TS + Vite (EstateReels-v2 구도 이식)
     src\pages\            Dashboard, PostList, Review, Concept,
                           Storyboard, Generate, Result
-  .env                    NAVER_CLIENT_ID/SECRET, GEMINI_API_KEY,
-                          COMFYUI_URL, 포트 설정
+  .env                    NAVER_CLIENT_ID/SECRET, GOOGLE_CSE_KEY/ID,
+                          GEMINI_API_KEY, COMFYUI_URL, 포트 설정
 ```
 
 ## 4. 화면 흐름 (7단계 위저드)
 
 1. **카테고리 대시보드** — 기본 6종(부동산·재테크·건강·요리·여행·IT), 추가/편집 가능.
    카테고리마다 DataLab 상승률 기준 "지금 뜨는 키워드 TOP 5" 표시.
-2. **블로그 리스트** — 카테고리별 탭. 키워드로 네이버 검색 상위 글 수집,
-   글마다 보랏빛 점수 배지 + 제목/요약/원문 링크. 영상화할 글 3~5개 선택.
+2. **블로그 리스트** — 카테고리별 탭. 키워드로 네이버·구글 검색 상위 글 수집,
+   글마다 보랏빛 점수 배지 + 소스 배지(N/G) + 제목/요약/원문 링크. 소스 필터
+   (전체/네이버/구글) 제공. 영상화할 글 3~5개 선택.
 3. **분석 리뷰** — 추출된 핵심 정보(숫자·사실·구조) 확인·편집.
 4. **컨셉·형식** — 카피 컨셉 + 이미지 스타일팩 + 형식(릴스/롱폼, 길이) 선택.
 5. **스토리보드** — 씬별 자막/나레이션/이미지 프롬프트 편집.
@@ -103,9 +104,16 @@ DataLab API는 인기 키워드 "목록"을 주지 않고 지정 키워드의 �
 ## 5. 수집 계층
 
 - 네이버 검색 API(블로그)로 키워드당 상위 N건 목록 수집(제목·링크·요약·작성일).
+- 구글: Custom Search JSON API(공식, 무료 100쿼리/일 — 일일 사용량으로 충분) 우선,
+  키 미설정 시 Playwright 검색 크롤링 폴백. 블로그 도메인(티스토리·브런치·네이버 등)만
+  필터링해 리스트에 편입. 사전 준비물: GOOGLE_CSE_KEY + GOOGLE_CSE_ID 발급(무료).
 - 본문 크롤링은 EstateReels-v2 `blogImport.ts` 폴백 체인을 서버로 이식:
-  로컬 Playwright → jina 리더 → allorigins. 네이버 블로그는 iframe 본문(PostView) 처리.
-- 수집 결과는 SQLite에 저장. 리스트 화면은 저장분 우선, 새로고침 시 재수집.
+  로컬 Playwright → jina 리더 → allorigins. 네이버 블로그는 iframe 본문(PostView) 처리,
+  티스토리·브런치는 범용 본문 추출(jina 리더가 커버).
+- 수집 결과는 SQLite에 저장(source 필드: naver/google). 리스트 화면은 저장분 우선,
+  새로고침 시 재수집.
+- 진단 가점: 같은 주제가 네이버·구글 양쪽 상위에 모두 노출되면 no_discount(검증된 수요)
+  판정에 가점.
 
 ## 6. 보랏빛소 진단 — 블로그판
 
