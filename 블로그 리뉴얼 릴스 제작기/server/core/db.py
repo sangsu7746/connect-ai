@@ -1,0 +1,64 @@
+import os, pathlib, sqlite3
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS categories(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL,
+  emoji TEXT DEFAULT '📁'
+);
+CREATE TABLE IF NOT EXISTS seed_keywords(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+  keyword TEXT NOT NULL,
+  UNIQUE(category_id, keyword)
+);
+CREATE TABLE IF NOT EXISTS trends(
+  category_id INTEGER NOT NULL,
+  keyword TEXT NOT NULL,
+  ratio_last REAL, ratio_prev REAL, rise_pct REAL,
+  fetched_at TEXT,
+  PRIMARY KEY(category_id, keyword)
+);
+CREATE TABLE IF NOT EXISTS posts(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+  keyword TEXT,
+  source TEXT NOT NULL CHECK(source IN('naver','google')),
+  title TEXT NOT NULL,
+  url TEXT NOT NULL UNIQUE,
+  summary TEXT DEFAULT '',
+  blogger TEXT DEFAULT '',
+  posted_at TEXT DEFAULT '',
+  content TEXT DEFAULT '',
+  crawled_at TEXT,
+  fetched_at TEXT
+);
+CREATE TABLE IF NOT EXISTS diagnoses(
+  post_id INTEGER PRIMARY KEY REFERENCES posts(id) ON DELETE CASCADE,
+  score INTEGER NOT NULL,
+  verdict TEXT NOT NULL,
+  answers_json TEXT NOT NULL,
+  hooks_json TEXT NOT NULL,
+  diagnosed_at TEXT
+);
+"""
+
+def db_path() -> str:
+    p = os.environ.get("APP_DB_PATH")
+    if p:
+        return p
+    d = pathlib.Path(__file__).resolve().parents[1] / "data"
+    d.mkdir(exist_ok=True)
+    return str(d / "app.db")
+
+def get_conn() -> sqlite3.Connection:
+    conn = sqlite3.connect(db_path(), check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
+
+def init_db() -> None:
+    conn = get_conn()
+    conn.executescript(SCHEMA)
+    conn.commit()
+    conn.close()
