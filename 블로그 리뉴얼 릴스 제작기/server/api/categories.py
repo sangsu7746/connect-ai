@@ -1,3 +1,4 @@
+import sqlite3
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from core.db import get_conn
@@ -33,10 +34,13 @@ def list_categories():
 def add_category(body: CategoryIn):
     conn = get_conn()
     try:
-        cur = conn.execute("INSERT INTO categories(name, emoji) VALUES(?,?)",
-                           (body.name, body.emoji))
-        conn.commit()
-        return {"id": cur.lastrowid}
+        try:
+            cur = conn.execute("INSERT INTO categories(name, emoji) VALUES(?,?)",
+                               (body.name, body.emoji))
+            conn.commit()
+            return {"id": cur.lastrowid}
+        except sqlite3.IntegrityError:
+            raise HTTPException(409, "이미 있는 카테고리")
     finally:
         conn.close()
 

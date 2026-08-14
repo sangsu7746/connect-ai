@@ -23,3 +23,9 @@ def test_add_delete_category_and_keyword(monkeypatch, tmp_path):
     c.delete(f"/api/categories/{cid}/keywords/이유식")
     c.delete(f"/api/categories/{cid}")
     assert "육아" not in {x["name"] for x in c.get("/api/categories").json()}
+
+def test_duplicate_category_name_returns_409(monkeypatch, tmp_path):
+    c = make_client(monkeypatch, tmp_path)
+    r = c.post("/api/categories", json={"name": "IT"})
+    assert r.status_code == 409
+    assert r.json()["detail"] == "이미 있는 카테고리"
