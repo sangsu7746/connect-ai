@@ -798,94 +798,147 @@ def write_post(title: str, content: str, tags: str = "", affiliate_url: str = ""
             if not ensure_login(p, wait_minutes=6):
                 result["why"] = "로그인/편집기 도달 실패"
                 return result
+            return _write_one(p, title, html, tags, mode, category, upload_paths, result)
+        finally:
+            ctx.close()
 
-            p.wait_for_timeout(2000)
-            # 이어쓰기 안내 팝업이 뜨면 닫는다(이전 임시저장이 있을 때 나온다)
-            for txt in ("취소", "새로 작성"):
-                try:
-                    btn = p.locator(f"button:has-text('{txt}')").first
-                    if btn.is_visible(timeout=1200):
-                        btn.click()
-                        p.wait_for_timeout(800)
-                        break
-                except Exception:
-                    pass
 
-            # 이미지 업로드가 먼저다. setContent 를 하면 에디터 내용이 통째로 덮여서
-            # 그 전에 올려 둔 이미지가 사라진다. 주소만 받아 두고 본문에 끼워 넣는다.
-            if upload_paths:
-                urls = upload_images(p, upload_paths)
-                html = _apply_uploaded(html, urls)
-                result["uploaded"] = len(urls)
+def _write_one(p, title: str, html: str, tags: str, mode: str,
+               category: str, upload_paths: list, result: dict) -> dict:
+    """
+    이미 로그인된 page 로 글 하나를 올린다. 브라우저 수명은 호출자가 관리한다.
 
-            r = p.evaluate(_FILL_JS, [title, html])
-            if not r.get("ok"):
-                result["why"] = f"본문 입력 실패: {r.get('why')}"
-                return result
-            print(f"  제목 {r['titleLen']}자 / 본문 {r['bodyLen']}자 입력됨")
-
-            if category:
-                result["category_ok"] = select_category(p, category)
-
-            if tags:
-                try:
-                    tag_el = p.locator("#tagText")
-                    for t in [x.strip() for x in tags.split(",") if x.strip()][:8]:
-                        tag_el.click()
-                        tag_el.type(t, delay=40)
-                        p.keyboard.press("Enter")
-                        p.wait_for_timeout(250)
-                except Exception as e:
-                    print(f"  태그 입력 건너뜀: {str(e)[:50]}")
-
-            p.wait_for_timeout(600)
-
-            if mode == "draft":
-                # 주의: 임시저장은 '글'로 등록되지 않는다. 글 관리 목록에 안 뜨고
-                # 에디터 안의 임시저장 목록에만 쌓인다(카운터로 확인됨).
-                p.locator("a.action:has-text('임시저장')").first.click()
-                p.wait_for_timeout(3000)
-                result.update(ok=True, url=p.url,
-                              note="임시저장됨 — 글 관리에는 나오지 않습니다. "
-                                   "글로 등록하려면 mode='private' 또는 'public' 을 쓰세요")
-                return result
-
-            # ── 발행 레이어 열기 ──────────────────────────────────────
-            # 실측으로 확보한 ID (2026-08):
-            #   #publish-layer-btn  완료 → 레이어 열기
-            #   #open20 공개 / #open15 공개(보호) / #open0 비공개  (radio)
-            #   #publish-btn        최종 저장 (선택한 공개설정에 따라 라벨이 바뀐다)
-            p.locator("#publish-layer-btn").click()
-            p.wait_for_timeout(2000)
-
-            radio_id = "#open0" if mode == "private" else "#open20"
-            try:
-                # 라디오는 label 을 눌러야 반응한다
-                p.evaluate("""(rid) => {
-                    const inp = document.querySelector(rid);
-                    if (!inp) return false;
-                    const lab = document.querySelector(`label[for="${rid.slice(1)}"]`) || inp;
-                    lab.click();
-                    return true;
-                }""", radio_id)
+    write_posts() 가 여러 건을 한 세션에서 돌리려고 갈라 놓은 것이다.
+    글마다 브라우저를 새로 열면 티스토리 세션 쿠키가 사라져 두 번째부터 로그인 화면에 막힌다.
+    """
+    p.wait_for_timeout(2000)
+    # 이어쓰기 안내 팝업이 뜨면 닫는다(이전 임시저장이 있을 때 나온다)
+    for txt in ("취소", "새로 작성"):
+        try:
+            btn = p.locator(f"button:has-text('{txt}')").first
+            if btn.is_visible(timeout=1200):
+                btn.click()
                 p.wait_for_timeout(800)
-            except Exception as e:
-                print(f"  공개설정 클릭 실패: {str(e)[:60]}")
+                break
+        except Exception:
+            pass
 
-            btn_label = p.evaluate("""() => {
-                const b = document.querySelector('#publish-btn');
-                return b ? (b.innerText||'').trim() : '';}""")
-            print(f"  최종 버튼: '{btn_label}'")
+    # 이미지 업로드가 먼저다. setContent 를 하면 에디터 내용이 통째로 덮여서
+    # 그 전에 올려 둔 이미지가 사라진다. 주소만 받아 두고 본문에 끼워 넣는다.
+    if upload_paths:
+        urls = upload_images(p, upload_paths)
+        html = _apply_uploaded(html, urls)
+        result["uploaded"] = len(urls)
 
-            p.locator("#publish-btn").click()
-            p.wait_for_timeout(6000)
+    r = p.evaluate(_FILL_JS, [title, html])
+    if not r.get("ok"):
+        result["why"] = f"본문 입력 실패: {r.get('why')}"
+        return result
+    print(f"  제목 {r['titleLen']}자 / 본문 {r['bodyLen']}자 입력됨")
 
-            # 발행되면 에디터를 벗어난다 — URL 로 성공을 판정한다
-            done = "/manage/newpost" not in p.url
-            result.update(ok=done, url=p.url,
-                          note=("발행 완료" if done else
-                                "최종 저장 클릭했으나 편집기에 남아 있음 — 확인 필요"))
-            return result
+    if category:
+        result["category_ok"] = select_category(p, category)
+
+    if tags:
+        try:
+            tag_el = p.locator("#tagText")
+            for t in [x.strip() for x in tags.split(",") if x.strip()][:8]:
+                tag_el.click()
+                tag_el.type(t, delay=40)
+                p.keyboard.press("Enter")
+                p.wait_for_timeout(250)
+        except Exception as e:
+            print(f"  태그 입력 건너뜀: {str(e)[:50]}")
+
+    p.wait_for_timeout(600)
+
+    if mode == "draft":
+        # 주의: 임시저장은 '글'로 등록되지 않는다. 글 관리 목록에 안 뜨고
+        # 에디터 안의 임시저장 목록에만 쌓인다(카운터로 확인됨).
+        p.locator("a.action:has-text('임시저장')").first.click()
+        p.wait_for_timeout(3000)
+        result.update(ok=True, url=p.url,
+                      note="임시저장됨 — 글 관리에는 나오지 않습니다. "
+                           "글로 등록하려면 mode='private' 또는 'public' 을 쓰세요")
+        return result
+
+    # ── 발행 레이어 열기 ──────────────────────────────────────
+    # 실측으로 확보한 ID (2026-08):
+    #   #publish-layer-btn  완료 → 레이어 열기
+    #   #open20 공개 / #open15 공개(보호) / #open0 비공개  (radio)
+    #   #publish-btn        최종 저장 (선택한 공개설정에 따라 라벨이 바뀐다)
+    p.locator("#publish-layer-btn").click()
+    p.wait_for_timeout(2000)
+
+    radio_id = "#open0" if mode == "private" else "#open20"
+    try:
+        # 라디오는 label 을 눌러야 반응한다
+        p.evaluate("""(rid) => {
+            const inp = document.querySelector(rid);
+            if (!inp) return false;
+            const lab = document.querySelector(`label[for="${rid.slice(1)}"]`) || inp;
+            lab.click();
+            return true;
+        }""", radio_id)
+        p.wait_for_timeout(800)
+    except Exception as e:
+        print(f"  공개설정 클릭 실패: {str(e)[:60]}")
+
+    btn_label = p.evaluate("""() => {
+        const b = document.querySelector('#publish-btn');
+        return b ? (b.innerText||'').trim() : '';}""")
+    print(f"  최종 버튼: '{btn_label}'")
+
+    p.locator("#publish-btn").click()
+    p.wait_for_timeout(6000)
+
+    # 발행되면 에디터를 벗어난다 — URL 로 성공을 판정한다
+    done = "/manage/newpost" not in p.url
+    result.update(ok=done, url=p.url,
+                  note=("발행 완료" if done else
+                        "최종 저장 클릭했으나 편집기에 남아 있음 — 확인 필요"))
+    return result
+
+
+def write_posts(jobs: list, mode: str = "public", headless: bool = False, log=print,
+                wait_minutes: float = 12.0) -> dict:
+    """
+    여러 글을 **한 브라우저 세션에서** 연속 발행한다.
+
+    티스토리 세션 쿠키(TSSESSION)는 창을 닫으면 사라진다. 글마다 write_post 를 부르면
+    두 번째부터 로그인 화면에 막힌다 — 수정 작업에서 실제로 그렇게 실패했다.
+    그래서 로그인 한 번에 전부 처리한다.
+
+    jobs: [{"key":..., "title":..., "html":..., "tags":..., "category":...,
+            "upload_paths":[...]}, ...]
+    """
+    from playwright.sync_api import sync_playwright
+    out = {}
+    with sync_playwright() as pw:
+        ctx = _ctx(pw, headless)
+        p = _page(ctx)
+        p.on("dialog", lambda d: d.accept())
+        try:
+            if not ensure_login(p, wait_minutes=wait_minutes):
+                return {j["key"]: {"ok": False, "why": "로그인/편집기 도달 실패"} for j in jobs}
+            for i, j in enumerate(jobs, 1):
+                log(f"\n[{i}/{len(jobs)}] {j['title'][:44]}")
+                try:
+                    out[j["key"]] = _write_one(
+                        p, j["title"], j["html"], j.get("tags", ""), mode,
+                        j.get("category", ""), j.get("upload_paths"), {"mode": mode, "ok": False})
+                except Exception as e:
+                    out[j["key"]] = {"ok": False, "why": str(e)[:140]}
+                    log(f"  ✘ {str(e)[:90]}")
+                # 다음 글을 위해 새 글쓰기 화면으로 돌아간다
+                if i < len(jobs):
+                    p.wait_for_timeout(2500)
+                    try:
+                        p.goto(NEWPOST_URL, wait_until="domcontentloaded", timeout=45000)
+                        p.wait_for_timeout(4000)
+                    except Exception:
+                        pass
+            return out
         finally:
             ctx.close()
 
