@@ -33,7 +33,8 @@ STATE = os.path.join(BASE_DIR, ".daily_state.json")
 PY = os.path.join(BASE_DIR, ".venv", "Scripts", "python.exe")
 
 MAX_PER_DAY = 10           # 하루 목표 발행 수(사용자 지정)
-MAX_FAILS = 3              # 연속 실패가 이만큼이면 사람이 볼 때까지 멈춘다
+MAX_FAILS = 3              # 연속 '발행' 실패가 이만큼이면 사람이 볼 때까지 멈춘다
+MAX_SKIPS = 5              # 쿠팡 수집이 이만큼 막히면 그날은 물러난다(IP 를 조이는 중)
 PRICE_MAX_AGE_HOURS = 12   # 이보다 오래된 가격이면 다시 확인한다
 
 #: 글과 글 사이 간격(초). 정확히 같은 간격으로 올리면 기계가 올린 티가 난다.
@@ -63,16 +64,20 @@ def _save_state(s: dict) -> None:
     io.open(STATE, "w", encoding="utf-8").write(json.dumps(s, ensure_ascii=False, indent=2))
 
 
-def pick_target() -> dict:
+def pick_target(skip: set = None) -> dict:
     """
     다음에 올릴 상품 하나. 조건은 셋 다 만족해야 한다.
       실측 데이터 / 파트너스 딥링크 보유 / 아직 이 채널에 안 올림
     할인율이 큰 것부터 고른다 — 읽는 사람에게 가치가 큰 순서다.
+
+    skip: 이번 실행에서 이미 실패한 상품. 빼지 않으면 같은 상품만 계속 다시 고른다.
+      (실제로 쿠팡이 수집을 막은 상품 하나 때문에 재고 15건이 있는데도 배치가 멈췄다)
     """
+    skip = skip or set()
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     try:
-        row = conn.execute("""
+        rows = conn.execute("""
             SELECT * FROM products p
              WHERE p.is_real = 1
                AND p.affiliate_url LIKE '%link.coupang.com%'
@@ -80,11 +85,14 @@ def pick_target() -> dict:
                AND p.product_id NOT IN (
                      SELECT product_id FROM published_posts WHERE channel = 'naver')
              ORDER BY p.discount_rate DESC, p.review_count DESC
-             LIMIT 1
-        """).fetchone()
+             LIMIT 60
+        """).fetchall()
     finally:
         conn.close()
-    return dict(row) if row else None
+    for r in rows:
+        if str(r["product_id"]) not in skip:
+            return dict(r)
+    return None
 
 
 def refresh_price(product_id: str, detail_url: str = "") -> bool:
@@ -135,12 +143,15 @@ def remaining_stock() -> int:
         conn.close()
 
 
-def publish_one(st: dict) -> str:
+def publish_one(st: dict, skip: set) -> str:
     """
-    한 건 발행. 돌려주는 값: 'ok' | 'fail' | 'empty'
+    한 건 발행. 돌려주는 값: 'ok' | 'skip' | 'fail' | 'empty'
+      ok    발행 성공
+      skip  이 상품은 못 하지만 다른 상품은 해볼 만하다(쿠팡 수집 차단 등)
+      fail  발행 자체가 실패 — 연속되면 멈춰야 한다
     한 건이 실패해도 그날 배치 전체를 접지 않는다 — 다음 상품으로 넘어간다.
     """
-    target = pick_target()
+    target = pick_target(skip)
     if not target:
         return "empty"
 
@@ -149,9 +160,12 @@ def publish_one(st: dict) -> str:
 
     if not price_is_fresh(target):
         if not refresh_price(pid, target.get("detail_url") or ""):
-            log("  낡은 가격으로는 올리지 않습니다. 이 건은 건너뜁니다.")
-            return "fail"
-        target = pick_target() or target
+            # 쿠팡이 막은 것은 이 상품의 문제이지 발행 시스템의 문제가 아니다.
+            # 이 상품만 제외하고 다음 상품으로 간다.
+            skip.add(pid)
+            log("  낡은 가격으로는 올리지 않습니다. 이 상품은 건너뛰고 다음으로 갑니다.")
+            return "skip"
+        target = pick_target(skip) or target
         log(f"  갱신된 가격: {target['current_price']:,}원 "
             f"(할인 {target.get('discount_rate', 0)}%)")
 
@@ -196,6 +210,7 @@ def main() -> int:
 
     deadline = time.time() + MAX_RUN_HOURS * 3600
     done = 0
+    skip = set()          # 이번 실행에서 수집이 막힌 상품
     while st["count_today"] < MAX_PER_DAY:
         if time.time() > deadline:
             log(f"⏱️ 실행 시간 상한({MAX_RUN_HOURS}시간)에 도달 — 나머지는 다음 실행으로 넘깁니다.")
@@ -205,20 +220,29 @@ def main() -> int:
         log("-" * 58)
         log(f"[{n}/{MAX_PER_DAY}]")
 
-        r = publish_one(st)
+        r = publish_one(st, skip)
         if r == "empty":
-            log("⛔ 더 올릴 상품이 없습니다 — 딥링크가 있는 미발행 상품이 0건입니다.")
-            log("   쿠팡 파트너스에 로그인해 보충하세요: python coupang_partners.py linkall 20")
+            log("⛔ 더 올릴 상품이 없습니다.")
+            if skip:
+                log(f"   (이번 실행에서 수집이 막혀 건너뛴 상품 {len(skip)}건 제외)")
+            log("   딥링크 보충: python coupang_partners.py linkall 20")
             break
         if r == "ok":
             st["fails"] = 0
             st["count_today"] += 1
             done += 1
+        elif r == "skip":
+            # 쿠팡 수집 차단은 발행 실패가 아니다. 실패 카운터를 올리지 않는다.
+            # 다만 연달아 막히면 쿠팡이 이 IP 를 조이는 중이니 그때는 물러난다.
+            if len(skip) >= MAX_SKIPS:
+                log(f"⛔ 수집이 연속 {len(skip)}건 막혔습니다 — 쿠팡이 조이는 중으로 보입니다.")
+                log("   오늘은 여기서 멈추고, 시간을 두고 다시 시도하세요.")
+                break
         else:
             st["fails"] = st.get("fails", 0) + 1
             if st["fails"] >= MAX_FAILS:
                 _save_state(st)
-                log(f"⛔ 연속 {st['fails']}회 실패 — 오늘은 여기서 멈춥니다.")
+                log(f"⛔ 연속 {st['fails']}회 발행 실패 — 오늘은 여기서 멈춥니다.")
                 break
         _save_state(st)
 
