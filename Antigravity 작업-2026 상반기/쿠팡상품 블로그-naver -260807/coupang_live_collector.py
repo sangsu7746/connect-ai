@@ -187,7 +187,14 @@ def save_real_products(products: list) -> int:
             discount_rate=CASE WHEN excluded.discount_rate>0 THEN excluded.discount_rate ELSE products.discount_rate END,
             image_url=CASE WHEN excluded.image_url<>'' THEN excluded.image_url ELSE products.image_url END,
             detail_images=CASE WHEN excluded.detail_images NOT IN ('','[]') THEN excluded.detail_images ELSE products.detail_images END,
-            affiliate_url=CASE WHEN excluded.affiliate_url<>'' THEN excluded.affiliate_url ELSE products.affiliate_url END,
+            -- 파트너스 딥링크는 무슨 일이 있어도 덮어쓰지 않는다.
+            -- 수집기는 affiliate_url 자리에 그냥 상품 페이지 주소를 넣는다(collect_detail).
+            -- 예전 조건은 '빈 값이 아니면 덮어쓴다' 여서, 발행 직전 가격 재확인 한 번에
+            -- 애써 만든 딥링크가 일반 주소로 되돌아갔다. 그 상태로 4건이 발행됐고 수수료가 0원이 됐다.
+            affiliate_url=CASE
+                WHEN products.affiliate_url LIKE '%link.coupang.com%' THEN products.affiliate_url
+                WHEN excluded.affiliate_url<>'' THEN excluded.affiliate_url
+                ELSE products.affiliate_url END,
             is_rocket=excluded.is_rocket,
             review_count=CASE WHEN excluded.review_count>0 THEN excluded.review_count ELSE products.review_count END,
             rating=CASE WHEN excluded.rating>0 AND excluded.rating<=5 THEN excluded.rating ELSE products.rating END,
