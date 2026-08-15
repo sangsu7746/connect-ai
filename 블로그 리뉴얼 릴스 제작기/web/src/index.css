@@ -1,0 +1,44 @@
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #0f1115; color: #e6e6ea;
+       font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; }
+.page { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+h1 { font-size: 22px; margin: 8px 0 20px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+         gap: 14px; }
+.card { background: #171a21; border: 1px solid #262b36; border-radius: 12px;
+        padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.card-title { font-size: 17px; font-weight: 700; color: #e6e6ea;
+              text-decoration: none; }
+.card-title:hover { color: #a78bfa; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { background: #20242e; border-radius: 20px; padding: 3px 10px;
+        font-size: 12px; }
+.chip em { font-style: normal; margin-left: 4px; font-size: 11px; }
+.chip .up { color: #f87171; } .chip .down { color: #60a5fa; }
+button { background: #7c3aed; color: #fff; border: 0; border-radius: 8px;
+         padding: 8px 14px; cursor: pointer; font-size: 13px; }
+button:disabled { opacity: .5; cursor: default; }
+button.ghost { background: #262b36; }
+input { background: #171a21; color: #e6e6ea; border: 1px solid #262b36;
+        border-radius: 8px; padding: 8px 12px; font-size: 14px; }
+.add-row { display: flex; gap: 8px; margin-top: 18px; }
+.tabs { display: flex; gap: 8px; margin: 14px 0; }
+.tabs button.active { outline: 2px solid #a78bfa; }
+.post { background: #171a21; border: 1px solid #262b36; border-radius: 10px;
+        padding: 12px 14px; margin-bottom: 10px; display: flex; gap: 12px;
+        align-items: flex-start; }
+.badge { min-width: 44px; text-align: center; border-radius: 8px;
+         padding: 6px 4px; font-weight: 800; font-size: 15px; }
+.badge.s4 { background: #7c3aed; } .badge.s3 { background: #8b5cf6cc; }
+.badge.s2 { background: #4b5563; } .badge.s1 { background: #6b4f3f; }
+.badge.s0 { background: #3f2f26; }
+.badge small { display: block; font-size: 10px; font-weight: 400; }
+.src { font-size: 11px; border-radius: 4px; padding: 1px 6px; margin-right: 6px; }
+.src.naver { background: #03c75a33; color: #6ee7a0; }
+.src.google { background: #4285f433; color: #93b7f5; }
+.post h3 { margin: 0 0 4px; font-size: 15px; }
+.post h3 a { color: #e6e6ea; text-decoration: none; }
+.post h3 a:hover { color: #a78bfa; }
+.post p { margin: 2px 0; font-size: 13px; color: #9aa0ae; }
+.hooks { font-size: 12px; color: #c4b5fd; margin-top: 4px; }
