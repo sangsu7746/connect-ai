@@ -57,10 +57,19 @@ def test_weak_lists_failed_questions():
     assert d2["weak"] == []
 
 def test_admin_numbers_excluded_from_hooks():
+    # 훅 단위(만원)가 있어도 행정 문맥 줄이면 배제 — 필터 실경로 검증
     post = {"title": "보증보험 안내", "source": "naver", "summary": "",
-            "content": "문의 전화 1588-1234-5678번\n사업자 등록번호 120-88-00767"}
-    d = pc.diagnose(post, [])
-    assert d["hooks"] == []          # 행정성 숫자는 훅이 아니다
+            "content": "문의 전화 상담료는 3만원입니다"}
+    assert pc.diagnose(post, [])["hooks"] == []
+    # 양성 대조: 행정 문맥 없으면 같은 단위 숫자가 훅이 된다
+    post2 = {"title": "보증보험 안내", "source": "naver", "summary": "",
+             "content": "보증료는 연 38만원이다"}
+    assert pc.diagnose(post2, [])["hooks"]
+
+def test_range_and_negative_numbers_not_admin_blocked():
+    post = {"title": "시세 정리", "source": "naver", "summary": "",
+            "content": "이 지역 원룸 시세는 1000-5000만원 선이고 전월 대비 15% 내렸다"}
+    assert pc.diagnose(post, [])["hooks"]      # 하이픈 구간·퍼센트는 훅 유지
 
 def test_pick_principles_mapping():
     d = pc.diagnose(POOR, [])        # 전 문항 실패 → 1,2,5,6,7,8 + 3,4 → 상위 5

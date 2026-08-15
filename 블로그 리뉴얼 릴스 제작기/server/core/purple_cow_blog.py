@@ -31,7 +31,7 @@ _HOOK_UNITS = {"만원", "억", "억원", "%", "퍼센트", "배"}
 
 #: 훅 후보에서 배제할 행정성 숫자 문맥 (원본 BORING_KEY의 블로그판)
 _ADMIN_CTX = re.compile(r"(전화|문의|팩스|사업자|등록\s*번호|우편|주소|계좌|"
-                        r"인가|허가|신고\s*번호|-\d{2,})")
+                        r"인가|허가|신고\s*번호)")
 
 
 def extract_numbers(text: str) -> list[tuple[str, float, str]]:
