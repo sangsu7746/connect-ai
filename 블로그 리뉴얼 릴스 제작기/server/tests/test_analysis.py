@@ -34,3 +34,11 @@ def test_extract_chapters_pads_short_answer(monkeypatch):
     monkeypatch.setattr(analysis.gemini, "available", lambda: True)
     monkeypatch.setattr(analysis.gemini, "generate", lambda p, **kw: '["하나"]')
     assert len(analysis.extract_chapters(POSTS, 3)) == 3
+
+def test_extract_chapters_non_list_json_falls_back(monkeypatch):
+    monkeypatch.setattr(analysis.gemini, "available", lambda: True)
+    monkeypatch.setattr(analysis.gemini, "generate",
+                        lambda p, **kw: '{"chapters": ["기초", "실전"]}')
+    ch = analysis.extract_chapters(POSTS, 2)
+    assert len(ch) == 2
+    assert "chapters" not in ch          # dict 키 순회 오염이 아니어야 함

@@ -52,7 +52,10 @@ def extract_chapters(posts: list[dict], n: int) -> list[str]:
             f"[글 제목들]\n{titles}\n[본문 발췌]\n{body}\n"
             f'짧은 한국어 명사구 {n}개의 JSON 배열만 출력: ["...", ...]',
             temperature=0.4, max_tokens=512)
-        ch = [str(c).strip() for c in gemini.parse_json(raw) if str(c).strip()]
+        parsed = gemini.parse_json(raw)
+        if not isinstance(parsed, list):
+            return _fallback_chapters(posts, n)
+        ch = [str(c).strip() for c in parsed if str(c).strip()]
     except Exception:
         return _fallback_chapters(posts, n)
     ch = ch[:n]
