@@ -50,3 +50,12 @@ def test_first_person_hedged_passes():
 def test_same_value_date_then_fabricated_blocked():
     r = g.check("3층 매장인데 이용자가 3배 늘었다는 주장이 있다.", "매장 정보 없음")
     assert not r["ok"]                     # 3배는 컨텍스트에 없는 숫자
+
+def test_superlative_ending_in_eopda_still_blocked():
+    """최상급 표현 '없다'는 헤지로 인정하지 않음 — 규칙 자기무력화 방지"""
+    assert not g.check("이보다 싼 곳은 없다", CTX)["ok"]
+    assert not g.check("최저가로 예약했는데 후회는 없다", CTX)["ok"]
+
+def test_first_person_with_unrelated_eopda_still_blocked():
+    """1인칭 사칭 + 무관한 '없다'는 헤지로 인정하지 않음"""
+    assert not g.check("제가 써봤는데 부작용은 없다", CTX)["ok"]
