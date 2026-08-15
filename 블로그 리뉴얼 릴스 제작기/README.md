@@ -9,5 +9,5 @@
    구글 CSE 키는 선택. CSE 키가 없으면 구글 수집은 설치된 Chrome을 통한
    Playwright 폴백으로 동작)
 2. 서버: `server\.venv\Scripts\python -m uvicorn main:app --app-dir server --port 8792`
-3. 웹: `cd web && npm run dev` → http://localhost:5175
+3. 웹: `cd web; npm run dev` → http://localhost:5175
 4. 테스트: `server\.venv\Scripts\python -m pytest server/tests -v`

@@ -20,14 +20,14 @@ def discover(cid: int, body: DiscoverIn):
         try:
             items += naver.search_blog(body.keyword, display=10)
         except Exception as e:
-            errors.append(f"naver: {e}")
+            errors.append(f"naver: {type(e).__name__}")
         gitems: list = []
         try:
             gitems = google_search.search_blog(body.keyword, num=10)
             if not gitems and not google_search.available():
                 gitems = google_search.search_blog_playwright(body.keyword)
         except Exception as e:
-            errors.append(f"google: {e}")
+            errors.append(f"google: {type(e).__name__}")
         items += gitems
         if not items:
             detail = "검색 결과 없음 — API 키 설정을 확인하세요"
@@ -42,6 +42,7 @@ def discover(cid: int, body: DiscoverIn):
                             summary,blogger,posted_at,fetched_at)
                             VALUES(?,?,?,?,?,?,?,?,?)
                             ON CONFLICT(url) DO UPDATE SET
+                            category_id=excluded.category_id,
                             keyword=excluded.keyword, fetched_at=excluded.fetched_at""",
                          (cid, body.keyword, it["source"], it["title"], it["url"],
                           it["summary"], it["blogger"], it["posted_at"], now))
@@ -49,15 +50,21 @@ def discover(cid: int, body: DiscoverIn):
                                     (it["url"],)).fetchone()["id"])
         conn.commit()
 
-        # 본문 크롤 (없는 것만) → 진단
+        # 본문 크롤 (없는 것만) — 네트워크 I/O 동안 트랜잭션을 열지 않는다
         rows = [dict(r) for r in conn.execute(
             f"SELECT * FROM posts WHERE id IN ({','.join('?'*len(ids))})", ids)]
+        crawled: list[tuple[str, str, int]] = []
         for row in rows:
             if not row["content"]:
                 content = crawler.fetch_content(row["url"])
-                conn.execute("UPDATE posts SET content=?, crawled_at=? WHERE id=?",
-                             (content, now, row["id"]))
+                crawled.append((content, now, row["id"]))
                 row["content"] = content
+        for content, ts, pid in crawled:
+            conn.execute("UPDATE posts SET content=?, crawled_at=? WHERE id=?",
+                         (content, ts, pid))
+        conn.commit()
+
+        # 진단 (순수 계산 — 트랜잭션 짧음)
         for row in rows:
             corpus = [{"title": r["title"], "source": r["source"]}
                       for r in rows if r["id"] != row["id"]]

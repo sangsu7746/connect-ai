@@ -54,6 +54,22 @@ def test_google_playwright_fallback_when_no_cse(monkeypatch, tmp_path):
     assert any(p["source"] == "google"
                for p in c.get("/api/categories/1/posts").json())
 
+def test_discover_reassigns_category_on_rediscovery(monkeypatch, tmp_path):
+    c = make_client(monkeypatch, tmp_path)
+    c.post("/api/categories/1/discover", json={"keyword": "전세 보증보험"})
+    posts1 = c.get("/api/categories/1/posts").json()
+    assert len(posts1) == 3
+
+    c.post("/api/categories/2/discover", json={"keyword": "전세 보증보험"})
+    posts1_after = c.get("/api/categories/1/posts").json()
+    posts2 = c.get("/api/categories/2/posts").json()
+
+    # 카테고리 2로 재발견된 글들은 카테고리 1에서 사라지고 카테고리 2에 나타난다
+    assert len(posts1_after) == 0
+    assert len(posts2) == 3
+    assert {p["url"] for p in posts2} == {
+        "https://blog.naver.com/a/1", "https://blog.naver.com/a/2", "https://x.tistory.com/3"}
+
 def test_discover_survives_naver_failure(monkeypatch, tmp_path):
     c = make_client(monkeypatch, tmp_path)
     import api.discover as disc
