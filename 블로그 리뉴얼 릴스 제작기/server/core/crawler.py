@@ -12,7 +12,10 @@ def _get(url: str) -> str:
     return r.text
 
 def to_mobile_naver(url: str) -> str | None:
-    m = re.match(r"https?://blog\.naver\.com/([^/]+)/(\d+)", url)
+    m = re.match(r"https?://(?:m\.)?blog\.naver\.com/([^/?]+)/(\d+)", url)
+    if m and m.group(1) != "PostView.naver":
+        return f"https://m.blog.naver.com/{m.group(1)}/{m.group(2)}"
+    m = re.search(r"https?://(?:m\.)?blog\.naver\.com/PostView\.naver\?.*?blogId=([^&]+).*?logNo=(\d+)", url)
     if m:
         return f"https://m.blog.naver.com/{m.group(1)}/{m.group(2)}"
     return None
