@@ -34,5 +34,9 @@ __pycache__/
 *.pyc
 .venv/
 
+# 커밋 메시지 임시파일
+cm.txt
+commitmsg*.txt
+
 # 실행 상태 파일
 .daily_state.json
