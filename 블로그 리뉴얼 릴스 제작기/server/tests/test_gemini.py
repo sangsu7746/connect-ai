@@ -1,0 +1,36 @@
+import httpx
+import pytest
+from core import gemini
+
+def _resp(status, text="응답"):
+    body = {"candidates": [{"content": {"parts": [{"text": text}]}}]}
+    return httpx.Response(status, json=body if status == 200 else {"error": {}},
+                          request=httpx.Request("POST", "u"))
+
+def test_generate_falls_back_on_failure(monkeypatch):
+    monkeypatch.setattr(gemini.settings, "gemini_api_key", "k")
+    calls = []
+    def fake_post(url, json=None, timeout=None):
+        calls.append(url)
+        return _resp(500) if len(calls) == 1 else _resp(200, "폴백 성공")
+    monkeypatch.setattr(httpx, "post", fake_post)
+    assert gemini.generate("p") == "폴백 성공"
+    assert gemini.MODEL_CHAIN[0] in calls[0] and gemini.MODEL_CHAIN[1] in calls[1]
+
+def test_generate_raises_when_all_fail(monkeypatch):
+    monkeypatch.setattr(gemini.settings, "gemini_api_key", "k")
+    monkeypatch.setattr(httpx, "post", lambda url, json=None, timeout=None: _resp(500))
+    with pytest.raises(gemini.GeminiError):
+        gemini.generate("p")
+
+def test_generate_without_key_raises(monkeypatch):
+    monkeypatch.setattr(gemini.settings, "gemini_api_key", "")
+    with pytest.raises(gemini.GeminiError):
+        gemini.generate("p")
+
+def test_parse_json_variants():
+    assert gemini.parse_json('```json\n[{"a": 1}]\n```') == [{"a": 1}]
+    assert gemini.parse_json('앞말 [1, 2] 뒷말') == [1, 2]
+    assert gemini.parse_json('{"b": 2}') == {"b": 2}
+    with pytest.raises(ValueError):
+        gemini.parse_json("json 없음")
