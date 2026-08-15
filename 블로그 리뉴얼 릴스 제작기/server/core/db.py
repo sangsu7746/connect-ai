@@ -41,6 +41,17 @@ CREATE TABLE IF NOT EXISTS diagnoses(
   hooks_json TEXT NOT NULL,
   diagnosed_at TEXT
 );
+CREATE TABLE IF NOT EXISTS scripts(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+  post_ids_json TEXT NOT NULL,
+  fmt TEXT NOT NULL CHECK(fmt IN('reels','long')),
+  duration_sec INTEGER NOT NULL,
+  analysis_json TEXT NOT NULL,
+  scenes_json TEXT NOT NULL,
+  description_md TEXT DEFAULT '',
+  created_at TEXT
+);
 """
 
 def db_path() -> str:
