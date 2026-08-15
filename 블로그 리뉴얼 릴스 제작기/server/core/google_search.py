@@ -1,12 +1,14 @@
 import httpx
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 from .config import settings
 
 BLOG_DOMAINS = ("tistory.com", "brunch.co.kr", "blog.naver.com",
                 "velog.io", "medium.com", "post.naver.com")
 
 def _is_blog(url: str) -> bool:
-    return any(d in url for d in BLOG_DOMAINS)
+    host = urlparse(url).netloc.lower()
+    return any(host == d or host.endswith("." + d) for d in BLOG_DOMAINS)
 
 def available() -> bool:
     return bool(settings.google_cse_key and settings.google_cse_id)

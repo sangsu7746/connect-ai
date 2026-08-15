@@ -33,3 +33,9 @@ def test_parse_serp_html():
     assert items == [{"source": "google", "title": "제목A",
                       "url": "https://x.tistory.com/1", "summary": "요약A",
                       "blogger": "", "posted_at": ""}]
+
+def test_is_blog_hostname_matching():
+    assert g._is_blog("https://abc.tistory.com/12") is True
+    assert g._is_blog("https://brunch.co.kr/@x/3") is True
+    assert g._is_blog("https://tistory.com.phish.net/x") is False
+    assert g._is_blog("https://ads.example.com/go?u=tistory.com/spam") is False
