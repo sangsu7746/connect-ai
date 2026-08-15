@@ -73,6 +73,26 @@ def test_regen_scene_single(monkeypatch):
     new = script_gen.regen_scene(scene, POSTS, diag)
     assert new["caption"] == "보증료 연 0.128%" and new["idx"] == 2
 
+def test_safe_fallback_sanitizes_caption(monkeypatch):
+    monkeypatch.setattr(script_gen.gemini, "available", lambda: True)
+    def bad_gen(prompt, **kw):
+        want = prompt.count('"idx"')
+        return json.dumps([_fake_scene(caption="가입자 92% 만족",
+                                       narration="가입자 92%가 만족했습니다")
+                           for _ in range(max(want, 1))], ensure_ascii=False)
+    monkeypatch.setattr(script_gen.gemini, "generate", bad_gen)
+    out = script_gen.generate_script(POSTS, "reels", 30)
+    for s in out["scenes"]:
+        assert "92" not in s["caption"] and "92" not in s["narration"]
+
+def test_non_list_batch_response_degrades(monkeypatch):
+    monkeypatch.setattr(script_gen.gemini, "available", lambda: True)
+    monkeypatch.setattr(script_gen.gemini, "generate",
+                        lambda p, **kw: '{"scenes": "잘못된 형태"}')
+    out = script_gen.generate_script(POSTS, "reels", 30)   # 크래시 없이
+    body = [s for s in out["scenes"] if s["role"] != "chapter"]
+    assert all(s["narration"] == script_gen.SAFE_NARRATION for s in body)
+
 def test_scripts_table_exists(db):
     names = {r["name"] for r in db.execute(
         "SELECT name FROM sqlite_master WHERE type='table'")}

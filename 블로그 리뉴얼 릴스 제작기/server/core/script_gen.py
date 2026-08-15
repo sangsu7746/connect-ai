@@ -55,8 +55,11 @@ def _apply(scene: dict, gen: dict) -> None:
     scene["image_prompt"] = gen.get("image_prompt") or ""
 
 
-def _safe_fallback(scene: dict) -> None:
-    scene["caption"] = scene["caption"][:18] or scene["chapter"][:18] or "핵심 정리"
+def _safe_fallback(scene: dict, corpus: str, sources: list[str]) -> None:
+    cap = scene["caption"][:18]
+    if not cap or _gate({"caption": cap, "sub": "", "narration": ""}, corpus, sources):
+        cap = scene["chapter"][:18] or "핵심 정리"
+    scene["caption"] = cap
     scene["sub"] = ""
     scene["narration"] = SAFE_NARRATION
     if not scene["image_prompt"]:
@@ -118,6 +121,8 @@ def generate_script(posts: list[dict], fmt: str, duration: int) -> dict:
                                 max_tokens=4096))
         except Exception:
             gens = []
+        if not isinstance(gens, list):
+            gens = []
         gen_by_idx = {g.get("idx"): g for g in gens if isinstance(g, dict)}
         for pos, s in enumerate(batch):
             g = gen_by_idx.get(s["idx"]) or (gens[pos] if pos < len(gens)
@@ -134,7 +139,7 @@ def generate_script(posts: list[dict], fmt: str, duration: int) -> dict:
                 by_idx[s["idx"]].update(cand)
                 break
         if _gate(by_idx[s["idx"]], corpus, sources) or not s["narration"]:
-            _safe_fallback(by_idx[s["idx"]])
+            _safe_fallback(by_idx[s["idx"]], corpus, sources)
 
     return {"scenes": scenes, "fact_sheet": facts, "diag": diag,
             "chapters": chapters}
