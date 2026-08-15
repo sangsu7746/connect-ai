@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from core.db import init_db, get_conn
 from core.seed_data import ensure_seed
 from api.categories import router as categories_router
+from api.trends import router as trends_router
 
 app = FastAPI(title="blog-reels-maker")
 init_db()
@@ -12,6 +13,7 @@ ensure_seed(_conn)
 _conn.close()
 
 app.include_router(categories_router)
+app.include_router(trends_router)
 
 @app.get("/api/health")
 def health():
