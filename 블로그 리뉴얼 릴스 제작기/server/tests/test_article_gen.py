@@ -70,3 +70,21 @@ def test_unavailable_raises(monkeypatch):
     monkeypatch.setattr(article_gen.gemini, "available", lambda: False)
     with pytest.raises(GeminiError):
         article_gen.generate_article(POSTS)
+
+def test_title_hook_copy_gated(monkeypatch):
+    # 훅(원문 발췌)이 15자+ 복사면 SAFE_TITLE로 — 제목 복사 금지
+    long_posts = [{"title": "정리", "url": "https://a/1", "source": "naver",
+                   "summary": "",
+                   "content": "전세 보증보험은 보증료가 연 0.128% 수준으로 확인되었다."}]
+    monkeypatch.setattr(article_gen.gemini, "available", lambda: True)
+    monkeypatch.setattr(article_gen.gemini, "generate",
+                        lambda p, **kw: json.dumps(
+                            {"title": "역대급 정리", "body_md": "전세 보증보험 요약이다."},
+                            ensure_ascii=False))
+    out = article_gen.generate_article(long_posts)
+    assert out["title"] == article_gen.SAFE_TITLE     # 훅이 복사 위반 → 안전 제목
+
+def test_heading_only_block_merged():
+    pars = article_gen._paragraphs("## 소제목\n\n본문 내용이다.\n\n## 다음\n\n둘째.")
+    assert pars[0].startswith("## 소제목\n본문")
+    assert pars[1].startswith("## 다음\n둘째")

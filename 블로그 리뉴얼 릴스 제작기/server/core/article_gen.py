@@ -35,17 +35,27 @@ def build_article_guide(diag: dict) -> str:
 
 
 def _paragraphs(body_md: str) -> list[str]:
-    """빈 줄 기준 문단 분리. ## 헤딩은 다음 문단에 붙인다."""
-    blocks, cur = [], []
+    """빈 줄 기준 문단 분리. 헤딩 단독 블록은 다음 블록에 붙인다."""
+    raw, cur = [], []
     for line in (body_md or "").splitlines():
         if not line.strip():
             if cur:
-                blocks.append("\n".join(cur))
+                raw.append("\n".join(cur))
                 cur = []
             continue
         cur.append(line)
     if cur:
-        blocks.append("\n".join(cur))
+        raw.append("\n".join(cur))
+    blocks, pending = [], ""
+    for b in raw:
+        lines = b.splitlines()
+        if len(lines) == 1 and lines[0].lstrip().startswith("#"):
+            pending = (pending + "\n" + b).strip() if pending else b
+            continue
+        blocks.append((pending + "\n" + b).strip() if pending else b)
+        pending = ""
+    if pending:
+        blocks.append(pending)
     return blocks
 
 
@@ -104,11 +114,14 @@ def generate_article(posts: list[dict]) -> dict:
     title = (gen.get("title") or "").strip()[:TITLE_MAX]
     if not title or guardrails.check(title, corpus)["blocking"] \
             or guardrails.check_copy(title, sources):
-        if title:
-            warnings.append(f"제목이 게이트에 걸려 교체됨: {title}")
+        warnings.append(f"제목이 게이트에 걸려 교체됨: {title}" if title
+                        else "생성된 제목이 비어 있어 교체됨")
         hook = (diag["hooks"][0][:TITLE_MAX] if diag["hooks"] else "")
-        title = hook if hook and not guardrails.check(hook, corpus)["blocking"] \
-            else SAFE_TITLE
+        if hook and not guardrails.check(hook, corpus)["blocking"] \
+                and not guardrails.check_copy(hook, sources):
+            title = hook
+        else:
+            title = SAFE_TITLE
 
     paragraphs = _paragraphs(gen.get("body_md") or "")
     budget = ARTICLE_REGEN_BUDGET
