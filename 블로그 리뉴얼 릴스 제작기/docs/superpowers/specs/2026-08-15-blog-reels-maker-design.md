@@ -234,10 +234,53 @@ DataLab API는 인기 키워드 "목록"을 주지 않고 지정 키워드의 �
 - 통합: 저장된 블로그 HTML 픽스처로 수집→분석→대본을 오프라인 실행(외부 API 없이 CI 가능).
 - 스모크: 5초 샘플 렌더로 ffmpeg 파이프 검증. 실제 E2E(검색→10분 렌더) 1건은 수동 확인.
 
+## 12-A. 블로그 글 생성·발행 (M2.5 — 2026-08-16 승인 추가)
+
+같은 수집·분석·진단 위에서 릴스 대본과 나란히 **블로그 글**을 생성하고
+네이버·티스토리에 자동 발행한다. 글 선택 → "블로그 글 만들기" 독립 버튼.
+
+### 글 생성 (article_gen)
+- 원본 쿠팡 `build_blog_guide`의 블로그판 지침: 진단·약점·원칙 주입 + 제목 32자 이내
+  + 단점 먼저 + GEO 문단 자립성(문단마다 주제어 재기입, 숫자마다 확인 시점) + 금지어.
+- 산출: 네이버·티스토리 공용 원고 1개 — 제목 + 마크다운 본문 1,200~1,800자,
+  구조 `■ 핵심 요약(3줄) → h2 소제목 3~4개(각각 단독 인용 가능) → 단점/주의 → 마무리`.
+- 게이트: 대본과 동일 원칙을 **문단 단위**로(숫자 대조·금지어·원문 15자 복사) →
+  위반 문단 재생성(요청당 예산 10회) → 최종 실패 문단은 삭제하고 경고 목록에 기록.
+- Gemini 부재 시 503 (대본과 동일 정책).
+
+### 저장·API
+- `articles` 테이블: id, category_id, post_ids_json, title, body_md, warnings_json,
+  status(`draft`/`published`), published_urls_json, created_at.
+- REST: POST /api/articles {category_id, post_ids} · GET /api/articles/{id} ·
+  GET /api/categories/{cid}/articles · PATCH(제목·본문 편집 → 재게이트 warnings 동봉) ·
+  POST /api/articles/{id}/publish {platform: naver|tistory, force?: bool}.
+
+### 발행 연동 (외부 프로세스 — B안 승인)
+- `core/publisher_bridge.py`: handoff JSON(platform·title·body_md·category) 작성 →
+  `.env`의 `PUBLISHER_DIR`(쿠팡 블로그 프로젝트 경로)의 `publish_generic.py`를
+  subprocess로 실행(타임아웃 5분) → result JSON(ok·url·error) 파싱 → URL·상태 저장.
+- `publish_generic.py`는 쿠팡 프로젝트에 추가하는 얇은 CLI 1개 — 기존 검증 자산 재사용:
+  티스토리는 기존 `tistory_poster.py post <원고.md>` 흐름(**기본 비공개 발행,
+  공개 전환은 사람이** — 원본 설계 철학 유지), 네이버는 `NaverBlogPoster.write_post`.
+  쿠팡 특화(제휴링크·대가성 고지·상품 위젯) 경로는 호출하지 않는다.
+- 로그인 세션은 그쪽 프로젝트의 persistent 세션·쿠키 그대로 — 이 앱은 크리덴셜을
+  다루지 않는다. 세션 만료 시 브라우저 창에서 직접 로그인.
+- 발행 직전 게이트 재검사 — 경고가 있으면 409 거부, `force: true`로만 무시 발행.
+- 실패·타임아웃 → draft 유지 + 에러 표시. PUBLISHER_DIR 미설정 → 발행 버튼 비활성.
+
+### UI
+- PostList make-bar에 `📝 블로그 글 만들기` 버튼(대본 버튼과 나란히).
+- `/article/:id`: 제목 input·본문 textarea·게이트 경고 패널·플랫폼별 발행 버튼·발행 URL.
+
+### 테스트
+- article_gen 게이트·문단 삭제·예산은 Gemini mock으로, 브릿지는 subprocess mock으로
+  오프라인 CI. publish_generic 자체는 쿠팡 프로젝트에서 수동 스모크 1회.
+
 ## 12. 마일스톤
 
 1. 수집 + 카테고리 대시보드 + 블로그 리스트(보랏빛 배지) — 여기까지로 "카테고리별 리스트" 요구 충족
-2. 분석 + 대본 엔진(보랏빛소·GEO·날조 게이트)
+2. 분석 + 대본 엔진(보랏빛소·GEO·날조 게이트) — 완료
+2-5. 블로그 글 생성·발행(§12-A) — 대본과 독립 산출물, 네이버·티스토리 자동 발행
 3. ComfyUI 이미지 + 스타일팩 + 캐시
 4. 릴스 렌더(30/60초) — 첫 영상 산출
 5. 롱폼(1/3/5/10분) + TTS 병렬 + GEO 설명란
