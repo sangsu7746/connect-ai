@@ -23,6 +23,9 @@ export const addKeyword = (cid: number, keyword: string) =>
   fetch(`/api/categories/${cid}/keywords`, { method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ keyword }) }).then(r => j<{ ok: boolean }>(r))
+export const deleteKeyword = (cid: number, keyword: string) =>
+  fetch(`/api/categories/${cid}/keywords/${encodeURIComponent(keyword)}`,
+    { method: 'DELETE' }).then(r => j<{ ok: boolean }>(r))
 export const refreshTrends = (cid: number) =>
   fetch(`/api/categories/${cid}/trends/refresh`, { method: 'POST' })
     .then(r => j<TrendRow[]>(r))

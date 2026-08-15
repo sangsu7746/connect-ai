@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { type Category, getCategories, addCategory, refreshTrends } from '../api'
+import { type Category, getCategories, addCategory, addKeyword, deleteKeyword, refreshTrends } from '../api'
 
 export default function Dashboard() {
   const [cats, setCats] = useState<Category[]>([])
   const [name, setName] = useState('')
   const [busy, setBusy] = useState<number | null>(null)
+  const [kwDraft, setKwDraft] = useState<Record<number, string>>({})
 
   const load = () => getCategories().then(setCats)
   useEffect(() => { load() }, [])
@@ -36,8 +37,23 @@ export default function Dashboard() {
                       <em className={t.rise_pct > 0 ? 'up' : 'down'}>
                         {t.rise_pct > 0 ? '▲' : '▼'}{Math.abs(t.rise_pct)}%
                       </em>}
+                    <button className="x" title="시드에서 삭제"
+                            onClick={async () => {
+                              await deleteKeyword(c.id, t.keyword); load()
+                            }}>×</button>
                   </span>
                 ))}
+            </div>
+            <div className="add-row">
+              <input placeholder="시드 키워드 추가"
+                     value={kwDraft[c.id] ?? ''}
+                     onChange={e => setKwDraft({ ...kwDraft, [c.id]: e.target.value })} />
+              <button className="ghost" onClick={async () => {
+                const kw = (kwDraft[c.id] ?? '').trim()
+                if (!kw) return
+                await addKeyword(c.id, kw)
+                setKwDraft({ ...kwDraft, [c.id]: '' }); load()
+              }}>+</button>
             </div>
             <button onClick={() => onRefresh(c.id)} disabled={busy === c.id}>
               {busy === c.id ? '갱신 중…' : '🔄 트렌드 갱신'}

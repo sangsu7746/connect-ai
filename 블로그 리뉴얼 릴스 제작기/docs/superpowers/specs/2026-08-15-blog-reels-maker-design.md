@@ -107,9 +107,9 @@ DataLab API는 인기 키워드 "목록"을 주지 않고 지정 키워드의 �
 - 구글: Custom Search JSON API(공식, 무료 100쿼리/일 — 일일 사용량으로 충분) 우선,
   키 미설정 시 Playwright 검색 크롤링 폴백. 블로그 도메인(티스토리·브런치·네이버 등)만
   필터링해 리스트에 편입. 사전 준비물: GOOGLE_CSE_KEY + GOOGLE_CSE_ID 발급(무료).
-- 본문 크롤링은 EstateReels-v2 `blogImport.ts` 폴백 체인을 서버로 이식:
-  로컬 Playwright → jina 리더 → allorigins. 네이버 블로그는 iframe 본문(PostView) 처리,
-  티스토리·브런치는 범용 본문 추출(jina 리더가 커버).
+- 본문 크롤링 폴백 체인(M1 구현 확정): 네이버는 모바일 변환(m.blog) 후 httpx 직접
+  추출(se-main-container/postViewArea), 일반 URL은 trafilatura, 실패·80자 미만이면
+  jina 리더. 네이버 블로그 구형 PostView 쿼리 URL도 지원.
 - 수집 결과는 SQLite에 저장(source 필드: naver/google). 리스트 화면은 저장분 우선,
   새로고침 시 재수집.
 - 진단 가점: 같은 주제가 네이버·구글 양쪽 상위에 모두 노출되면 no_discount(검증된 수요)
