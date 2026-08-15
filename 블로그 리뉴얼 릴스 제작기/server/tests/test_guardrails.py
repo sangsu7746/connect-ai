@@ -37,3 +37,16 @@ def test_copy_detection():
     hits = g.check_copy("놀랍게도 전세 보증보험은 보증료가 연 0.128%입니다.", src)
     assert hits                                   # 연속 15자+ 복사
     assert not g.check_copy("보증료는 연 0.128%다. 즉 3억이면 38만원 수준.", src)
+
+def test_derived_subtraction_passes():
+    # 4억은 CTX에 없지만 7억-3억 뺄셈 파생 → 통과해야 한다
+    r = g.check("보증 한도 7억원과 전세가 3억의 차이는 4억원이다.", CTX)
+    assert r["ok"], r["blocking"]
+
+def test_first_person_hedged_passes():
+    r = g.check("제가 써본 적은 없지만 후기를 종합하면 이렇다.", CTX)
+    assert r["ok"], r["blocking"]
+
+def test_same_value_date_then_fabricated_blocked():
+    r = g.check("3층 매장인데 이용자가 3배 늘었다는 주장이 있다.", "매장 정보 없음")
+    assert not r["ok"]                     # 3배는 컨텍스트에 없는 숫자

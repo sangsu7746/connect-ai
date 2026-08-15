@@ -17,7 +17,8 @@ _HEDGE = re.compile(
     r"아니(다|라|며|고|에요|입니다|랍니다)|아님|"
     r"모른다|모릅니다|쓰지\s*않|쓸\s*수\s*없|말할\s*수\s*없|"
     r"근거가\s*없|데이터가\s*없|기록이\s*없|검증할\s*수\s*없|"
-    r"보장하지\s*않|의미하지\s*않|뜻하지\s*않)")
+    r"보장하지\s*않|의미하지\s*않|뜻하지\s*않|"
+    r"없(다|고|지만|으니))")
 
 _NUM = re.compile(r"\d[\d,]*\.?\d*")
 #: 숫자 대조에서 뺄 것 — 날짜·서수처럼 본문에서 자연스럽게 생기는 값
@@ -88,18 +89,18 @@ def check(text: str, context: str = "") -> dict:
                     blocking.append(f"금지 표현 '{m.group(0)}'" + (f" — {why}" if why else ""))
         for pat in FIRST_PERSON:
             m = re.search(pat, sent)
-            if m:
+            if m and not hedged:
                 blocking.append(f"사용 경험 사칭 '{m.group(0)}' — 화자는 직접 해보지 않았다")
 
     if context:
         known = _known_numbers(context)
         seen = set()
         for v, tail in _numbers_with_ctx(text or ""):
+            if _DATE_CTX.match(tail.strip()[:1] or " ") or _DATE_CTX.search(tail[:2]):
+                continue
             if v in seen:
                 continue
             seen.add(v)
-            if _DATE_CTX.match(tail.strip()[:1] or " ") or _DATE_CTX.search(tail[:2]):
-                continue
             if v in known or round(v) in known:
                 continue
             if any(abs(v - k) <= max(1.0, abs(k) * 0.005) for k in known):
