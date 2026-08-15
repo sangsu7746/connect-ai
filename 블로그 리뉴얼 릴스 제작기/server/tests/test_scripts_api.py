@@ -22,6 +22,7 @@ def _seed_posts(c, monkeypatch):
 
 def _mock_engine(monkeypatch):
     import api.scripts as sc
+    monkeypatch.setattr(sc.gemini, "available", lambda: True)
     def fake_generate(posts, fmt, duration):
         from core import storyboard
         scenes = storyboard.build_scenes(fmt, duration, ["기초", "실전"])
@@ -70,6 +71,8 @@ def test_regen_scene_endpoint(monkeypatch, tmp_path):
 
 def test_create_404_on_bad_posts(monkeypatch, tmp_path):
     c = make_client(monkeypatch, tmp_path)
+    import api.scripts as sc
+    monkeypatch.setattr(sc.gemini, "available", lambda: True)
     assert c.post("/api/scripts", json={"category_id": 1, "post_ids": [999],
                                         "fmt": "reels", "duration": 30}).status_code == 404
 
@@ -82,3 +85,59 @@ def test_patch_truncates_caption_and_sub(monkeypatch, tmp_path):
     r = c.patch(f"/api/scripts/{sid}/scenes/0",
                 json={"caption": "가" * 30, "sub": "나" * 30})
     assert len(r.json()["caption"]) == 18 and len(r.json()["sub"]) == 22
+
+def test_patch_scene_returns_gate_warnings(monkeypatch, tmp_path):
+    # I1: PATCH 수동 편집은 차단하지 않되, 게이트 위반이 있으면 warnings로 동봉한다.
+    # 저장 자체는 그대로 성공해야 한다.
+    c = make_client(monkeypatch, tmp_path)
+    ids = _seed_posts(c, monkeypatch)
+    _mock_engine(monkeypatch)
+    sid = c.post("/api/scripts", json={"category_id": 1, "post_ids": ids,
+                                       "fmt": "reels", "duration": 30}).json()["id"]
+    r = c.patch(f"/api/scripts/{sid}/scenes/0",
+                json={"narration": "가입자 92% 만족"})
+    assert r.status_code == 200
+    assert r.json()["warnings"]                     # 코퍼스에 없는 92 → 경고 있음
+    got = c.get(f"/api/scripts/{sid}").json()
+    assert got["scenes"][0]["narration"] == "가입자 92% 만족"   # 저장은 됨
+
+def test_patch_scene_no_warnings_when_clean(monkeypatch, tmp_path):
+    c = make_client(monkeypatch, tmp_path)
+    ids = _seed_posts(c, monkeypatch)
+    _mock_engine(monkeypatch)
+    sid = c.post("/api/scripts", json={"category_id": 1, "post_ids": ids,
+                                       "fmt": "reels", "duration": 30}).json()["id"]
+    r = c.patch(f"/api/scripts/{sid}/scenes/0", json={"caption": "수정 자막"})
+    assert r.json()["warnings"] == []
+
+def test_create_503_without_gemini_key(monkeypatch, tmp_path):
+    # I2-①: 키 없이 진입하면 명확한 503 — 퇴화 대본을 만들지 않는다.
+    c = make_client(monkeypatch, tmp_path)
+    import api.scripts as sc
+    monkeypatch.setattr(sc.gemini, "available", lambda: False)
+    ids = _seed_posts(c, monkeypatch)
+    r = c.post("/api/scripts", json={"category_id": 1, "post_ids": ids,
+                                     "fmt": "reels", "duration": 30})
+    assert r.status_code == 503
+
+def test_create_502_when_generation_totally_fails(monkeypatch, tmp_path):
+    # I2-②: generate_script가 GeminiError를 던지면(모든 배치 실패) 502로 변환된다.
+    c = make_client(monkeypatch, tmp_path)
+    import api.scripts as sc
+    monkeypatch.setattr(sc.gemini, "available", lambda: True)
+    ids = _seed_posts(c, monkeypatch)
+    def boom(posts, fmt, duration):
+        raise sc.gemini.GeminiError("대본 생성 실패 — 모든 배치 호출이 실패했습니다")
+    monkeypatch.setattr(sc.script_gen, "generate_script", boom)
+    r = c.post("/api/scripts", json={"category_id": 1, "post_ids": ids,
+                                     "fmt": "reels", "duration": 30})
+    assert r.status_code == 502
+
+def test_create_404_on_bad_category(monkeypatch, tmp_path):
+    # I4: 존재하지 않는 category_id는 posts 로드(비싼 크롤·진단)보다 먼저 404로 막는다.
+    c = make_client(monkeypatch, tmp_path)
+    import api.scripts as sc
+    monkeypatch.setattr(sc.gemini, "available", lambda: True)
+    r = c.post("/api/scripts", json={"category_id": 999, "post_ids": [1],
+                                     "fmt": "reels", "duration": 30})
+    assert r.status_code == 404

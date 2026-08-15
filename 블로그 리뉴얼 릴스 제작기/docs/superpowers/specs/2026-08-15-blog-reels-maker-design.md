@@ -34,7 +34,7 @@ Stable Diffusion(ComfyUI) 생성 이미지로 릴스(9:16)와 롱폼 모션영�
         │ REST + 잡 폴링
 [FastAPI 서버 (Python, 포트 8792)]
    ├─ 수집: 네이버 검색 API + DataLab + 구글 CSE(폴백: Playwright)
-   ├─ 크롤링: Playwright 본문 수집 (폴백 체인)
+   ├─ 크롤링: httpx·trafilatura 본문 수집 (jina 폴백)
    ├─ 진단: purple_cow 블로그판 (4문항 → 보랏빛 점수)
    ├─ 대본: Gemini (보랏빛소 지침 + GEO) → guardrails 숫자 대조
    ├─ 이미지: ComfyUI API (기본 127.0.0.1:8188)
@@ -58,7 +58,7 @@ D:\블로그 리뉴얼 릴스 제작기\
                           script, images, tts, render, jobs
     core\
       naver.py            검색 API + DataLab 순위화
-      crawler.py          Playwright 본문 수집 + 폴백 체인
+      crawler.py          모바일 변환·trafilatura·jina 폴백 체인
       purple_cow_blog.py  보랏빛소 블로그판 (원본 이식·각색)
       guardrails.py       숫자 대조 날조 게이트 (원본 이식)
       banned_words.py     금지어 공용 모듈 (단일 출처)
@@ -220,8 +220,8 @@ DataLab API는 인기 키워드 "목록"을 주지 않고 지정 키워드의 �
 
 | 실패 지점 | 처리 |
 |---|---|
-| 본문 크롤링 차단 | 폴백 체인(Playwright → jina → allorigins), 전부 실패 시 검색 요약문으로 진단만 수행 |
-| Gemini 실패 | 모델 폴백 + 재시도, 최종 실패 시 규칙 기반 기본 대본(진단 hooks 사용) |
+| 본문 크롤링 차단 | 폴백 체인(모바일 변환 httpx → trafilatura → jina), 전부 실패 시 검색 요약문으로 진단만 수행 |
+| Gemini 실패 | 모델 폴백 + 재시도, 최종 실패 시 명확한 오류(퇴화 대본을 저장하지 않음 — §7 복사 차단 원칙상 원문 기반 규칙 대본은 만들지 않는다) |
 | ComfyUI 다운/타임아웃 | 그라디언트 카드 폴백 |
 | TTS 실패 | 해당 씬 자막+BGM만 |
 | 날조 게이트 3회 실패 | 숫자 없는 안전 문구 |

@@ -57,7 +57,7 @@ export const getScript = (id: number) =>
 export const patchScene = (sid: number, idx: number, body: Partial<Scene>) =>
   fetch(`/api/scripts/${sid}/scenes/${idx}`, { method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body) }).then(r => j<Scene>(r))
+    body: JSON.stringify(body) }).then(r => j<Scene & { warnings?: string[] }>(r))
 export const regenScene = (sid: number, idx: number) =>
   fetch(`/api/scripts/${sid}/scenes/${idx}/regen`, { method: 'POST' })
     .then(r => j<Scene>(r))

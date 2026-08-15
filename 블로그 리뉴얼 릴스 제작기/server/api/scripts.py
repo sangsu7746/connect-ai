@@ -2,7 +2,7 @@ import datetime, json
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from core.db import get_conn
-from core import geo, script_gen
+from core import analysis, geo, gemini, script_gen
 
 router = APIRouter(prefix="/api", tags=["scripts"])
 
@@ -49,10 +49,20 @@ def create_script(body: ScriptIn):
             ("reels", 30), ("reels", 60), ("long", 60),
             ("long", 180), ("long", 300), ("long", 600)):
         raise HTTPException(422, "지원하지 않는 형식/길이")
+    # I2: 키 없는 채로 진입시켜 퇴화 대본을 만드는 대신 여기서 명확히 막는다.
+    if not gemini.available():
+        raise HTTPException(503, "GEMINI_API_KEY 미설정 — 대본 생성은 키가 필요합니다")
     conn = get_conn()
     try:
+        # I4: posts 로드(비싼 크롤·진단 전제) 전에 카테고리 존재부터 확인한다.
+        if not conn.execute("SELECT 1 FROM categories WHERE id=?",
+                            (body.category_id,)).fetchone():
+            raise HTTPException(404, "존재하지 않는 카테고리다")
         posts = _load_posts(conn, body.post_ids)
-        out = script_gen.generate_script(posts, body.fmt, body.duration)
+        try:
+            out = script_gen.generate_script(posts, body.fmt, body.duration)
+        except gemini.GeminiError as e:
+            raise HTTPException(502, str(e))
         summary_scene = next((s for s in out["scenes"] if s["role"] == "summary"), None)
         summary_lines = [x for x in (
             summary_scene and summary_scene.get("narration"),
@@ -103,6 +113,9 @@ def list_scripts(cid: int):
 
 
 def _update_scene(sid: int, idx: int, mutate, needs_posts: bool) -> dict:
+    """mutate(target, posts, diag)는 target을 제자리에서 고치고, 응답에만 얹을
+    추가 필드(dict)를 선택적으로 반환할 수 있다 (예: I1의 warnings) —
+    그 값은 target에는 없으므로 scenes_json에는 저장되지 않는다."""
     conn = get_conn()
     try:
         row = conn.execute("SELECT * FROM scripts WHERE id=?", (sid,)).fetchone()
@@ -114,11 +127,11 @@ def _update_scene(sid: int, idx: int, mutate, needs_posts: bool) -> dict:
             raise HTTPException(404, "scene not found")
         analysis_data = json.loads(row["analysis_json"])
         posts = _load_posts(conn, json.loads(row["post_ids_json"])) if needs_posts else []
-        mutate(target, posts, analysis_data.get("diag", {}))
+        extra = mutate(target, posts, analysis_data.get("diag", {})) or {}
         conn.execute("UPDATE scripts SET scenes_json=? WHERE id=?",
                      (json.dumps(scenes, ensure_ascii=False), sid))
         conn.commit()
-        return target
+        return {**target, **extra}
     finally:
         conn.close()
 
@@ -132,6 +145,8 @@ def regen_scene_ep(sid: int, idx: int):
 
 @router.patch("/scripts/{sid}/scenes/{idx}")
 def edit_scene(sid: int, idx: int, body: SceneEdit):
+    """수동 편집은 차단하지 않는다 — 대신 게이트를 돌려 위반을 warnings로 동봉한다 (I1).
+    저장 자체는 항상 성공한다(사용자가 의도적으로 원문을 인용하고 싶을 수도 있다)."""
     def mutate(target, posts, diag):
         for k, v in body.model_dump(exclude_none=True).items():
             if k == "caption":
@@ -139,4 +154,7 @@ def edit_scene(sid: int, idx: int, body: SceneEdit):
             elif k == "sub":
                 v = v[:22]
             target[k] = v
-    return _update_scene(sid, idx, mutate, needs_posts=False)
+        corpus = analysis.corpus_text(posts)
+        sources = [p.get("content") or "" for p in posts]
+        return {"warnings": script_gen._gate(target, corpus, sources)}
+    return _update_scene(sid, idx, mutate, needs_posts=True)

@@ -1,4 +1,5 @@
 import json
+import pytest
 from core import script_gen, storyboard
 
 POSTS = [
@@ -86,12 +87,38 @@ def test_safe_fallback_sanitizes_caption(monkeypatch):
         assert "92" not in s["caption"] and "92" not in s["narration"]
 
 def test_non_list_batch_response_degrades(monkeypatch):
+    # I2: 모든 배치가 쓸모없는 응답만 내놓으면(생성 대상 전부 나레이션 빈 상태)
+    # 더 이상 퇴화 대본을 조용히 저장하지 않는다 — 명확한 실패로 바뀐다.
     monkeypatch.setattr(script_gen.gemini, "available", lambda: True)
     monkeypatch.setattr(script_gen.gemini, "generate",
                         lambda p, **kw: '{"scenes": "잘못된 형태"}')
-    out = script_gen.generate_script(POSTS, "reels", 30)   # 크래시 없이
+    with pytest.raises(script_gen.gemini.GeminiError):
+        script_gen.generate_script(POSTS, "reels", 30)
+
+def test_gate_field_isolation():
+    # C1: caption/sub/narration을 " "로 합치면 narration의 hedge가 caption의
+    # 금지어를 면제시켜 버렸다. "\n" 결합이면 필드별로 격리돼 caption이 걸린다.
+    scene = {"caption": "최저가 예약 비법", "sub": "",
+             "narration": "가격이 최저인지 확인할 수 없다."}
+    assert script_gen._gate(scene, "본문", ["본문"])   # caption 금지어가 차단돼야 함
+
+def test_regen_budget_caps_total_calls(monkeypatch):
+    # I3: 위반 씬마다 무상한 재생성을 허용하면 대형 롱폼(72씬)에서 폭주한다.
+    # 요청당 재생성 예산(20)을 넘으면 남은 위반 씬은 즉시 안전 폴백으로 간다.
+    monkeypatch.setattr(script_gen.gemini, "available", lambda: True)
+    calls = {"n": 0}
+    def always_bad(prompt, **kw):
+        calls["n"] += 1
+        want = prompt.count('"idx"')
+        return json.dumps([_fake_scene(narration="가입자의 92%가 만족했습니다")
+                           for _ in range(max(want, 1))], ensure_ascii=False)
+    monkeypatch.setattr(script_gen.gemini, "generate", always_bad)
+    out = script_gen.generate_script(POSTS, "long", 600)   # 72씬, 프레임 1+챕터 6=배치 7회
     body = [s for s in out["scenes"] if s["role"] != "chapter"]
     assert all(s["narration"] == script_gen.SAFE_NARRATION for s in body)
+    # 챕터 추출 1회 + 배치 7회 + 예산 상한 20회 (script_gen.gemini와 analysis.gemini는
+    # 같은 core.gemini 모듈이라 always_bad가 챕터 추출 호출도 가로챈다)
+    assert calls["n"] <= 1 + 7 + 20
 
 def test_scripts_table_exists(db):
     names = {r["name"] for r in db.execute(

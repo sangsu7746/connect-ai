@@ -10,7 +10,7 @@ def _resp(status, text="응답"):
 def test_generate_falls_back_on_failure(monkeypatch):
     monkeypatch.setattr(gemini.settings, "gemini_api_key", "k")
     calls = []
-    def fake_post(url, json=None, timeout=None):
+    def fake_post(url, json=None, headers=None, timeout=None):
         calls.append(url)
         return _resp(500) if len(calls) == 1 else _resp(200, "폴백 성공")
     monkeypatch.setattr(httpx, "post", fake_post)
@@ -19,9 +19,23 @@ def test_generate_falls_back_on_failure(monkeypatch):
 
 def test_generate_raises_when_all_fail(monkeypatch):
     monkeypatch.setattr(gemini.settings, "gemini_api_key", "k")
-    monkeypatch.setattr(httpx, "post", lambda url, json=None, timeout=None: _resp(500))
+    monkeypatch.setattr(httpx, "post",
+                        lambda url, json=None, headers=None, timeout=None: _resp(500))
     with pytest.raises(gemini.GeminiError):
         gemini.generate("p")
+
+def test_generate_sends_key_in_header_not_url(monkeypatch):
+    # M3: 키가 URL 쿼리에 노출되던 것을 헤더로 옮겼다. 로그·프록시에 키가 남지 않는다.
+    monkeypatch.setattr(gemini.settings, "gemini_api_key", "secret-key")
+    seen = {}
+    def fake_post(url, json=None, headers=None, timeout=None):
+        seen["url"] = url
+        seen["headers"] = headers
+        return _resp(200, "ok")
+    monkeypatch.setattr(httpx, "post", fake_post)
+    gemini.generate("p")
+    assert "secret-key" not in seen["url"] and "key=" not in seen["url"]
+    assert seen["headers"]["x-goog-api-key"] == "secret-key"
 
 def test_generate_without_key_raises(monkeypatch):
     monkeypatch.setattr(gemini.settings, "gemini_api_key", "")

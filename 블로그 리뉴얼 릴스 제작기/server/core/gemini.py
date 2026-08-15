@@ -7,7 +7,7 @@ import httpx
 from .config import settings
 
 MODEL_CHAIN = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-1.5-flash"]
-_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 
 class GeminiError(RuntimeError):
@@ -25,10 +25,11 @@ def generate(prompt: str, temperature: float = 0.8, max_tokens: int = 4096) -> s
     for model in MODEL_CHAIN:
         try:
             r = httpx.post(
-                _URL.format(model=model, key=settings.gemini_api_key),
+                _URL.format(model=model),
                 json={"contents": [{"parts": [{"text": prompt}]}],
                       "generationConfig": {"temperature": temperature,
                                            "maxOutputTokens": max_tokens}},
+                headers={"x-goog-api-key": settings.gemini_api_key},
                 timeout=60)
             if r.status_code != 200:
                 last = f"{model}: HTTP {r.status_code}"

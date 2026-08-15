@@ -42,3 +42,11 @@ def test_extract_chapters_non_list_json_falls_back(monkeypatch):
     ch = analysis.extract_chapters(POSTS, 2)
     assert len(ch) == 2
     assert "chapters" not in ch          # dict 키 순회 오염이 아니어야 함
+
+def test_extract_chapters_gates_titles(monkeypatch):
+    monkeypatch.setattr(analysis.gemini, "available", lambda: True)
+    monkeypatch.setattr(analysis.gemini, "generate",
+                        lambda p, **kw: '["월 92만원 버는 법", "가입 절차"]')
+    ch = analysis.extract_chapters(POSTS, 2)
+    assert len(ch) == 2 and "가입 절차" in ch
+    assert all("92" not in c for c in ch)      # 코퍼스에 없는 숫자 타이틀 교체됨

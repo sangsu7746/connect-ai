@@ -18,7 +18,8 @@ export default function Storyboard() {
 
   const save = async (idx: number, patch: Partial<Scene>) => {
     try {
-      const s = await patchScene(sid, idx, patch)
+      const { warnings, ...s } = await patchScene(sid, idx, patch)
+      if (warnings && warnings.length) alert('⚠ 게이트 경고:\n' + warnings.join('\n'))
       setScript(prev => prev && { ...prev, scenes: prev.scenes.map(x => x.idx === idx ? s : x) })
     } catch (e) { alert(`저장 실패: ${e}`) }
   }
