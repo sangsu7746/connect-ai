@@ -17,14 +17,16 @@ export default function Storyboard() {
   if (!script) return <div className="page">불러오는 중…</div>
 
   const save = async (idx: number, patch: Partial<Scene>) => {
-    const s = await patchScene(sid, idx, patch)
-    setScript({ ...script, scenes: script.scenes.map(x => x.idx === idx ? s : x) })
+    try {
+      const s = await patchScene(sid, idx, patch)
+      setScript(prev => prev && { ...prev, scenes: prev.scenes.map(x => x.idx === idx ? s : x) })
+    } catch (e) { alert(`저장 실패: ${e}`) }
   }
   const regen = async (idx: number) => {
     setBusy(idx)
     try {
       const s = await regenScene(sid, idx)
-      setScript({ ...script, scenes: script.scenes.map(x => x.idx === idx ? s : x) })
+      setScript(prev => prev && { ...prev, scenes: prev.scenes.map(x => x.idx === idx ? s : x) })
     } catch (e) { alert(`재생성 실패: ${e}`) }
     finally { setBusy(null) }
   }
@@ -47,10 +49,12 @@ export default function Storyboard() {
                 {busy === s.idx ? '재생성 중…' : '♻ AI 재생성'}
               </button>}
           </div>
-          <input defaultValue={s.caption} maxLength={18} placeholder="자막(≤18자)"
+          <input key={`c${s.idx}:${s.caption}`} defaultValue={s.caption}
+                 maxLength={18} placeholder="자막(≤18자)"
                  onBlur={e => e.target.value !== s.caption &&
                    save(s.idx, { caption: e.target.value })} />
-          <textarea defaultValue={s.narration} placeholder="나레이션" rows={2}
+          <textarea key={`n${s.idx}:${s.narration}`} defaultValue={s.narration}
+                    placeholder="나레이션" rows={2}
                     onBlur={e => e.target.value !== s.narration &&
                       save(s.idx, { narration: e.target.value })} />
         </div>
