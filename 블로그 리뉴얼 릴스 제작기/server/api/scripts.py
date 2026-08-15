@@ -102,7 +102,7 @@ def list_scripts(cid: int):
         conn.close()
 
 
-def _update_scene(sid: int, idx: int, mutate) -> dict:
+def _update_scene(sid: int, idx: int, mutate, needs_posts: bool) -> dict:
     conn = get_conn()
     try:
         row = conn.execute("SELECT * FROM scripts WHERE id=?", (sid,)).fetchone()
@@ -113,7 +113,7 @@ def _update_scene(sid: int, idx: int, mutate) -> dict:
         if not target:
             raise HTTPException(404, "scene not found")
         analysis_data = json.loads(row["analysis_json"])
-        posts = _load_posts(conn, json.loads(row["post_ids_json"]))
+        posts = _load_posts(conn, json.loads(row["post_ids_json"])) if needs_posts else []
         mutate(target, posts, analysis_data.get("diag", {}))
         conn.execute("UPDATE scripts SET scenes_json=? WHERE id=?",
                      (json.dumps(scenes, ensure_ascii=False), sid))
@@ -127,12 +127,16 @@ def _update_scene(sid: int, idx: int, mutate) -> dict:
 def regen_scene_ep(sid: int, idx: int):
     def mutate(target, posts, diag):
         target.update(script_gen.regen_scene(target, posts, diag))
-    return _update_scene(sid, idx, mutate)
+    return _update_scene(sid, idx, mutate, needs_posts=True)
 
 
 @router.patch("/scripts/{sid}/scenes/{idx}")
 def edit_scene(sid: int, idx: int, body: SceneEdit):
     def mutate(target, posts, diag):
         for k, v in body.model_dump(exclude_none=True).items():
+            if k == "caption":
+                v = v[:18]
+            elif k == "sub":
+                v = v[:22]
             target[k] = v
-    return _update_scene(sid, idx, mutate)
+    return _update_scene(sid, idx, mutate, needs_posts=False)

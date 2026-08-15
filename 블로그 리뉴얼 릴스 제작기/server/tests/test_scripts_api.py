@@ -72,3 +72,13 @@ def test_create_404_on_bad_posts(monkeypatch, tmp_path):
     c = make_client(monkeypatch, tmp_path)
     assert c.post("/api/scripts", json={"category_id": 1, "post_ids": [999],
                                         "fmt": "reels", "duration": 30}).status_code == 404
+
+def test_patch_truncates_caption_and_sub(monkeypatch, tmp_path):
+    c = make_client(monkeypatch, tmp_path)
+    ids = _seed_posts(c, monkeypatch)
+    _mock_engine(monkeypatch)
+    sid = c.post("/api/scripts", json={"category_id": 1, "post_ids": ids,
+                                       "fmt": "reels", "duration": 30}).json()["id"]
+    r = c.patch(f"/api/scripts/{sid}/scenes/0",
+                json={"caption": "가" * 30, "sub": "나" * 30})
+    assert len(r.json()["caption"]) == 18 and len(r.json()["sub"]) == 22
