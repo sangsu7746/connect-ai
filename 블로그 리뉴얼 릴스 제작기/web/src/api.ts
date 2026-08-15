@@ -35,3 +35,29 @@ export const discover = (cid: number, keyword: string) =>
     body: JSON.stringify({ keyword }) }).then(r => j<{ count: number }>(r))
 export const getPosts = (cid: number, source: string) =>
   fetch(`/api/categories/${cid}/posts?source=${source}`).then(r => j<Post[]>(r))
+
+export interface Scene {
+  idx: number; role: string; sec: number; chapter: string
+  caption: string; sub: string; narration: string; image_prompt: string
+}
+export interface Script {
+  id: number; category_id: number; fmt: string; duration_sec: number
+  scenes: Scene[]; description_md: string; post_ids: number[]
+  chapters: string[]; diag: { score: number; verdict: string; hooks: string[] }
+  fact_sheet: { fact: string; source_title: string; source_url: string }[]
+}
+export const createScript = (category_id: number, post_ids: number[],
+                             fmt: string, duration: number) =>
+  fetch('/api/scripts', { method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ category_id, post_ids, fmt, duration }) })
+    .then(r => j<{ id: number }>(r))
+export const getScript = (id: number) =>
+  fetch(`/api/scripts/${id}`).then(r => j<Script>(r))
+export const patchScene = (sid: number, idx: number, body: Partial<Scene>) =>
+  fetch(`/api/scripts/${sid}/scenes/${idx}`, { method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body) }).then(r => j<Scene>(r))
+export const regenScene = (sid: number, idx: number) =>
+  fetch(`/api/scripts/${sid}/scenes/${idx}/regen`, { method: 'POST' })
+    .then(r => j<Scene>(r))

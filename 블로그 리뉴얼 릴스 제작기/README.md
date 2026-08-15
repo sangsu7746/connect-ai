@@ -11,3 +11,9 @@
 2. 서버: `server\.venv\Scripts\python -m uvicorn main:app --app-dir server --port 8792`
 3. 웹: `cd web; npm run dev` → http://localhost:5175
 4. 테스트: `server\.venv\Scripts\python -m pytest server/tests -v`
+
+### M2 — 대본 만들기
+
+.env에 `GEMINI_API_KEY` 추가 필요(대본·챕터 생성). 키가 없으면 수집·진단까지만 동작.
+블로그 리스트에서 글을 체크 → 형식 선택 → "대본 만들기" → 스토리보드에서
+씬별 자막·나레이션 편집, AI 재생성, GEO 설명란 복사.

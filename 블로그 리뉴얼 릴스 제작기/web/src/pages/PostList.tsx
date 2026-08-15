@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { type Category, type Post, discover, getCategories, getPosts } from '../api'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { type Category, type Post, createScript, discover, getCategories, getPosts } from '../api'
 import PurpleBadge from '../components/PurpleBadge'
 
 const SOURCES = [
@@ -16,6 +16,11 @@ export default function PostList() {
   const [posts, setPosts] = useState<Post[]>([])
   const [source, setSource] = useState<string>('all')
   const [busyKw, setBusyKw] = useState<string | null>(null)
+  const [picked, setPicked] = useState<number[]>([])
+  const [fmt, setFmt] = useState<'reels' | 'long'>('reels')
+  const [dur, setDur] = useState(30)
+  const [making, setMaking] = useState(false)
+  const nav = useNavigate()
 
   const load = (src = source) => getPosts(cid, src).then(setPosts)
   useEffect(() => {
@@ -55,9 +60,36 @@ export default function PostList() {
           </button>
         ))}
       </div>
+      {picked.length > 0 && (
+        <div className="make-bar">
+          <b>{picked.length}개 선택</b>
+          <select value={`${fmt}:${dur}`} onChange={e => {
+            const [f, d] = e.target.value.split(':')
+            setFmt(f as 'reels' | 'long'); setDur(Number(d))
+          }}>
+            <option value="reels:30">릴스 30초</option>
+            <option value="reels:60">릴스 60초</option>
+            <option value="long:60">롱폼 1분</option>
+            <option value="long:180">롱폼 3분</option>
+            <option value="long:300">롱폼 5분</option>
+            <option value="long:600">롱폼 10분</option>
+          </select>
+          <button disabled={making} onClick={async () => {
+            setMaking(true)
+            try {
+              const { id } = await createScript(cid, picked, fmt, dur)
+              nav(`/script/${id}`)
+            } catch (e) { alert(`대본 생성 실패: ${e}`) }
+            finally { setMaking(false) }
+          }}>{making ? '생성 중… (수십 초)' : '🎬 대본 만들기'}</button>
+        </div>
+      )}
       {posts.length === 0 && <p>키워드를 눌러 상위 글을 수집하세요.</p>}
       {posts.map(p => (
         <div className="post" key={p.id}>
+          <input type="checkbox" checked={picked.includes(p.id)}
+                 onChange={e => setPicked(e.target.checked
+                   ? [...picked, p.id] : picked.filter(x => x !== p.id))} />
           <PurpleBadge score={p.score} verdict={p.verdict} />
           <div>
             <h3>
