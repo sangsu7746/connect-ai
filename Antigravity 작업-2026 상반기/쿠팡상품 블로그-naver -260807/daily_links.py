@@ -58,6 +58,55 @@ def stock() -> dict:
     return {"have": have, "ready": ready, "need": need}
 
 
+def make_via_api(n: int) -> int:
+    """
+    파트너스 API 로 딥링크를 만든다. 만들어진 건수를 돌려준다.
+
+    한 번에 여러 URL 을 보낼 수 있지만 나눠서 보낸다 —
+    한 건이 잘못돼 전체가 실패하면 어느 상품이 문제인지 알 수 없다.
+    """
+    import coupang_api
+    import coupang_partners as CP
+
+    targets = CP.pending_links(n)
+    if not targets:
+        return 0
+
+    made = 0
+    CHUNK = 10
+    for i in range(0, len(targets), CHUNK):
+        batch = targets[i:i + CHUNK]
+        urls = [t["detail_url"] for t in batch if t.get("detail_url")]
+        try:
+            got = coupang_api.make_deeplinks(urls)
+        except Exception as e:
+            log(f"  ✘ API 호출 실패: {str(e)[:140]}")
+            break
+        for t in batch:
+            link = got.get(t["detail_url"], "")
+            if not link:
+                log(f"    ✘ {t['title'][:34]} — 딥링크를 받지 못함")
+                continue
+            try:
+                CP.save_link(str(t["product_id"]), link)
+                made += 1
+                log(f"    ✅ {t['title'][:34]}")
+            except Exception as e:
+                log(f"    ✘ {t['title'][:30]} 저장 실패: {str(e)[:60]}")
+    return made
+
+
+def _summary(before: dict, made: int, target: int) -> int:
+    after = stock()
+    log("")
+    log("=" * 58)
+    log(f"생성 {made}/{target}건 · 보유 {before['have']} → {after['have']}건 "
+        f"· 발행 대기 {after['ready']}건")
+    if after["ready"] < 10:
+        log(f"⚠️ 발행 대기가 {after['ready']}건입니다. 하루 10건 목표에는 모자랍니다.")
+    return 0 if made else 1
+
+
 def main() -> int:
     n = TARGET_PER_DAY
     for a in sys.argv[1:]:
@@ -76,6 +125,19 @@ def main() -> int:
         return 0
 
     n = min(n, s["need"])
+
+    # ── API 가 있으면 그걸 쓴다 ──
+    # 브라우저 방식은 사람이 매번 로그인해야 하고(인증 쿠키가 세션 쿠키다),
+    # 상품을 검색 결과에서 골라야 해서 10%쯤 실패했다. API 는 URL 만 주면 끝난다.
+    import coupang_api
+    if coupang_api.has_keys():
+        log("")
+        log("  파트너스 API 로 만듭니다 — 로그인이 필요 없습니다.")
+        made = make_via_api(n)
+        if made > 0 or s["need"] == 0:
+            return _summary(s, made, n)
+        log("  API 로 한 건도 만들지 못했습니다. 브라우저 방식으로 넘어갑니다.")
+
     log("")
     log("─" * 58)
     log("  브라우저가 열립니다. **쿠팡 파트너스에 직접 로그인해 주세요.**")

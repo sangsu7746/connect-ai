@@ -695,8 +695,13 @@ def swap_affiliate(html: str, deeplink: str) -> str:
     return html
 
 
-def _edit_one(p, entry_id: int, transform, mode: str, log) -> dict:
-    """이미 로그인된 page 로 글 하나를 고친다. 브라우저 수명은 호출자가 관리한다."""
+def _edit_one(p, entry_id: int, transform, mode: str, log, category: str = "") -> dict:
+    """
+    이미 로그인된 page 로 글 하나를 고친다. 브라우저 수명은 호출자가 관리한다.
+
+    category 를 주면 분류도 다시 지정한다. 상세 수집이 안 된 상품이 기본값으로 떨어져
+    티스토리에 없는 이름('쿠팡 할인물품')이 되면 분류가 통째로 비는데, 그걸 되돌리기 위한 것이다.
+    """
     result = {"entry_id": entry_id, "ok": False}
     p.goto(EDIT_URL.format(id=entry_id), wait_until="domcontentloaded", timeout=45000)
     p.wait_for_timeout(5000)
@@ -730,6 +735,9 @@ def _edit_one(p, entry_id: int, transform, mode: str, log) -> dict:
     log(f"  새 제목  : {new_title[:46]}")
     log(f"  새 본문  : {r['bodyLen']}자")
 
+    if category:
+        result["category_ok"] = select_category(p, category, log=log)
+
     p.locator("#publish-layer-btn").click()
     p.wait_for_timeout(2000)
     radio_id = "#open0" if mode == "private" else "#open20"
@@ -752,7 +760,8 @@ def _edit_one(p, entry_id: int, transform, mode: str, log) -> dict:
     return result
 
 
-def edit_posts(jobs: dict, mode: str = "public", headless: bool = False, log=print) -> dict:
+def edit_posts(jobs: dict, mode: str = "public", headless: bool = False, log=print,
+               wait_minutes: float = 12.0) -> dict:
     """
     여러 글을 **한 브라우저 세션에서** 연속으로 고친다.
 
@@ -769,12 +778,15 @@ def edit_posts(jobs: dict, mode: str = "public", headless: bool = False, log=pri
         p = _page(ctx)
         p.on("dialog", lambda d: d.accept())
         try:
-            if not ensure_login(p, wait_minutes=6):
+            if not ensure_login(p, wait_minutes=wait_minutes):
                 return {k: {"ok": False, "why": "로그인/편집기 도달 실패"} for k in jobs}
-            for entry_id, transform in sorted(jobs.items()):
+            for entry_id, spec in sorted(jobs.items()):
+                # spec 은 transform 함수이거나 {"transform":..., "category":...} 다
+                transform = spec["transform"] if isinstance(spec, dict) else spec
+                category = spec.get("category", "") if isinstance(spec, dict) else ""
                 log(f"\n[{entry_id}]")
                 try:
-                    out[entry_id] = _edit_one(p, entry_id, transform, mode, log)
+                    out[entry_id] = _edit_one(p, entry_id, transform, mode, log, category)
                 except Exception as e:
                     out[entry_id] = {"ok": False, "why": str(e)[:120]}
                 p.wait_for_timeout(1500)

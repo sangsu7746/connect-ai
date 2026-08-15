@@ -154,16 +154,19 @@ def check_disclosure(content: str, title: str = "") -> list:
     """
     쿠팡 파트너스 승인 기준을 검사한다. 원고 품질과 별개로, 이걸 어기면 계정이 위험하다.
 
-    공식 기준 세 가지:
-      1. 제목에 [광고] 표시
-      2. 고지 문구를 게시물 첫 부분에 (태그·링크·이미지보다 앞)
-      3. 확정 표현 — "제공받습니다". 조건부("받을 수 있습니다")는 부적합
+    표시 위치는 **제목 또는 게시물 첫 부분** 중 하나면 된다(공식 가이드·공정위 지침 모두
+    '또는' 이다). 그래서 둘 중 어느 쪽으로 표시했는지에 따라 검사 기준이 달라진다.
+
+      제목에 [광고] 가 있으면      → 본문 고지 위치는 느슨하게 본다
+      제목에 표시가 없으면(기본)   → **본문 고지가 맨 앞이어야 한다**. 그게 유일한 표시다
+
+    나머지 두 가지는 어느 경우든 지켜야 한다:
+      · 고지 문구가 본문에 있을 것
+      · 확정 표현일 것 — "제공받습니다". 조건부("받을 수 있습니다")는 부적합
     """
     problems = []
     body = content or ""
-
-    if not re.match(r"^\s*\[?\s*(광고|AD|Ad|ad)\s*\]?", title or ""):
-        problems.append("제목에 [광고] 표시가 없다 — 파트너스 승인 거부 사유")
+    titled = bool(re.match(r"^\s*\[?\s*(광고|AD|Ad|ad)\s*\]?", title or ""))
 
     m = _WEAK_DISCLOSURE.search(body)
     if m:
@@ -171,13 +174,19 @@ def check_disclosure(content: str, title: str = "") -> list:
 
     if "쿠팡 파트너스 활동의 일환" not in body:
         problems.append("대가성 고지 문구가 본문에 없다")
+        return problems
+
+    head = body[:body.index("쿠팡 파트너스 활동의 일환")]
+    if re.search(r"!\[|<img|https?://|^#\S+", head, re.M):
+        problems.append("고지 앞에 이미지·링크·태그가 있다 — 고지가 첫 부분이어야 한다")
     else:
-        # '첫 부분'인지 본다. 고지 앞에 이미지·링크·해시태그가 있으면 안 된다.
-        head = body[:body.index("쿠팡 파트너스 활동의 일환")]
-        if re.search(r"!\[|<img|https?://|^#\S+", head, re.M):
-            problems.append("고지 앞에 이미지·링크·태그가 있다 — 고지가 첫 부분이어야 한다")
-        elif len(head.strip()) > 120:
-            problems.append(f"고지가 본문 {len(head.strip())}자 뒤에 있다 — 첫 부분으로 올려야 한다")
+        # 제목 표시가 없으면 본문 고지가 유일한 표시이므로 자리를 더 엄격히 본다.
+        limit = 120 if titled else 40
+        n = len(head.strip())
+        if n > limit:
+            problems.append(
+                f"고지가 본문 {n}자 뒤에 있다 — 맨 앞으로 올려야 한다"
+                + ("" if titled else " (제목에 [광고] 표시가 없어 본문 고지가 유일한 표시다)"))
     return problems
 
 
