@@ -15,13 +15,25 @@ def discover(cid: int, body: DiscoverIn):
     try:
         if not conn.execute("SELECT 1 FROM categories WHERE id=?", (cid,)).fetchone():
             raise HTTPException(404, "category not found")
-        items = naver.search_blog(body.keyword, display=10)
-        gitems = google_search.search_blog(body.keyword, num=10)
-        if not gitems and not google_search.available():
-            gitems = google_search.search_blog_playwright(body.keyword)
+        items: list = []
+        errors: list[str] = []
+        try:
+            items += naver.search_blog(body.keyword, display=10)
+        except Exception as e:
+            errors.append(f"naver: {e}")
+        gitems: list = []
+        try:
+            gitems = google_search.search_blog(body.keyword, num=10)
+            if not gitems and not google_search.available():
+                gitems = google_search.search_blog_playwright(body.keyword)
+        except Exception as e:
+            errors.append(f"google: {e}")
         items += gitems
         if not items:
-            raise HTTPException(502, "검색 결과 없음 — API 키 설정을 확인하세요")
+            detail = "검색 결과 없음 — API 키 설정을 확인하세요"
+            if errors:
+                detail += " (" + "; ".join(errors) + ")"
+            raise HTTPException(502, detail)
         now = datetime.datetime.now().isoformat(timespec="seconds")
 
         ids = []

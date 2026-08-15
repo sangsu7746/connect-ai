@@ -53,3 +53,14 @@ def test_google_playwright_fallback_when_no_cse(monkeypatch, tmp_path):
     c.post("/api/categories/1/discover", json={"keyword": "전세 보증보험"})
     assert any(p["source"] == "google"
                for p in c.get("/api/categories/1/posts").json())
+
+def test_discover_survives_naver_failure(monkeypatch, tmp_path):
+    c = make_client(monkeypatch, tmp_path)
+    import api.discover as disc
+    def boom(q, display=10):
+        raise OSError("naver down")
+    monkeypatch.setattr(disc.naver, "search_blog", boom)
+    r = c.post("/api/categories/1/discover", json={"keyword": "전세 보증보험"})
+    assert r.status_code == 200                       # 구글만으로 진행
+    posts = c.get("/api/categories/1/posts").json()
+    assert {p["source"] for p in posts} == {"google"}
