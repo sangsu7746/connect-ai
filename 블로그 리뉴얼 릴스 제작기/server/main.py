@@ -7,6 +7,7 @@ from api.categories import router as categories_router
 from api.trends import router as trends_router
 from api.discover import router as discover_router
 from api.scripts import router as scripts_router
+from api.articles import router as articles_router
 
 app = FastAPI(title="blog-reels-maker")
 init_db()
@@ -18,6 +19,7 @@ app.include_router(categories_router)
 app.include_router(trends_router)
 app.include_router(discover_router)
 app.include_router(scripts_router)
+app.include_router(articles_router)
 
 @app.get("/api/health")
 def health():

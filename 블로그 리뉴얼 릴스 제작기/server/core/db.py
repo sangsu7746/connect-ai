@@ -52,6 +52,17 @@ CREATE TABLE IF NOT EXISTS scripts(
   description_md TEXT DEFAULT '',
   created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS articles(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+  post_ids_json TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body_md TEXT NOT NULL,
+  warnings_json TEXT DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN('draft','published')),
+  published_urls_json TEXT DEFAULT '{}',
+  created_at TEXT
+);
 """
 
 def db_path() -> str:
