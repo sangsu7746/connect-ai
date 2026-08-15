@@ -49,3 +49,30 @@ def test_evidence_only_from_data():
 def test_hooks_deduplicated():
     d = pc.diagnose(RICH, CORPUS)
     assert len(d["hooks"]) == len(set(d["hooks"]))
+
+def test_weak_lists_failed_questions():
+    d = pc.diagnose(POOR, [])
+    assert len(d["weak"]) == 4
+    d2 = pc.diagnose(RICH, CORPUS)
+    assert d2["weak"] == []
+
+def test_admin_numbers_excluded_from_hooks():
+    post = {"title": "보증보험 안내", "source": "naver", "summary": "",
+            "content": "문의 전화 1588-1234-5678번\n사업자 등록번호 120-88-00767"}
+    d = pc.diagnose(post, [])
+    assert d["hooks"] == []          # 행정성 숫자는 훅이 아니다
+
+def test_pick_principles_mapping():
+    d = pc.diagnose(POOR, [])        # 전 문항 실패 → 1,2,5,6,7,8 + 3,4 → 상위 5
+    ns = [p["n"] for p in pc._pick_principles(d)]
+    assert ns == [1, 2, 5, 6, 7]
+    d2 = pc.diagnose(RICH, CORPUS)   # 3점 이상 → 덜어내기 [3,4,6]
+    assert [p["n"] for p in pc._pick_principles(d2)] == [3, 4, 6]
+
+def test_build_script_guide_scene_level_scope():
+    d = pc.diagnose(RICH, CORPUS)
+    full = pc.build_script_guide(d, scene_level=False)
+    one = pc.build_script_guide(d, scene_level=True)
+    assert "[씬 구성]" in full and "[이번 출력 범위]" not in full
+    assert "[이번 출력 범위]" in one and "[씬 구성]" not in one
+    assert "금지" in full and str(d["score"]) in full
