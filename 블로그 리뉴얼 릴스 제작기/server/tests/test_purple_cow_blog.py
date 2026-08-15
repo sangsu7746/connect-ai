@@ -45,3 +45,7 @@ def test_evidence_only_from_data():
     for a in d["answers"]:
         if a["yes"] and a["key"] != "no_discount":
             assert a["evidence"] in (RICH["content"] + RICH["title"] + RICH["summary"])
+
+def test_hooks_deduplicated():
+    d = pc.diagnose(RICH, CORPUS)
+    assert len(d["hooks"]) == len(set(d["hooks"]))

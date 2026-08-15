@@ -2,7 +2,7 @@
 
 원본(쿠팡 purple_cow.py)의 원칙 유지:
 - 판정은 수집 데이터에서만. 모델 추론으로 YES를 만들지 않는다.
-- evidence는 항상 원문에서 잘라낸 문자열.
+- evidence는 원문에서 잘라낸 문자열 (예외: no_discount는 코퍼스 통계 요약 — 원문이 아니라 수집 목록에서 계산된 값).
 원본 4문항을 콘텐츠 기준으로 각색 (spec §6 표):
   one_second   구체 숫자 훅 후보 존재
   what_is_that 통념 반박 마커 존재
@@ -69,7 +69,12 @@ def diagnose(post: dict, corpus: list[dict]) -> dict:
     q1 = bool(hook_nums)
     ev1 = _sentence_around(text, hook_nums[0][0]) if q1 else ""
     if q1:
-        hooks = [_sentence_around(text, raw) for raw, _, _ in hook_nums[:3]]
+        seen = []
+        for raw, _, _ in hook_nums:
+            line = _sentence_around(text, raw)
+            if line not in seen:
+                seen.append(line)
+        hooks = seen[:3]
     answers.append({"key": "one_second", "q": CHECKLIST[0][1], "yes": q1,
                     "evidence": ev1})
 
