@@ -1,7 +1,8 @@
 """ffmpeg 렌더러 (spec §9 — EstateReels ffmpegService 2단계 구조 이식).
-① 씬 클립: 이미지 1.25배 스케일→zoompan(줌인)→자막 PNG overlay→무음 트랙
+① 씬 클립: 이미지 1.25배 스케일→zoompan(줌인)→자막 PNG overlay→오디오 트랙
+   (나레이션 있으면 TTS mp3+apad, 없으면 무음 anullsrc)
 ② concat -c copy(자막이 구워져 재인코딩 불필요) → 실패 시 재인코딩 폴백
-③ BGM 먹싱(volume 0.28, 루프, -shortest). 양쪽 모두 길이 클램프."""
+③ BGM 먹싱(volume 0.28, 루프) — amix로 나레이션 보존. 양쪽 모두 길이 클램프."""
 import pathlib
 import shutil
 import subprocess
@@ -44,7 +45,8 @@ def _scene_image(scene: dict, category: str, fmt: str,
 
 
 def _scene_clip(scene: dict, img: pathlib.Path, cap_png: pathlib.Path,
-                fmt: str, workdir: pathlib.Path) -> pathlib.Path:
+                fmt: str, workdir: pathlib.Path,
+                narration: pathlib.Path | None = None) -> pathlib.Path:
     w, h = SIZE[fmt]
     dur = max(float(scene["sec"]), 0.5)
     frames = max(round(dur * FPS), 1)
@@ -54,11 +56,18 @@ def _scene_clip(scene: dict, img: pathlib.Path, cap_png: pathlib.Path,
           f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
           f"d={frames}:s={w}x{h}:fps={FPS}[bg];"
           f"[bg][1:v]overlay=0:0[v]")
-    _run(["ffmpeg", "-y", "-loop", "1", "-i", img, "-i", cap_png,
-          "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
-          "-filter_complex", vf, "-map", "[v]", "-map", "2:a",
-          "-t", f"{dur:.2f}", "-c:v", "libx264", "-preset", "veryfast",
-          "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", out])
+    cmd = ["ffmpeg", "-y", "-loop", "1", "-i", img, "-i", cap_png]
+    if narration is not None:
+        cmd += ["-i", narration]
+        # apad로 나레이션을 씬 길이까지 늘림 — -shortest와 함께 쓰면
+        # apad가 무효화되므로 여기서는 -shortest를 넣지 않고 -t로 길이 고정한다.
+        audio = ["-af", "apad", "-map", "2:a"]
+    else:
+        cmd += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
+        audio = ["-map", "2:a"]
+    _run(cmd + ["-filter_complex", vf, "-map", "[v]"] + audio +
+         ["-t", f"{dur:.2f}", "-c:v", "libx264", "-preset", "veryfast",
+          "-pix_fmt", "yuv420p", "-c:a", "aac", out])
     return out
 
 
@@ -79,14 +88,16 @@ def _concat(clips: list[pathlib.Path], total_sec: float, out: pathlib.Path,
 def _mux_bgm(video: pathlib.Path, bgm_path: pathlib.Path, total_sec: float,
              out: pathlib.Path) -> None:
     _run(["ffmpeg", "-y", "-i", video, "-stream_loop", "-1", "-i", bgm_path,
-          "-filter_complex", "[1:a]volume=0.28[b]",
-          "-map", "0:v", "-map", "[b]", "-c:v", "copy", "-c:a", "aac",
+          "-filter_complex",
+          "[1:a]volume=0.28[b];[0:a][b]amix=inputs=2:duration=first[a]",
+          "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac",
           "-t", f"{total_sec:.2f}", "-shortest", out], timeout=1800)
 
 
 def render_script(scenes: list[dict], fmt: str, category: str,
                   bgm_path: pathlib.Path | None, out_path: pathlib.Path,
-                  workdir: pathlib.Path, on_scene=None) -> None:
+                  workdir: pathlib.Path, on_scene=None,
+                  narrations: dict | None = None) -> None:
     workdir.mkdir(parents=True, exist_ok=True)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     w, h = SIZE[fmt]
@@ -98,7 +109,8 @@ def render_script(scenes: list[dict], fmt: str, category: str,
         cap.write_bytes(captions.render_caption(
             scene.get("caption") or "", scene.get("sub") or "",
             scene["role"], w, h))
-        clips.append(_scene_clip(scene, img, cap, fmt, workdir))
+        clips.append(_scene_clip(scene, img, cap, fmt, workdir,
+                                 narration=(narrations or {}).get(scene["idx"])))
         if on_scene:
             on_scene()
     if bgm_path:

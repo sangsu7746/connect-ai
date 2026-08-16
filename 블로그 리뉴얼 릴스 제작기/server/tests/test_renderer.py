@@ -132,6 +132,33 @@ def test_run_raises_render_error_with_stderr(monkeypatch):
     with pytest.raises(renderer.RenderError):
         renderer._run(["ffmpeg", "-i", "nope"])
 
+def test_scene_clip_with_narration_uses_apad(monkeypatch, tmp_path):
+    calls = _setup(monkeypatch, tmp_path)
+    narr = tmp_path / "n0.mp3"
+    narr.write_bytes(b"mp3")
+    out = tmp_path / "out.mp4"
+    renderer.render_script(SCENES, "reels", "부동산", None, out,
+                           tmp_path / "work", narrations={0: narr})
+    joined = [" ".join(map(str, c)) for c in calls]
+    clip0 = [c for c in joined if "clip_000" in c][0]
+    clip1 = [c for c in joined if "clip_001" in c][0]
+    assert str(narr) in clip0 and "apad" in clip0        # 나레이션 씬
+    assert "anullsrc" not in clip0
+    assert "anullsrc" in clip1                            # 무나레이션 씬은 기존
+    assert "-t 4.00" in clip0                             # 길이 클램프 유지
+
+def test_mux_bgm_preserves_narration_via_amix(monkeypatch, tmp_path):
+    calls = _setup(monkeypatch, tmp_path)
+    bgm = tmp_path / "m.mp3"
+    bgm.write_bytes(b"mp3")
+    renderer.render_script(SCENES, "reels", "부동산", bgm,
+                           tmp_path / "out.mp4", tmp_path / "work")
+    joined = [" ".join(map(str, c)) for c in calls]
+    mux = [c for c in joined if "volume=0.28" in c][0]
+    assert "amix=inputs=2:duration=first" in mux          # 나레이션 보존 믹스
+    assert "-map [a]" in mux or '-map "[a]"' in mux
+    assert "-map [b]" not in mux                          # 오디오 교체 방식 제거
+
 def test_run_wraps_timeout_and_oserror(monkeypatch):
     import subprocess as sp
     import pytest
