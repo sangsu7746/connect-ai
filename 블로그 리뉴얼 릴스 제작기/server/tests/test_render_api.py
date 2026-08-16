@@ -50,7 +50,7 @@ def test_render_job_creates_record(monkeypatch, tmp_path):
     sid = _make_script(c, monkeypatch)
     import api.render as rd
     def fake_render(scenes, fmt, category, bgm_path, out_path, workdir,
-                    on_scene=None):
+                    on_scene=None, narrations=None):
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_bytes(b"mp4")
         for _ in scenes:
@@ -63,6 +63,47 @@ def test_render_job_creates_record(monkeypatch, tmp_path):
     renders = c.get(f"/api/scripts/{sid}/renders").json()
     assert len(renders) == 1 and renders[0]["file"].endswith(".mp4")
     assert renders[0]["duration_sec"] == 30
+
+def test_render_job_includes_tts_step(monkeypatch, tmp_path):
+    c = make_client(monkeypatch, tmp_path)
+    sid = _make_script(c, monkeypatch)
+    import api.render as rd
+    synth_called = {}
+    def fake_synth(scenes, voice=None, on_done=None):
+        synth_called["n"] = len([s for s in scenes if s.get("narration")])
+        for s in scenes:
+            if s.get("narration") and on_done:
+                on_done()
+        return {}
+    monkeypatch.setattr(rd.tts, "synth_scenes", fake_synth)
+    def fake_render(scenes, fmt, category, bgm_path, out_path, workdir,
+                    on_scene=None, narrations=None):
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_bytes(b"mp4")
+        for _ in scenes:
+            if on_scene:
+                on_scene()
+    monkeypatch.setattr(rd.renderer, "render_script", fake_render)
+    j = _wait_job(c, c.post(f"/api/scripts/{sid}/render").json()["job_id"])
+    assert j["status"] == "done"
+    assert synth_called["n"] == 7                    # 나레이션 있는 씬 전부
+    assert j["total"] == 7 * 2 + 1 and j["progress"] == j["total"]
+
+def test_render_continues_when_tts_totally_fails(monkeypatch, tmp_path):
+    c = make_client(monkeypatch, tmp_path)
+    sid = _make_script(c, monkeypatch)
+    import api.render as rd
+    def boom(scenes, voice=None, on_done=None):
+        raise OSError("network down")
+    monkeypatch.setattr(rd.tts, "synth_scenes", boom)
+    def fake_render(scenes, fmt, category, bgm_path, out_path, workdir,
+                    on_scene=None, narrations=None):
+        assert narrations == {}                      # 무음 폴백
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_bytes(b"mp4")
+    monkeypatch.setattr(rd.renderer, "render_script", fake_render)
+    j = _wait_job(c, c.post(f"/api/scripts/{sid}/render").json()["job_id"])
+    assert j["status"] == "done"                     # 멈추지 않음
 
 def test_render_conflicts_with_image_job(monkeypatch, tmp_path):
     import threading

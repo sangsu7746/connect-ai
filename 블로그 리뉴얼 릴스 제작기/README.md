@@ -48,3 +48,10 @@ BGM 파일명은 `<무드>-NN.mp3` 규약(documentary_calm/family_warm/emotional
 — 규약 밖 파일은 무드 무관 폴백으로만 선택된다.
 이미지가 없는 씬은 스타일 색 카드로 대체됨 — 먼저 "🎨 이미지 생성" 권장.
 ffmpeg가 PATH에 있어야 한다(확인: `ffmpeg -version`).
+
+### M5 — TTS 나레이션
+
+렌더 시 씬 나레이션을 Edge-TTS(무료, 네트워크 필요)로 자동 합성해 BGM과 믹스한다.
+보이스는 `.env`의 `TTS_VOICE`(기본 ko-KR-SunHiNeural, 남성은 ko-KR-InJoonNeural).
+네트워크가 없으면 해당 렌더는 무음으로 진행된다. 합성 결과는 `server/data/tts/`에
+캐시되어 같은 문장은 재합성하지 않는다. 롱폼(1/3/5/10분)도 같은 렌더 버튼으로 동작.

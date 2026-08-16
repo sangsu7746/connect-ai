@@ -7,7 +7,7 @@ import tempfile
 from fastapi import APIRouter, HTTPException
 
 from core.db import get_conn
-from core import bgm, jobs, renderer
+from core import bgm, jobs, renderer, tts
 
 router = APIRouter(prefix="/api", tags=["render"])
 
@@ -42,7 +42,21 @@ def start_render(sid: int):
             row = conn.execute("SELECT * FROM scripts WHERE id=?",
                                (sid,)).fetchone()
             scenes = json.loads(row["scenes_json"])
-            ctx.set_total(len(scenes) + 1)
+            ctx.set_total(len(scenes) * 2 + 1)
+            # TTS 단계: 씬별 tick. synth_scenes가 전면 실패(예외)하면
+            # on_done이 한 번도 안 불렸을 수 있으므로 ticked 카운터로
+            # 실제 발생한 tick 수를 세고, 나머지를 여기서 보정한다
+            # (단순히 "나레이션 없는 씬만큼"이 아니라 "안 간 만큼").
+            ticked = {"n": 0}
+            def tts_tick():
+                ticked["n"] += 1
+                ctx.tick()
+            try:
+                narrations = tts.synth_scenes(scenes, on_done=tts_tick)
+            except Exception:
+                narrations = {}                      # TTS 전면 실패 → 무음
+            for _ in range(len(scenes) - ticked["n"]):
+                ctx.tick()
             bgm_path = bgm.pick(category, seed=sid)
             with tempfile.TemporaryDirectory(prefix=f"render_{sid}_") as td:
                 now = datetime.datetime.now().isoformat(timespec="seconds")
@@ -57,7 +71,8 @@ def start_render(sid: int):
                 try:
                     renderer.render_script(scenes, fmt, category, bgm_path,
                                            out, pathlib.Path(td),
-                                           on_scene=ctx.tick)
+                                           on_scene=ctx.tick,
+                                           narrations=narrations)
                 except Exception:
                     conn.execute("DELETE FROM renders WHERE id=?", (rid,))
                     conn.commit()
