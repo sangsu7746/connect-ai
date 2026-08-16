@@ -11,6 +11,7 @@ from api.discover import router as discover_router
 from api.scripts import router as scripts_router
 from api.articles import router as articles_router
 from api.images import router as images_router
+from api.render import router as render_router, videos_dir
 
 app = FastAPI(title="blog-reels-maker")
 init_db()
@@ -29,7 +30,9 @@ app.include_router(discover_router)
 app.include_router(scripts_router)
 app.include_router(articles_router)
 app.include_router(images_router)
+app.include_router(render_router)
 app.mount("/images", StaticFiles(directory=str(images_dir())), name="images")
+app.mount("/videos", StaticFiles(directory=str(videos_dir())), name="videos")
 
 @app.get("/api/health")
 def health():

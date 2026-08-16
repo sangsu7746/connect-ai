@@ -36,8 +36,8 @@ def _gen_for_scene(conn, scene: dict, category: str, fmt: str,
 @router.post("/scripts/{sid}/images")
 def generate_images(sid: int, body: ImagesIn | None = None):
     force = bool(body and body.force)
-    if jobs.has_running("images", str(sid)):
-        raise HTTPException(409, "이미지 잡이 이미 실행 중입니다 — 완료 후 다시 시도하세요")
+    if jobs.has_running("images", str(sid)) or jobs.has_running("render", str(sid)):
+        raise HTTPException(409, "이 스크립트의 잡이 이미 실행 중입니다 — 완료 후 다시 시도하세요")
     conn = get_conn()
     try:
         row = _load_script(conn, sid)
@@ -99,8 +99,8 @@ def get_job(jid: int):
 
 @router.post("/scripts/{sid}/scenes/{idx}/image")
 def regen_scene_image(sid: int, idx: int):
-    if jobs.has_running("images", str(sid)):
-        raise HTTPException(409, "이미지 잡이 이미 실행 중입니다 — 완료 후 다시 시도하세요")
+    if jobs.has_running("images", str(sid)) or jobs.has_running("render", str(sid)):
+        raise HTTPException(409, "이 스크립트의 잡이 이미 실행 중입니다 — 완료 후 다시 시도하세요")
     conn = get_conn()
     try:
         row = _load_script(conn, sid)

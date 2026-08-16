@@ -83,6 +83,13 @@ CREATE TABLE IF NOT EXISTS jobs(
   ref TEXT DEFAULT '',
   created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS renders(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  script_id INTEGER NOT NULL REFERENCES scripts(id) ON DELETE CASCADE,
+  file TEXT NOT NULL,
+  duration_sec INTEGER NOT NULL,
+  created_at TEXT
+);
 """
 
 def db_path() -> str:
