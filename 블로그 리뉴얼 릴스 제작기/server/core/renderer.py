@@ -3,9 +3,9 @@
 ② concat -c copy(자막이 구워져 재인코딩 불필요) → 실패 시 재인코딩 폴백
 ③ BGM 먹싱(volume 0.28, 루프, -shortest). 양쪽 모두 길이 클램프."""
 import pathlib
+import shutil
 import subprocess
 
-from . import bgm as _bgm  # noqa: F401  (호출부 참조용 — 직접 사용은 API 층)
 from . import captions, image_gen, style_packs
 
 SIZE = {"reels": (1080, 1920), "long": (1920, 1080)}
@@ -19,7 +19,7 @@ class RenderError(RuntimeError):
 def _run(cmd: list, timeout: int = 600) -> None:
     try:
         r = subprocess.run([str(c) for c in cmd], capture_output=True, text=True,
-                           timeout=timeout, encoding="utf-8")
+                           timeout=timeout, encoding="utf-8", errors="replace")
     except subprocess.TimeoutExpired:
         raise RenderError(f"ffmpeg 시간 초과({timeout}s)")
     except Exception as e:
@@ -47,10 +47,12 @@ def _scene_clip(scene: dict, img: pathlib.Path, cap_png: pathlib.Path,
                 fmt: str, workdir: pathlib.Path) -> pathlib.Path:
     w, h = SIZE[fmt]
     dur = max(float(scene["sec"]), 0.5)
-    frames = max(int(dur * FPS), 1)
+    frames = max(round(dur * FPS), 1)
     out = workdir / f"clip_{scene['idx']:03d}.mp4"
     vf = (f"[0:v]scale={int(w * 1.25)}:{int(h * 1.25)},"
-          f"zoompan=z='min(zoom+0.0011,1.16)':d={frames}:s={w}x{h}:fps={FPS}[bg];"
+          f"zoompan=z='min(zoom+0.0011,1.16)':"
+          f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
+          f"d={frames}:s={w}x{h}:fps={FPS}[bg];"
           f"[bg][1:v]overlay=0:0[v]")
     _run(["ffmpeg", "-y", "-loop", "1", "-i", img, "-i", cap_png,
           "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
@@ -105,6 +107,8 @@ def render_script(scenes: list[dict], fmt: str, category: str,
         try:
             _mux_bgm(tmp, bgm_path, total, out_path)
         except RenderError:
-            tmp.replace(out_path)                          # BGM 실패 → 무음 진행
+            # Path.replace는 크로스 드라이브(예: C: temp → D: videos)에서
+            # OSError(WinError 17)를 낸다 — shutil.move로 대체 (BGM 실패 → 무음 진행)
+            shutil.move(str(tmp), str(out_path))
     else:
         _concat(clips, total, out_path, workdir)

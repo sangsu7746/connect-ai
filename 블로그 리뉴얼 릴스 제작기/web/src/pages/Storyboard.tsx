@@ -22,7 +22,7 @@ export default function Storyboard() {
 
   useEffect(() => {
     getScript(sid).then(setScript).catch(e => alert(e))
-    getRenders(sid).then(setRenders)
+    getRenders(sid).then(setRenders).catch(() => {})       // 조용히 무시 — 이력 없어도 렌더는 가능
   }, [sid])
   // 언마운트(페이지 이동) 시 대기 중인 폴링 타이머를 정리 — 안 하면 setTimeout이
   // 계속 돌며 언마운트된 컴포넌트에 setState를 시도한다.

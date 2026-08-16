@@ -21,6 +21,8 @@ ensure_seed(_conn)
 # 안 돼서 has_running()이 계속 409를 반환한다. 시작 시 정리한다 (C2).
 _conn.execute("UPDATE jobs SET status='error', error='서버 재시작으로 중단' "
               "WHERE status='running'")
+# 렌더 잡이 죽은 시점에 따라 file=''인 유령 renders 행이 남을 수 있다 — 정리.
+_conn.execute("DELETE FROM renders WHERE file=''")
 _conn.commit()
 _conn.close()
 

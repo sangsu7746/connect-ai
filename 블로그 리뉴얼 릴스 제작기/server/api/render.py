@@ -61,6 +61,7 @@ def start_render(sid: int):
                 except Exception:
                     conn.execute("DELETE FROM renders WHERE id=?", (rid,))
                     conn.commit()
+                    out.unlink(missing_ok=True)
                     raise
                 conn.execute("UPDATE renders SET file=? WHERE id=?",
                              (fname, rid))

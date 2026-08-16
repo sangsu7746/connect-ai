@@ -17,7 +17,8 @@ def _setup(monkeypatch, tmp_path):
     (imgs / "b.png").write_bytes(image_gen.gradient_card("#34d399", 64, 114))
     monkeypatch.setenv("APP_IMAGES_DIR", str(imgs))
     calls = []
-    def fake_run(cmd, capture_output=None, text=None, timeout=None, encoding=None):
+    def fake_run(cmd, capture_output=None, text=None, timeout=None, encoding=None,
+                errors=None):
         calls.append(cmd)
         # concat·클립 출력 파일을 흉내 낸다
         out = pathlib.Path(cmd[-1])
@@ -40,6 +41,7 @@ def test_render_builds_expected_commands(monkeypatch, tmp_path):
     clip_cmds = [c for c in joined if "zoompan" in c]
     assert len(clip_cmds) == 2
     assert "min(zoom+0.0011,1.16)" in clip_cmds[0]
+    assert "x='iw/2-(iw/zoom/2)'" in clip_cmds[0]          # 중앙 앵커(I2) — 좌상단 줌인 방지
     assert "libx264" in clip_cmds[0] and "veryfast" in clip_cmds[0]
     assert "1080x1920" in clip_cmds[0]                    # zoompan s=
     concat_cmds = [c for c in joined if "-f concat" in c]
@@ -56,6 +58,33 @@ def test_render_bgm_mux(monkeypatch, tmp_path):
     mux = [c for c in joined if "volume=0.28" in c]
     assert mux and "-stream_loop -1" in mux[0] and "-shortest" in mux[0]
 
+def test_bgm_mux_failure_falls_back_via_shutil_move(monkeypatch, tmp_path):
+    # C1: tmp.replace(out_path)는 크로스 드라이브(C: temp → D: videos)에서
+    # OSError(WinError 17)를 낸다 — shutil.move로 대체됐는지 검증.
+    calls = _setup(monkeypatch, tmp_path)
+    bgm = tmp_path / "m.mp3"
+    bgm.write_bytes(b"mp3")
+    out = tmp_path / "out.mp4"
+
+    def boom_mux(*a, **kw):
+        raise renderer.RenderError("mux 실패")
+    monkeypatch.setattr(renderer, "_mux_bgm", boom_mux)
+
+    def fail_replace(self, target):
+        raise AssertionError("Path.replace는 크로스 드라이브에서 쓰면 안 됨")
+    monkeypatch.setattr(pathlib.Path, "replace", fail_replace)
+
+    import shutil
+    move_calls = []
+    real_move = shutil.move
+    def fake_move(src, dst):
+        move_calls.append((src, dst))
+        return real_move(src, dst)
+    monkeypatch.setattr(shutil, "move", fake_move)
+
+    renderer.render_script(SCENES, "reels", "부동산", bgm, out, tmp_path / "work")
+    assert move_calls and out.exists()
+
 def test_concat_falls_back_to_reencode(monkeypatch, tmp_path):
     calls = []
     from core import image_gen
@@ -65,7 +94,8 @@ def test_concat_falls_back_to_reencode(monkeypatch, tmp_path):
     (imgs / "b.png").write_bytes(image_gen.gradient_card("#34d399", 64, 114))
     monkeypatch.setenv("APP_IMAGES_DIR", str(imgs))
     import subprocess as sp
-    def fake_run(cmd, capture_output=None, text=None, timeout=None, encoding=None):
+    def fake_run(cmd, capture_output=None, text=None, timeout=None, encoding=None,
+                errors=None):
         calls.append(cmd)
         joined = " ".join(map(str, cmd))
         class R:
@@ -91,7 +121,8 @@ def test_missing_image_uses_gradient(monkeypatch, tmp_path):
 
 def test_run_raises_render_error_with_stderr(monkeypatch):
     import subprocess as sp
-    def boom(cmd, capture_output=None, text=None, timeout=None, encoding=None):
+    def boom(cmd, capture_output=None, text=None, timeout=None, encoding=None,
+            errors=None):
         class R:
             returncode = 1
             stderr = "x" * 500
@@ -104,13 +135,15 @@ def test_run_raises_render_error_with_stderr(monkeypatch):
 def test_run_wraps_timeout_and_oserror(monkeypatch):
     import subprocess as sp
     import pytest
-    def timeout_fn(cmd, capture_output=None, text=None, timeout=None, encoding=None):
+    def timeout_fn(cmd, capture_output=None, text=None, timeout=None, encoding=None,
+                   errors=None):
         raise sp.TimeoutExpired(cmd="ffmpeg", timeout=600)
     monkeypatch.setattr(sp, "run", timeout_fn)
     with pytest.raises(renderer.RenderError) as exc_info:
         renderer._run(["ffmpeg"])
     assert "시간 초과" in str(exc_info.value)
-    def nf_fn(cmd, capture_output=None, text=None, timeout=None, encoding=None):
+    def nf_fn(cmd, capture_output=None, text=None, timeout=None, encoding=None,
+             errors=None):
         raise FileNotFoundError("ffmpeg not found")
     monkeypatch.setattr(sp, "run", nf_fn)
     with pytest.raises(renderer.RenderError):
