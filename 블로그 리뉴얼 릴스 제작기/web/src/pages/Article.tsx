@@ -47,7 +47,7 @@ export default function ArticlePage() {
              placeholder="제목(≤32자)"
              onBlur={e => e.target.value !== article.title &&
                save({ title: e.target.value })} />
-      <textarea key={`b:${article.body_md.length}`} className="desc"
+      <textarea key={`b:${article.body_md}`} className="desc"
                 defaultValue={article.body_md} rows={22}
                 onBlur={e => e.target.value !== article.body_md &&
                   save({ body_md: e.target.value })} />
