@@ -63,6 +63,15 @@ CREATE TABLE IF NOT EXISTS articles(
   published_urls_json TEXT DEFAULT '{}',
   created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS images(
+  hash TEXT PRIMARY KEY,
+  style_id TEXT NOT NULL,
+  prompt TEXT NOT NULL,
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  file TEXT NOT NULL,
+  created_at TEXT
+);
 """
 
 def db_path() -> str:

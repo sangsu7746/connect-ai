@@ -6,3 +6,4 @@ beautifulsoup4
 trafilatura
 playwright
 pytest
+Pillow
