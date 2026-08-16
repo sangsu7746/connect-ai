@@ -112,10 +112,19 @@ def list_scripts(cid: int):
         conn.close()
 
 
+#: 텍스트 편집·재생성이 소유하는 필드 — 이미지 필드(image_file 등)는 이미지 잡 소유라
+#: 여기서 병합하지 않는다 (동시 실행 시 서로의 기록을 지우지 않기 위한 소유권 분리)
+_TEXT_FIELDS = ("role", "sec", "chapter", "caption", "sub", "narration", "image_prompt")
+
+
 def _update_scene(sid: int, idx: int, mutate, needs_posts: bool) -> dict:
-    """mutate(target, posts, diag)는 target을 제자리에서 고치고, 응답에만 얹을
+    """mutate(target, posts, diag)는 target(사본)을 제자리에서 고치고, 응답에만 얹을
     추가 필드(dict)를 선택적으로 반환할 수 있다 (예: I1의 warnings) —
-    그 값은 target에는 없으므로 scenes_json에는 저장되지 않는다."""
+    그 값은 target에는 없으므로 scenes_json에는 저장되지 않는다.
+
+    mutate 실행(Gemini 호출 등 느릴 수 있음) 동안 이미지 잡이 이 씬의 image_file/
+    image_fallback을 커밋할 수 있으므로, 쓰기 직전에 scenes_json을 다시 읽어
+    이 씬의 텍스트 필드(_TEXT_FIELDS)만 최신 스냅샷에 병합한다 (C1)."""
     conn = get_conn()
     try:
         row = conn.execute("SELECT * FROM scripts WHERE id=?", (sid,)).fetchone()
@@ -125,13 +134,24 @@ def _update_scene(sid: int, idx: int, mutate, needs_posts: bool) -> dict:
         target = next((s for s in scenes if s["idx"] == idx), None)
         if not target:
             raise HTTPException(404, "scene not found")
+        target = dict(target)                       # 사본에 mutate (Gemini 등 느린 작업 포함)
         analysis_data = json.loads(row["analysis_json"])
         posts = _load_posts(conn, json.loads(row["post_ids_json"])) if needs_posts else []
         extra = mutate(target, posts, analysis_data.get("diag", {})) or {}
+        # 쓰기 직전 fresh read — 이미지 잡이 그동안 커밋한 씬별 기록을 보존한다
+        fresh_row = conn.execute("SELECT scenes_json FROM scripts WHERE id=?",
+                                 (sid,)).fetchone()
+        fresh = json.loads(fresh_row["scenes_json"])
+        ft = next((s for s in fresh if s["idx"] == idx), None)
+        if ft is None:
+            raise HTTPException(404, "scene not found")
+        for k in _TEXT_FIELDS:
+            if k in target:
+                ft[k] = target[k]
         conn.execute("UPDATE scripts SET scenes_json=? WHERE id=?",
-                     (json.dumps(scenes, ensure_ascii=False), sid))
+                     (json.dumps(fresh, ensure_ascii=False), sid))
         conn.commit()
-        return {**target, **extra}
+        return {**ft, **extra}
     finally:
         conn.close()
 
