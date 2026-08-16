@@ -9,6 +9,11 @@ from . import analysis, gemini, guardrails, purple_cow_blog, storyboard
 SAFE_NARRATION = "자세한 조건은 설명란의 원문에서 확인하세요."
 MAX_REGEN = 3
 
+
+def narration_budget(sec: float) -> int:
+    """씬 길이에 맞는 나레이션 자수 예산. edge-tts ≈6자/초 — 5자/초로 여유."""
+    return max(int(float(sec) * 5), 10)
+
 _SCENE_JSON = ('{"idx": %d, "caption": "≤18자 자막", "sub": "≤22자 보조(없으면 빈칸)", '
                '"narration": "나레이션(자막을 그대로 읽지 말 것)", '
                '"image_prompt": "english image prompt, no text"}')
@@ -26,7 +31,8 @@ def _batch_prompt(guide: str, facts: list[dict], scenes: list[dict],
     fact_lines = "\n".join(f"- {f['fact']}" for f in facts)
     scene_specs = "\n".join(
         _SCENE_JSON % s["idx"] +
-        f"  ← 역할 {s['role']}" + (f", 챕터 '{s['chapter']}'" if s["chapter"] else "")
+        f"  ← 역할 {s['role']}, {s['sec']}초, 나레이션 {narration_budget(s['sec'])}자 이내" +
+        (f", 챕터 '{s['chapter']}'" if s["chapter"] else "")
         for s in scenes)
     return f"""{guide}
 
@@ -48,6 +54,12 @@ def _gate(scene: dict, corpus: str, sources: list[str]) -> list[str]:
                                  scene.get("narration")) if x)
     problems = list(guardrails.check(text, corpus)["blocking"])
     problems += [f"원문 복사: {s}" for s in guardrails.check_copy(text, sources)]
+
+    narr = scene.get("narration") or ""
+    if narr and narr != SAFE_NARRATION and "sec" in scene:
+        budget = narration_budget(scene["sec"])
+        if len(narr) > budget:
+            problems.append(f"나레이션 길이 초과: {len(narr)}자 > {budget}자")
     return problems
 
 

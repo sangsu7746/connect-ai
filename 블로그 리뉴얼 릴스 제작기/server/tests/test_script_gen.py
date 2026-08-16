@@ -124,3 +124,52 @@ def test_scripts_table_exists(db):
     names = {r["name"] for r in db.execute(
         "SELECT name FROM sqlite_master WHERE type='table'")}
     assert "scripts" in names
+
+def test_narration_budget_formula():
+    assert script_gen.narration_budget(4.0) == 20
+    assert script_gen.narration_budget(8.3) == 41
+    assert script_gen.narration_budget(1.0) == 10          # 하한
+
+def test_gate_flags_over_budget_narration():
+    scene = {"idx": 0, "role": "point", "sec": 4.0, "chapter": "",
+             "caption": "자막", "sub": "",
+             "narration": "가" * 40, "image_prompt": ""}
+    problems = script_gen._gate(scene, "본문", ["본문"])
+    assert any("길이 초과" in p for p in problems)
+
+def test_gate_allows_within_budget_and_safe():
+    scene = {"idx": 0, "role": "point", "sec": 4.0, "chapter": "",
+             "caption": "자막", "sub": "",
+             "narration": "가" * 15, "image_prompt": ""}
+    assert not any("길이 초과" in p
+                   for p in script_gen._gate(scene, "본문", ["본문"]))
+    safe = dict(scene, narration=script_gen.SAFE_NARRATION, sec=2.2)
+    assert not any("길이 초과" in p
+                   for p in script_gen._gate(safe, "본문", ["본문"]))
+
+def test_over_budget_triggers_regen_then_fallback(monkeypatch):
+    monkeypatch.setattr(script_gen.gemini, "available", lambda: True)
+    def long_gen(prompt, **kw):
+        want = prompt.count('"idx"')
+        return json.dumps([_fake_scene(narration="보증료는 " + "가" * 60)
+                           for _ in range(max(want, 1))], ensure_ascii=False)
+    monkeypatch.setattr(script_gen.gemini, "generate", long_gen)
+    out = script_gen.generate_script(POSTS, "reels", 30)
+    for s in out["scenes"]:
+        if s["role"] == "chapter":
+            continue
+        budget = script_gen.narration_budget(s["sec"])
+        assert len(s["narration"]) <= max(budget,
+                                          len(script_gen.SAFE_NARRATION))
+
+def test_prompt_includes_budget(monkeypatch):
+    monkeypatch.setattr(script_gen.gemini, "available", lambda: True)
+    seen = {}
+    def spy(prompt, **kw):
+        seen["p"] = prompt
+        want = prompt.count('"idx"')
+        return json.dumps([_fake_scene() for _ in range(max(want, 1))],
+                          ensure_ascii=False)
+    monkeypatch.setattr(script_gen.gemini, "generate", spy)
+    script_gen.generate_script(POSTS, "reels", 30)
+    assert "자 이내" in seen["p"]                    # 씬별 예산 문구
