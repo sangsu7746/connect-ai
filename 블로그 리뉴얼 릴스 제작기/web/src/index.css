@@ -64,3 +64,8 @@ select { background: #171a21; color: #e6e6ea; border: 1px solid #262b36;
 .scene textarea, .desc { background: #0f1115; color: #e6e6ea;
     border: 1px solid #262b36; border-radius: 8px; padding: 8px 10px;
     font-size: 13px; font-family: inherit; resize: vertical; }
+.warn-panel { background: #3a2b12; border: 1px solid #b45309; border-radius: 10px;
+              padding: 10px 14px; margin: 10px 0; font-size: 13px;
+              display: flex; flex-direction: column; gap: 4px; }
+.page > input { width: 100%; margin-bottom: 10px; font-size: 16px; }
+.make-bar a { color: #a78bfa; font-size: 13px; }

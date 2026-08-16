@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { type Category, type Post, createScript, discover, getCategories, getPosts } from '../api'
+import { type Category, type Post, createArticle, createScript, discover, getCategories, getPosts } from '../api'
 import PurpleBadge from '../components/PurpleBadge'
 
 const SOURCES = [
@@ -82,6 +82,14 @@ export default function PostList() {
             } catch (e) { alert(`대본 생성 실패: ${e}`) }
             finally { setMaking(false) }
           }}>{making ? '생성 중… (수십 초)' : '🎬 대본 만들기'}</button>
+          <button className="ghost" disabled={making} onClick={async () => {
+            setMaking(true)
+            try {
+              const { id } = await createArticle(cid, picked)
+              nav(`/article/${id}`)
+            } catch (e) { alert(`글 생성 실패: ${e}`) }
+            finally { setMaking(false) }
+          }}>📝 블로그 글 만들기</button>
         </div>
       )}
       {posts.length === 0 && <p>키워드를 눌러 상위 글을 수집하세요.</p>}

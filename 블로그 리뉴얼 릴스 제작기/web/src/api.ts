@@ -61,3 +61,23 @@ export const patchScene = (sid: number, idx: number, body: Partial<Scene>) =>
 export const regenScene = (sid: number, idx: number) =>
   fetch(`/api/scripts/${sid}/scenes/${idx}/regen`, { method: 'POST' })
     .then(r => j<Scene>(r))
+
+export interface Article {
+  id: number; category_id: number; title: string; body_md: string
+  warnings: string[]; status: 'draft' | 'published'
+  published_urls: Record<string, string>; post_ids: number[]; created_at: string
+}
+export const createArticle = (category_id: number, post_ids: number[]) =>
+  fetch('/api/articles', { method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ category_id, post_ids }) }).then(r => j<{ id: number }>(r))
+export const getArticle = (id: number) =>
+  fetch(`/api/articles/${id}`).then(r => j<Article>(r))
+export const patchArticle = (id: number, body: { title?: string; body_md?: string }) =>
+  fetch(`/api/articles/${id}`, { method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body) }).then(r => j<Article>(r))
+export const publishArticle = (id: number, platform: string, force = false) =>
+  fetch(`/api/articles/${id}/publish`, { method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ platform, force }) }).then(r => j<{ ok: boolean; url: string }>(r))
