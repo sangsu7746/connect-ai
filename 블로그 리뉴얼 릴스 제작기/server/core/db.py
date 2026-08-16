@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS jobs(
   total INTEGER DEFAULT 0,
   result_json TEXT DEFAULT '{}',
   error TEXT DEFAULT '',
+  ref TEXT DEFAULT '',
   created_at TEXT
 );
 """

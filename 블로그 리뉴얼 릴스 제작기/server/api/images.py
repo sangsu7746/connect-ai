@@ -36,12 +36,11 @@ def _gen_for_scene(conn, scene: dict, category: str, fmt: str,
 @router.post("/scripts/{sid}/images")
 def generate_images(sid: int, body: ImagesIn | None = None):
     force = bool(body and body.force)
+    if jobs.has_running("images", str(sid)):
+        raise HTTPException(409, "이미지 잡이 이미 실행 중입니다 — 완료 후 다시 시도하세요")
     conn = get_conn()
     try:
         row = _load_script(conn, sid)
-        scenes = json.loads(row["scenes_json"])
-        todo = [s for s in scenes
-                if force or not s.get("image_file")]
         fmt, cid = row["fmt"], row["category_id"]
     finally:
         conn.close()
@@ -52,6 +51,9 @@ def generate_images(sid: int, body: ImagesIn | None = None):
             row = _load_script(conn, sid)
             scenes = json.loads(row["scenes_json"])
             category = _category_name(conn, cid)
+            todo_scenes = [s for s in scenes
+                           if force or not s.get("image_file")]
+            ctx.set_total(len(todo_scenes))
             done = 0
             for scene in scenes:
                 if not force and scene.get("image_file"):
@@ -68,7 +70,7 @@ def generate_images(sid: int, body: ImagesIn | None = None):
         finally:
             conn.close()
 
-    return {"job_id": jobs.start("images", len(todo), work)}
+    return {"job_id": jobs.start("images", 0, work, ref=str(sid))}
 
 
 @router.get("/jobs/{jid}")
@@ -81,6 +83,8 @@ def get_job(jid: int):
 
 @router.post("/scripts/{sid}/scenes/{idx}/image")
 def regen_scene_image(sid: int, idx: int):
+    if jobs.has_running("images", str(sid)):
+        raise HTTPException(409, "이미지 잡이 이미 실행 중입니다 — 완료 후 다시 시도하세요")
     conn = get_conn()
     try:
         row = _load_script(conn, sid)

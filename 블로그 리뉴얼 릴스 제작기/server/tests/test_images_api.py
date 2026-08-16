@@ -102,3 +102,22 @@ def test_single_scene_regen(monkeypatch, tmp_path):
 def test_job_404(monkeypatch, tmp_path):
     c = make_client(monkeypatch, tmp_path)
     assert c.get("/api/jobs/999").status_code == 404
+
+def test_concurrent_jobs_rejected(monkeypatch, tmp_path):
+    import threading
+    c = make_client(monkeypatch, tmp_path)
+    sid = _make_script(c, monkeypatch)
+    import api.images as im
+    gate = threading.Event()
+    def slow(p, n, w, h):
+        gate.wait(timeout=5)
+        return b"\x89PNG_x"
+    monkeypatch.setattr(im.image_gen.sd_webui, "txt2img", slow)
+    jid = c.post(f"/api/scripts/{sid}/images").json()["job_id"]
+    try:
+        assert c.post(f"/api/scripts/{sid}/images").status_code == 409
+        assert c.post(f"/api/scripts/{sid}/scenes/0/image").status_code == 409
+    finally:
+        gate.set()
+    j = _wait_job(c, jid)
+    assert j["status"] == "done"

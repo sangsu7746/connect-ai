@@ -20,13 +20,22 @@ class JobCtx:
         finally:
             conn.close()
 
+    def set_total(self, n: int) -> None:
+        conn = get_conn()
+        try:
+            conn.execute("UPDATE jobs SET total=? WHERE id=?", (n, self.jid))
+            conn.commit()
+        finally:
+            conn.close()
 
-def start(kind: str, total: int, work) -> int:
+
+def start(kind: str, total: int, work, ref: str = "") -> int:
     conn = get_conn()
     try:
         cur = conn.execute(
-            "INSERT INTO jobs(kind, total, created_at) VALUES(?,?,?)",
-            (kind, total, datetime.datetime.now().isoformat(timespec="seconds")))
+            "INSERT INTO jobs(kind, total, ref, created_at) VALUES(?,?,?,?)",
+            (kind, total, ref,
+             datetime.datetime.now().isoformat(timespec="seconds")))
         conn.commit()
         jid = cur.lastrowid
     finally:
@@ -56,5 +65,15 @@ def get(jid: int) -> dict | None:
     try:
         row = conn.execute("SELECT * FROM jobs WHERE id=?", (jid,)).fetchone()
         return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def has_running(kind: str, ref: str) -> bool:
+    conn = get_conn()
+    try:
+        return conn.execute(
+            "SELECT 1 FROM jobs WHERE kind=? AND ref=? AND status='running'",
+            (kind, ref)).fetchone() is not None
     finally:
         conn.close()
