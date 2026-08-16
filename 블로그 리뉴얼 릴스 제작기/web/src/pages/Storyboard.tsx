@@ -30,12 +30,18 @@ export default function Storyboard() {
     try {
       const { job_id } = await startImages(sid, force)
       const poll = async () => {
-        const jb = await getJob(job_id)
-        if (!mounted.current) return
-        setImgJob(jb)
-        if (jb.status === 'running') { imgTimer.current = setTimeout(poll, 1000); return }
-        if (jb.status === 'error') alert(`이미지 생성 실패: ${jb.error}`)
-        setScript(await getScript(sid))
+        try {
+          const jb = await getJob(job_id)
+          if (!mounted.current) return
+          setImgJob(jb)
+          if (jb.status === 'running') { imgTimer.current = setTimeout(poll, 1000); return }
+          if (jb.status === 'error') alert(`이미지 생성 실패: ${jb.error}`)
+          setScript(await getScript(sid))
+        } catch (e) {
+          if (!mounted.current) return
+          setImgJob(null)
+          alert(`이미지 잡 확인 실패: ${e}`)
+        }
       }
       poll()
     } catch (e) { alert(`이미지 생성 시작 실패: ${e}`) }
@@ -89,7 +95,7 @@ export default function Storyboard() {
             <div className="scene-img">
               <img src={`/images/${s.image_file}`} alt="" loading="lazy" />
               {s.image_fallback && <span className="fb-badge">⚠ 폴백</span>}
-              <button className="ghost" disabled={busy !== null}
+              <button className="ghost" disabled={busy !== null || imgJob?.status === 'running'}
                       onClick={async () => {
                         try {
                           const ns = await regenSceneImage(sid, s.idx)
