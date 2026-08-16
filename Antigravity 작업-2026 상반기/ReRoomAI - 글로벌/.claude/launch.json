@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "reroom-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "ReRoomAI", "run", "dev", "--", "--webpack"],
+      "port": 3000
+    }
+  ]
+}
