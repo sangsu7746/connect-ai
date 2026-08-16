@@ -72,6 +72,16 @@ CREATE TABLE IF NOT EXISTS images(
   file TEXT NOT NULL,
   created_at TEXT
 );
+CREATE TABLE IF NOT EXISTS jobs(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'running' CHECK(status IN('running','done','error')),
+  progress INTEGER DEFAULT 0,
+  total INTEGER DEFAULT 0,
+  result_json TEXT DEFAULT '{}',
+  error TEXT DEFAULT '',
+  created_at TEXT
+);
 """
 
 def db_path() -> str:
