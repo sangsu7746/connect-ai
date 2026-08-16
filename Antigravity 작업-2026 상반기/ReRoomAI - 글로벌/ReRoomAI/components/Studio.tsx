@@ -91,6 +91,10 @@ const MODE_TIPS: Record<string, { title: string; items: string[] }> = {
   },
 };
 
+// Share pages need a provisioned Firebase Storage bucket; until one exists the
+// button stays hidden rather than failing on click.
+const SHARE_ENABLED = process.env.NEXT_PUBLIC_SHARE_ENABLED === '1';
+
 export default function Studio() {
   // Input state
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -390,7 +394,7 @@ export default function Studio() {
                   >
                     Download PNG
                   </button>
-                  {authEnabled && (
+                  {authEnabled && SHARE_ENABLED && (
                     <button
                       onClick={() => void handleShare()}
                       disabled={isSharing}

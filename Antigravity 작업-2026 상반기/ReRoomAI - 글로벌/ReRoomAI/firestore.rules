@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// All Firestore access happens server-side through the Admin SDK, which bypasses
+// these rules. The client SDK is used only for Google sign-in, so browsers must
+// never be able to read or write documents directly — especially `users.credits`.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
