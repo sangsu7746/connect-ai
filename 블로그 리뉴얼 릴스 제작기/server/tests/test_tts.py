@@ -56,16 +56,19 @@ def test_voice_override_changes_cache_key(monkeypatch, tmp_path):
     b = tts.synth_scenes(SCENES[:1], voice="ko-KR-InJoonNeural")
     assert a[0] != b[0]                         # 보이스별 캐시 분리
 
-def test_atomic_cache_write(monkeypatch, tmp_path):
+def test_interrupted_write_leaves_no_final_file(monkeypatch, tmp_path):
+    """save()가 대상 경로에 부분 바이트를 쓴 뒤 죽는 경우 — 원자적 쓰기(.tmp→replace)만이
+    최종 캐시 경로 오염을 막는다. 옛 구현(직접 쓰기)이면 부분 파일이 최종 경로에 남아 실패한다."""
     _setup(monkeypatch, tmp_path)
+    class PartialCommunicate:
+        def __init__(self, text, voice, **kw):
+            self.text = text
+        async def save(self, path):
+            pathlib.Path(path).write_bytes(b"partial")   # 대상 경로에 쓰다가
+            raise RuntimeError("connection dropped")      # 중단
+    monkeypatch.setattr(tts.edge_tts, "Communicate", PartialCommunicate)
     out = tts.synth_scenes(SCENES[:1])
-    assert 0 in out
-    leftovers = list(out[0].parent.glob("*.tmp*"))
-    assert leftovers == []                        # 임시 파일 잔재 없음
-
-def test_partial_tmp_not_cached(monkeypatch, tmp_path):
-    _setup(monkeypatch, tmp_path)
-    FakeCommunicate.fail_texts = {"첫 나레이션"}
-    tts.synth_scenes(SCENES[:1])
+    assert out == {}                                      # 실패로 처리
     d = pathlib.Path(str(tmp_path / "tts"))
-    assert list(d.glob("*.mp3")) == []            # 실패는 최종 경로에 안 남음
+    assert list(d.glob("*.mp3")) == []                    # 최종 경로 무오염
+    assert list(d.glob("*.tmp")) == []                    # 임시 잔재도 정리

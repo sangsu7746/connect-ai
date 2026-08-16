@@ -167,3 +167,25 @@ def test_render_serialized_globally(monkeypatch, tmp_path):
     finally:
         gate.set()
     _wait_job(c, jid)
+
+def test_images_blocked_by_other_scripts_render(monkeypatch, tmp_path):
+    """타 sid 렌더 중 이미지 잡/단일 재생성이 409로 차단된다. 이번에 바꾼 동작이다."""
+    import threading
+    c = make_client(monkeypatch, tmp_path)
+    sid1 = _make_script(c, monkeypatch)
+    sid2 = _make_script2(c, monkeypatch)
+    import api.render as rd
+    gate = threading.Event()
+    def slow_render(scenes, fmt, category, bgm_path, out_path, workdir,
+                    on_scene=None, narrations=None):
+        gate.wait(timeout=5)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_bytes(b"mp4")
+    monkeypatch.setattr(rd.renderer, "render_script", slow_render)
+    jid = c.post(f"/api/scripts/{sid1}/render").json()["job_id"]
+    try:
+        assert c.post(f"/api/scripts/{sid2}/images").status_code == 409
+        assert c.post(f"/api/scripts/{sid2}/scenes/0/image").status_code == 409
+    finally:
+        gate.set()
+    _wait_job(c, jid)
