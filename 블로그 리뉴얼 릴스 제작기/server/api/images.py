@@ -3,7 +3,7 @@ import secrets
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from core.db import get_conn
-from core import image_gen, jobs, style_packs
+from core import image_gen, jobs, style_packs, locks
 
 router = APIRouter(prefix="/api", tags=["images"])
 
@@ -70,15 +70,16 @@ def generate_images(sid: int, body: ImagesIn | None = None):
                 # 쓰기 직전에 scenes_json을 다시 읽어 이 씬의 image_* 두 필드만
                 # 병합한다 — 그래야 읽기→쓰기 창이 SD 호출 시간이 아니라 이
                 # 병합 자체(수 ms)로 줄어 concurrent 편집을 덮어쓰지 않는다.
-                latest_row = _load_script(conn, sid)
-                latest_scenes = json.loads(latest_row["scenes_json"])
-                latest_scene = next((s for s in latest_scenes if s["idx"] == idx), None)
-                if latest_scene is not None:
-                    latest_scene["image_file"] = scene["image_file"]
-                    latest_scene["image_fallback"] = scene["image_fallback"]
-                    conn.execute("UPDATE scripts SET scenes_json=? WHERE id=?",
-                                 (json.dumps(latest_scenes, ensure_ascii=False), sid))
-                    conn.commit()
+                with locks.scenes_lock:
+                    latest_row = _load_script(conn, sid)
+                    latest_scenes = json.loads(latest_row["scenes_json"])
+                    latest_scene = next((s for s in latest_scenes if s["idx"] == idx), None)
+                    if latest_scene is not None:
+                        latest_scene["image_file"] = scene["image_file"]
+                        latest_scene["image_fallback"] = scene["image_fallback"]
+                        conn.execute("UPDATE scripts SET scenes_json=? WHERE id=?",
+                                     (json.dumps(latest_scenes, ensure_ascii=False), sid))
+                        conn.commit()
                 done += 1
                 ctx.tick()
             return {"generated": done}

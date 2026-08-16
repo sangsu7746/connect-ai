@@ -2,7 +2,7 @@ import datetime, json
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from core.db import get_conn
-from core import analysis, geo, gemini, script_gen
+from core import analysis, geo, gemini, script_gen, locks
 
 router = APIRouter(prefix="/api", tags=["scripts"])
 
@@ -139,18 +139,19 @@ def _update_scene(sid: int, idx: int, mutate, needs_posts: bool) -> dict:
         posts = _load_posts(conn, json.loads(row["post_ids_json"])) if needs_posts else []
         extra = mutate(target, posts, analysis_data.get("diag", {})) or {}
         # 쓰기 직전 fresh read — 이미지 잡이 그동안 커밋한 씬별 기록을 보존한다
-        fresh_row = conn.execute("SELECT scenes_json FROM scripts WHERE id=?",
-                                 (sid,)).fetchone()
-        fresh = json.loads(fresh_row["scenes_json"])
-        ft = next((s for s in fresh if s["idx"] == idx), None)
-        if ft is None:
-            raise HTTPException(404, "scene not found")
-        for k in _TEXT_FIELDS:
-            if k in target:
-                ft[k] = target[k]
-        conn.execute("UPDATE scripts SET scenes_json=? WHERE id=?",
-                     (json.dumps(fresh, ensure_ascii=False), sid))
-        conn.commit()
+        with locks.scenes_lock:
+            fresh_row = conn.execute("SELECT scenes_json FROM scripts WHERE id=?",
+                                     (sid,)).fetchone()
+            fresh = json.loads(fresh_row["scenes_json"])
+            ft = next((s for s in fresh if s["idx"] == idx), None)
+            if ft is None:
+                raise HTTPException(404, "scene not found")
+            for k in _TEXT_FIELDS:
+                if k in target:
+                    ft[k] = target[k]
+            conn.execute("UPDATE scripts SET scenes_json=? WHERE id=?",
+                         (json.dumps(fresh, ensure_ascii=False), sid))
+            conn.commit()
         return {**ft, **extra}
     finally:
         conn.close()
