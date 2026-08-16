@@ -108,11 +108,23 @@ def regen_scene_image(sid: int, idx: int):
         target = next((s for s in scenes if s["idx"] == idx), None)
         if not target:
             raise HTTPException(404, "scene not found")
+        # SD 호출(수 초~분) 도중 사용자가 다른 필드를 PATCH했을 수 있으므로,
+        # 쓰기 직전에 scenes_json을 다시 읽어 이 씬의 image_* 두 필드만
+        # 병합한다 — 그래야 읽기→쓰기 창이 SD 호출 시간이 아니라 이
+        # 병합 자체(수 ms)로 줄어 concurrent 편집을 덮어쓰지 않는다.
         _gen_for_scene(conn, target, _category_name(conn, row["category_id"]),
                        row["fmt"], salt=secrets.token_hex(3))
-        conn.execute("UPDATE scripts SET scenes_json=? WHERE id=?",
-                     (json.dumps(scenes, ensure_ascii=False), sid))
-        conn.commit()
-        return target
+        with locks.scenes_lock:
+            latest_row = _load_script(conn, sid)
+            latest_scenes = json.loads(latest_row["scenes_json"])
+            latest_scene = next((s for s in latest_scenes if s["idx"] == idx), None)
+            if latest_scene is not None:
+                latest_scene["image_file"] = target["image_file"]
+                latest_scene["image_fallback"] = target["image_fallback"]
+                conn.execute("UPDATE scripts SET scenes_json=? WHERE id=?",
+                             (json.dumps(latest_scenes, ensure_ascii=False), sid))
+                conn.commit()
+                return latest_scene
+        raise HTTPException(404, "scene not found (after lock)")
     finally:
         conn.close()

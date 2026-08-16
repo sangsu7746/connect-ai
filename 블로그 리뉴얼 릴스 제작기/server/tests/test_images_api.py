@@ -99,6 +99,35 @@ def test_single_scene_regen(monkeypatch, tmp_path):
     scenes = c.get(f"/api/scripts/{sid}").json()["scenes"]
     assert scenes[0]["image_file"] == r["image_file"]
 
+def test_single_regen_preserves_concurrent_text_edit(monkeypatch, tmp_path):
+    """C1 회귀 — 단일 씬 이미지 재생성 중 동시에 텍스트를 PATCH로 고쳐도
+    재생성이 마지막에 scenes 전체를 스냅샷째로 되쓰면서 그 편집을 지워버리면 안 된다.
+    씬별 fresh-read/merge 구조라면 편집이 그대로 살아남는다."""
+    import threading
+    c = make_client(monkeypatch, tmp_path)
+    sid = _make_script(c, monkeypatch)
+    import api.images as im
+    gate = threading.Event()
+    started = threading.Event()
+    def slow(p, n, w, h):
+        started.set()
+        gate.wait(timeout=5)
+        return b"\x89PNG_x"
+    monkeypatch.setattr(im.image_gen.sd_webui, "txt2img", slow)
+    result = {}
+    def call_regen():
+        result["r"] = c.post(f"/api/scripts/{sid}/scenes/1/image")
+    t = threading.Thread(target=call_regen)
+    t.start()
+    assert started.wait(timeout=5)
+    c.patch(f"/api/scripts/{sid}/scenes/0", json={"caption": "동시 수정"})
+    gate.set()
+    t.join(timeout=10)
+    assert result["r"].status_code == 200
+    scenes = c.get(f"/api/scripts/{sid}").json()["scenes"]
+    assert scenes[0]["caption"] == "동시 수정"       # 편집 보존
+    assert scenes[1]["image_file"]                   # 이미지도 기록됨
+
 def test_job_404(monkeypatch, tmp_path):
     c = make_client(monkeypatch, tmp_path)
     assert c.get("/api/jobs/999").status_code == 404
