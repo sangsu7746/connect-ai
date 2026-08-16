@@ -16,9 +16,14 @@ class RenderError(RuntimeError):
     pass
 
 
-def _run(cmd: list) -> None:
-    r = subprocess.run([str(c) for c in cmd], capture_output=True, text=True,
-                       timeout=600, encoding="utf-8")
+def _run(cmd: list, timeout: int = 600) -> None:
+    try:
+        r = subprocess.run([str(c) for c in cmd], capture_output=True, text=True,
+                           timeout=timeout, encoding="utf-8")
+    except subprocess.TimeoutExpired:
+        raise RenderError(f"ffmpeg 시간 초과({timeout}s)")
+    except Exception as e:
+        raise RenderError(f"ffmpeg 실행 실패: {type(e).__name__}")
     if r.returncode != 0:
         tail = (r.stderr or "").strip()[-300:]
         raise RenderError(f"ffmpeg 실패 (exit {r.returncode}) — {tail}")
@@ -63,10 +68,10 @@ def _concat(clips: list[pathlib.Path], total_sec: float, out: pathlib.Path,
     base = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", lst,
             "-t", f"{total_sec:.2f}"]
     try:
-        _run(base + ["-c", "copy", out])
+        _run(base + ["-c", "copy", out], timeout=1800)
     except RenderError:
         _run(base + ["-c:v", "libx264", "-preset", "veryfast",
-                     "-pix_fmt", "yuv420p", "-c:a", "aac", out])
+                     "-pix_fmt", "yuv420p", "-c:a", "aac", out], timeout=1800)
 
 
 def _mux_bgm(video: pathlib.Path, bgm_path: pathlib.Path, total_sec: float,
@@ -74,7 +79,7 @@ def _mux_bgm(video: pathlib.Path, bgm_path: pathlib.Path, total_sec: float,
     _run(["ffmpeg", "-y", "-i", video, "-stream_loop", "-1", "-i", bgm_path,
           "-filter_complex", "[1:a]volume=0.28[b]",
           "-map", "0:v", "-map", "[b]", "-c:v", "copy", "-c:a", "aac",
-          "-t", f"{total_sec:.2f}", "-shortest", out])
+          "-t", f"{total_sec:.2f}", "-shortest", out], timeout=1800)
 
 
 def render_script(scenes: list[dict], fmt: str, category: str,

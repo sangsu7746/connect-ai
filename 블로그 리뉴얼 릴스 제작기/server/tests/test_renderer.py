@@ -100,3 +100,18 @@ def test_run_raises_render_error_with_stderr(monkeypatch):
     import pytest
     with pytest.raises(renderer.RenderError):
         renderer._run(["ffmpeg", "-i", "nope"])
+
+def test_run_wraps_timeout_and_oserror(monkeypatch):
+    import subprocess as sp
+    import pytest
+    def timeout_fn(cmd, capture_output=None, text=None, timeout=None, encoding=None):
+        raise sp.TimeoutExpired(cmd="ffmpeg", timeout=600)
+    monkeypatch.setattr(sp, "run", timeout_fn)
+    with pytest.raises(renderer.RenderError) as exc_info:
+        renderer._run(["ffmpeg"])
+    assert "시간 초과" in str(exc_info.value)
+    def nf_fn(cmd, capture_output=None, text=None, timeout=None, encoding=None):
+        raise FileNotFoundError("ffmpeg not found")
+    monkeypatch.setattr(sp, "run", nf_fn)
+    with pytest.raises(renderer.RenderError):
+        renderer._run(["ffmpeg"])
