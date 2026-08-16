@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from core.db import get_conn
 from core import analysis, article_gen, gemini
+from core.gemini import GeminiError
 
 router = APIRouter(prefix="/api", tags=["articles"])
 
@@ -46,7 +47,10 @@ def create_article(body: ArticleIn):
                             (body.category_id,)).fetchone():
             raise HTTPException(404, "category not found")
         posts = _load_posts(conn, body.post_ids)
-        out = article_gen.generate_article(posts)
+        try:
+            out = article_gen.generate_article(posts)
+        except GeminiError as e:
+            raise HTTPException(502, f"글 생성 실패: {e}")
         now = datetime.datetime.now().isoformat(timespec="seconds")
         cur = conn.execute(
             """INSERT INTO articles(category_id, post_ids_json, title, body_md,

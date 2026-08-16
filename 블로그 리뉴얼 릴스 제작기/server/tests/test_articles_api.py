@@ -63,3 +63,15 @@ def test_create_404_bad_category(monkeypatch, tmp_path):
     _mock_engine(monkeypatch)
     assert c.post("/api/articles",
                   json={"category_id": 9999, "post_ids": [1]}).status_code == 404
+
+def test_create_502_when_generation_fails(monkeypatch, tmp_path):
+    c = make_client(monkeypatch, tmp_path)
+    ids = _seed_posts(c, monkeypatch)
+    import api.articles as art
+    from core.gemini import GeminiError
+    monkeypatch.setattr(art.gemini, "available", lambda: True)
+    def boom(posts):
+        raise GeminiError("모든 모델 실패")
+    monkeypatch.setattr(art.article_gen, "generate_article", boom)
+    assert c.post("/api/articles",
+                  json={"category_id": 1, "post_ids": ids}).status_code == 502
