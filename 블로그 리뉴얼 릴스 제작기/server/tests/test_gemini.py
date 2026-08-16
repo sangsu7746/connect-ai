@@ -48,3 +48,26 @@ def test_parse_json_variants():
     assert gemini.parse_json('{"b": 2}') == {"b": 2}
     with pytest.raises(ValueError):
         gemini.parse_json("json 없음")
+
+
+def test_thinking_headroom_added_to_token_cap(monkeypatch):
+    """사고 모델은 maxOutputTokens를 사고+본문에 함께 쓴다 — 호출자 예산에
+    여유분을 더해 보내지 않으면 본문이 잘려 JSON 파싱이 깨진다(2026-08-17 실측)."""
+    monkeypatch.setattr(gemini.settings, "gemini_api_key", "k")
+    seen = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        seen["cap"] = json["generationConfig"]["maxOutputTokens"]
+        return _resp(200, "ok")
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    gemini.generate("p", max_tokens=512)
+    assert seen["cap"] == 512 + gemini.THINKING_HEADROOM
+
+
+def test_model_chain_has_no_retired_models():
+    """gemini-1.5-flash·2.5-flash는 404(신규 사용자 불가) — 체인에 두면
+    폴백이 전부 실패한다."""
+    assert "gemini-1.5-flash" not in gemini.MODEL_CHAIN
+    assert "gemini-2.5-flash" not in gemini.MODEL_CHAIN
+    assert gemini.MODEL_CHAIN[0] == "gemini-3.5-flash"

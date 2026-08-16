@@ -6,8 +6,15 @@ import httpx
 
 from .config import settings
 
-MODEL_CHAIN = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-1.5-flash"]
+MODEL_CHAIN = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-3.6-flash"]
 _URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+#: 사고(thinking) 모델 여유분. maxOutputTokens는 사고 토큰과 본문 토큰을 함께 세므로,
+#: 호출자가 요청한 본문 예산에 이만큼을 더해 보낸다. 이걸 안 하면 사고가 한도를 다 먹고
+#: 본문이 잘려(finishReason=MAX_TOKENS) JSON 파싱이 깨진다 — 2026-08-17 실측:
+#: 릴스 7씬 배치에서 사고 3,928 / 본문 164 토큰으로 잘려 대본 생성이 전면 실패했다.
+#: 한도는 상한일 뿐 실제 생성분만 과금되므로 넉넉히 잡아도 비용 영향은 없다.
+THINKING_HEADROOM = 8192
 
 
 class GeminiError(RuntimeError):
@@ -27,8 +34,9 @@ def generate(prompt: str, temperature: float = 0.8, max_tokens: int = 4096) -> s
             r = httpx.post(
                 _URL.format(model=model),
                 json={"contents": [{"parts": [{"text": prompt}]}],
-                      "generationConfig": {"temperature": temperature,
-                                           "maxOutputTokens": max_tokens}},
+                      "generationConfig": {
+                          "temperature": temperature,
+                          "maxOutputTokens": max_tokens + THINKING_HEADROOM}},
                 headers={"x-goog-api-key": settings.gemini_api_key},
                 timeout=60)
             if r.status_code != 200:
