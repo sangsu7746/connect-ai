@@ -3,14 +3,30 @@
 네이버·구글 상위 블로그 글 → 보랏빛소 진단 → SD 이미지 → 릴스/롱폼 자동 제작.
 설계: docs/superpowers/specs/2026-08-15-blog-reels-maker-design.md
 
-## 실행 (M1)
+## 실행
 
-1. `.env` 작성 (`.env.example` 참고 — 네이버 개발자센터 검색/데이터랩 API 키 필수,
-   구글 CSE 키는 선택. CSE 키가 없으면 구글 수집은 설치된 Chrome을 통한
-   Playwright 폴백으로 동작)
-2. 서버: `server\.venv\Scripts\python -m uvicorn main:app --app-dir server --port 8792`
-3. 웹: `cd web; npm run dev` → http://localhost:5175
-4. 테스트: `server\.venv\Scripts\python -m pytest server/tests -v`
+**`시작.bat` 더블클릭** — SD WebUI(7860)·API 서버(8792)·웹(5175)을 순서대로 켜고
+브라우저를 연다. 이미 떠 있는 것은 건너뛰므로 여러 번 눌러도 중복 기동되지 않는다.
+SD WebUI는 모델 로딩에 1~2분 걸린다(실측 약 115초). 끌 때는 **`종료.bat`** —
+웹·API를 정리하고 SD WebUI 창은 남겨 둔다(다른 작업에서 계속 쓸 수 있게).
+
+사전 준비: `.env` 작성. **탐색기에서 `.env`와 `.env.example`이 똑같이 보이니 주의** —
+확장자가 숨겨져 있어 견본 파일을 잘못 여는 일이 잦다. 아래로 정확한 파일을 열 것:
+
+```
+notepad "D:\블로그 리뉴얼 릴스 제작기\.env"
+```
+
+- 네이버 검색 API 키: **필수**(수집). 데이터랩 API는 앱에 별도 추가해야 트렌드 갱신 동작
+- `GEMINI_API_KEY`: **필수**(대본·글 생성)
+- 구글 CSE 키·ID: 선택(구글 수집 확장). CSE ID는 검색엔진 스니펫의 `cx` 값
+- `PUBLISHER_DIR`: 선택(블로그 자동 발행)
+
+### 수동 실행 / 테스트
+
+- 서버: `server\.venv\Scripts\python -m uvicorn main:app --app-dir server --port 8792`
+- 웹: `cd web; npm run dev` → http://localhost:5175
+- 테스트: `server\.venv\Scripts\python -m pytest server/tests -v`
 
 ### M2 — 대본 만들기
 
