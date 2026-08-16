@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { type Job, type RenderInfo, type Scene, type Script, getJob, getRenders,
-         getScript, patchScene, regenScene, regenSceneImage, startImages,
+import { type Job, type RenderInfo, type Scene, type Script, deleteRender, getJob,
+         getRenders, getScript, patchScene, regenScene, regenSceneImage, startImages,
          startRender } from '../api'
 
 const ROLE_LABEL: Record<string, string> = {
@@ -167,9 +167,18 @@ export default function Storyboard() {
                  src={`/videos/${renders[0].file}`} />
           <div className="renders">
             {renders.map(r => (
-              <a key={r.id} href={`/videos/${r.file}`} download>
-                ⬇ {r.file} ({r.duration_sec}초 · {r.created_at})
-              </a>
+              <div key={r.id} className="render-row">
+                <a href={`/videos/${r.file}`} download>
+                  ⬇ {r.file} ({r.duration_sec}초 · {r.created_at})
+                </a>
+                <button className="ghost" onClick={async () => {
+                  if (!confirm('이 렌더를 삭제할까요?')) return
+                  try {
+                    await deleteRender(r.id)
+                    setRenders(await getRenders(sid))
+                  } catch (e) { alert(`삭제 실패: ${e}`) }
+                }}>🗑</button>
+              </div>
             ))}
           </div>
         </>

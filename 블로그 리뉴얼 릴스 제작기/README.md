@@ -43,9 +43,8 @@
 스토리보드에서 "🎬 렌더" → 씬 이미지+자막(맑은고딕)+Ken Burns를 ffmpeg로 합성해
 `server/data/videos/`에 mp4 저장, 완료 시 페이지에서 미리보기·다운로드.
 BGM은 `server/data/bgm/`의 mp3를 카테고리 무드로 자동 선택(없으면 무음).
-BGM 파일명은 `<무드>-NN.mp3` 규약(documentary_calm/family_warm/emotional_daily (celebration 파일도 있으나 카테고리에
-매핑되지 않아 무드 무관 폴백에서만 선택됨))
-— 규약 밖 파일은 무드 무관 폴백으로만 선택된다.
+BGM 파일명은 `<무드>-NN.mp3` 규약을 따른다(documentary_calm·family_warm·emotional_daily).
+celebration 파일도 들어 있으나 카테고리에 매핑되지 않아 무드 폴백에서만 선택된다.
 이미지가 없는 씬은 스타일 색 카드로 대체됨 — 먼저 "🎨 이미지 생성" 권장.
 ffmpeg가 PATH에 있어야 한다(확인: `ffmpeg -version`).
 

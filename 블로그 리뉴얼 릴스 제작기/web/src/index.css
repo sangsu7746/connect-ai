@@ -76,3 +76,4 @@ select { background: #171a21; color: #e6e6ea; border: 1px solid #262b36;
            border: 1px solid #262b36; }
 .renders { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
 .renders a { color: #a78bfa; }
+.render-row { display: flex; gap: 8px; align-items: center; }

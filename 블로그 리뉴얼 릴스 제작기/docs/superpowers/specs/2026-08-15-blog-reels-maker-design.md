@@ -216,10 +216,10 @@ DataLab API는 인기 키워드 "목록"을 주지 않고 지정 키워드의 �
 - 자막: 서버에서 Pillow로 프레임 크기 투명 PNG 렌더. hook/cta 중앙 강조, point 하단
   로어서드, 하단 스크림 그라디언트 — EstateReels 스타일 유지. 한글 폰트는 시스템 폰트 사용.
 - 해상도 1080p(릴스 1080×1920, 롱폼 1920×1080), `libx264 -preset veryfast`.
-- 오디오: Edge-TTS 씬별 **병렬** 생성(원본 직렬 병목 해소) → adelay + amix, BGM 볼륨 0.28.
+- 오디오(M5 구현 확정): 씬 클립에 Edge-TTS 나레이션 트랙(44100 스테레오 통일·apad·-t)
+  → concat → 마스터에서 BGM amix(volume 0.28, normalize=0, alimiter 0.98).
+  TTS는 씬별 병렬 4·문장 캐시·실패 무음.
   BGM은 무드별 로컬 파일(EstateReels bgmService 무드 4종 구조 이식).
-- 폴백 4단(copy+오디오 → 재인코딩+오디오 → 재인코딩+BGM → 기본) 이식.
-  단, copy 경로에도 길이 클램프를 적용해 원본의 "폴백 단계별 길이 불일치" 버그는 수정한다.
 - 잡 큐: 이미지·TTS·렌더는 SQLite 잡으로 백그라운드 실행, UI 폴링. 동시 렌더 1개 제한
   (720급 성능 주의 교훈 — GPU는 ComfyUI와 공유되므로 렌더 중 이미지 생성 큐는 대기).
 

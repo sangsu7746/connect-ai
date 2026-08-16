@@ -105,3 +105,5 @@ export const startRender = (sid: number) =>
     .then(r => j<{ job_id: number }>(r))
 export const getRenders = (sid: number) =>
   fetch(`/api/scripts/${sid}/renders`).then(r => j<RenderInfo[]>(r))
+export const deleteRender = (id: number) =>
+  fetch(`/api/renders/${id}`, { method: 'DELETE' }).then(r => j<{ ok: boolean }>(r))

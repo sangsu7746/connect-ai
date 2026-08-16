@@ -168,6 +168,24 @@ def test_render_serialized_globally(monkeypatch, tmp_path):
         gate.set()
     _wait_job(c, jid)
 
+def test_delete_render(monkeypatch, tmp_path):
+    c = make_client(monkeypatch, tmp_path)
+    sid = _make_script(c, monkeypatch)
+    import api.render as rd
+    def fake_render(scenes, fmt, category, bgm_path, out_path, workdir,
+                    on_scene=None, narrations=None):
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_bytes(b"mp4")
+    monkeypatch.setattr(rd.renderer, "render_script", fake_render)
+    _wait_job(c, c.post(f"/api/scripts/{sid}/render").json()["job_id"])
+    r = c.get(f"/api/scripts/{sid}/renders").json()[0]
+    fpath = rd.videos_dir() / r["file"]
+    assert fpath.exists()
+    assert c.delete(f"/api/renders/{r['id']}").status_code == 200
+    assert not fpath.exists()
+    assert c.get(f"/api/scripts/{sid}/renders").json() == []
+    assert c.delete(f"/api/renders/{r['id']}").status_code == 404
+
 def test_images_blocked_by_other_scripts_render(monkeypatch, tmp_path):
     """타 sid 렌더 중 이미지 잡/단일 재생성이 409로 차단된다. 이번에 바꾼 동작이다."""
     import threading

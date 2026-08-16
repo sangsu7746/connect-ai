@@ -100,3 +100,21 @@ def list_renders(sid: int):
                WHERE script_id=? AND file != '' ORDER BY id DESC""", (sid,))]
     finally:
         conn.close()
+
+
+@router.delete("/renders/{rid}")
+def delete_render(rid: int):
+    if jobs.has_running_kind("render"):
+        raise HTTPException(409, "렌더 진행 중에는 삭제할 수 없습니다")
+    conn = get_conn()
+    try:
+        row = conn.execute("SELECT * FROM renders WHERE id=?", (rid,)).fetchone()
+        if not row:
+            raise HTTPException(404, "render not found")
+        if row["file"]:
+            (videos_dir() / row["file"]).unlink(missing_ok=True)
+        conn.execute("DELETE FROM renders WHERE id=?", (rid,))
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
