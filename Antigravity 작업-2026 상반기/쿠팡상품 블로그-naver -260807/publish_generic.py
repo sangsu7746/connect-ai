@@ -3,6 +3,9 @@
 입력: --file handoff.json {platform, title, body_md, category}
 출력: stdout 마지막 줄에 {"ok": bool, "url": str, "error": str}
 
+주의: 티스토리는 비공개로 올라가지만 **네이버는 즉시 공개 발행**된다(naver_poster에 비공개 기능이 없음).
+호출 측이 사용자에게 이 차이를 알려야 한다.
+
 정독 결과(2026-08-16, tistory_poster.py 1070줄 / naver_poster.py 1725줄 전체 확인):
 
   · tistory_poster.text_to_html()/build_html() 은 affiliate_url 값과 무관하게
@@ -134,30 +137,30 @@ def _md_to_naver_plain(md: str) -> str:
 
 
 def _extract_naver_url(poster) -> str:
-    """발행 직후 페이지에서 blogId/logNo 를 긁어 PostView 주소를 만든다(최선 노력).
+    """발행 직후 페이지에서 current_url 기반으로 blogId/logNo 를 긁어 PostView 주소를 만든다(최선 노력).
 
     naver_poster.write_post 는 성공 여부만 돌려주고 URL을 돌려주지 않는다
     (coupang_blog_pipeline.py 도 naver 발행 성공 시 record_published 를 url 없이
     부른다 — 이 프로젝트가 원래도 naver 글 URL을 남겨 오지 않았다). fix_published_
     naver.py 가 쓰는 것과 같은 logNo 정규식으로 최대한 복원한다. 못 찾으면 빈 문자열.
+    page_source 전체를 보면 추천글·공유 위젯에서 다른 logNo를 잘못 매칭할 수 있어,
+    current_url 기반 매칭만 사용한다(정확도 우선).
     """
     try:
         d = poster.driver
         cur = d.current_url or ""
-        src = d.page_source or ""
     except Exception:
         return ""
-    for text in (cur, src):
-        m = re.search(r"blogId=([\w-]+)&(?:amp;)?logNo=(\d{6,})", text)
-        if m:
-            return f"https://blog.naver.com/PostView.naver?blogId={m.group(1)}&logNo={m.group(2)}"
+    m = re.search(r"blogId=([\w-]+)&(?:amp;)?logNo=(\d{6,})", cur)
+    if m:
+        return f"https://blog.naver.com/PostView.naver?blogId={m.group(1)}&logNo={m.group(2)}"
     if "logNo=" in cur:
         return cur
     return ""
 
 
 def publish_naver(title: str, body_md: str, category: str) -> str:
-    """NaverBlogPoster.write_post 재사용. 반환: 글 URL(확보 실패 시 빈 문자열).
+    """네이버 즉시 공개 발행 — 되돌리려면 블로그에서 직접 삭제해야 한다. 반환: 글 URL(확보 실패 시 빈 문자열).
 
     login(id, pw) 대신 _init_driver()+_load_cookies_and_check() 만 써서 저장된
     쿠키(~/.naver_poster_cookies.pkl) 세션만 재사용한다 — 아이디/비밀번호를
