@@ -12,5 +12,6 @@ class Settings:
     gemini_api_key = os.getenv("GEMINI_API_KEY", "")
     server_port = int(os.getenv("SERVER_PORT", "8792"))
     publisher_dir = os.getenv("PUBLISHER_DIR", "")
+    sd_webui_url = os.getenv("SD_WEBUI_URL", "http://127.0.0.1:7860")
 
 settings = Settings()
