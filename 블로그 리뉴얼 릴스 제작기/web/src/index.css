@@ -69,3 +69,6 @@ select { background: #171a21; color: #e6e6ea; border: 1px solid #262b36;
               display: flex; flex-direction: column; gap: 4px; }
 .page > input { width: 100%; margin-bottom: 10px; font-size: 16px; }
 .make-bar a { color: #a78bfa; font-size: 13px; }
+.scene-img { display: flex; gap: 10px; align-items: flex-start; }
+.scene-img img { width: 96px; border-radius: 8px; border: 1px solid #262b36; }
+.fb-badge { font-size: 11px; color: #f59e0b; }

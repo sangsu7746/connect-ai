@@ -39,6 +39,7 @@ export const getPosts = (cid: number, source: string) =>
 export interface Scene {
   idx: number; role: string; sec: number; chapter: string
   caption: string; sub: string; narration: string; image_prompt: string
+  image_file?: string; image_fallback?: boolean
 }
 export interface Script {
   id: number; category_id: number; fmt: string; duration_sec: number
@@ -81,3 +82,17 @@ export const publishArticle = (id: number, platform: string, force = false) =>
   fetch(`/api/articles/${id}/publish`, { method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ platform, force }) }).then(r => j<{ ok: boolean; url: string }>(r))
+
+export interface Job {
+  id: number; kind: string; status: 'running' | 'done' | 'error'
+  progress: number; total: number; error: string
+}
+export const startImages = (sid: number, force = false) =>
+  fetch(`/api/scripts/${sid}/images`, { method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ force }) }).then(r => j<{ job_id: number }>(r))
+export const getJob = (id: number) =>
+  fetch(`/api/jobs/${id}`).then(r => j<Job>(r))
+export const regenSceneImage = (sid: number, idx: number) =>
+  fetch(`/api/scripts/${sid}/scenes/${idx}/image`, { method: 'POST' })
+    .then(r => j<Scene>(r))

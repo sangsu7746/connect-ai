@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { type Scene, type Script, getScript, patchScene, regenScene } from '../api'
+import { type Job, type Scene, type Script, getJob, getScript, patchScene,
+         regenScene, regenSceneImage, startImages } from '../api'
 
 const ROLE_LABEL: Record<string, string> = {
   hook: '훅', summary: '요약', chapter: '챕터', point: '포인트',
@@ -12,9 +13,33 @@ export default function Storyboard() {
   const sid = Number(id)
   const [script, setScript] = useState<Script | null>(null)
   const [busy, setBusy] = useState<number | null>(null)
+  const [imgJob, setImgJob] = useState<Job | null>(null)
+  const imgTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mounted = useRef(true)
 
   useEffect(() => { getScript(sid).then(setScript).catch(e => alert(e)) }, [sid])
+  // 언마운트(페이지 이동) 시 대기 중인 폴링 타이머를 정리 — 안 하면 setTimeout이
+  // 계속 돌며 언마운트된 컴포넌트에 setState를 시도한다.
+  useEffect(() => () => {
+    mounted.current = false
+    if (imgTimer.current) clearTimeout(imgTimer.current)
+  }, [])
   if (!script) return <div className="page">불러오는 중…</div>
+
+  const runImages = async (force = false) => {
+    try {
+      const { job_id } = await startImages(sid, force)
+      const poll = async () => {
+        const jb = await getJob(job_id)
+        if (!mounted.current) return
+        setImgJob(jb)
+        if (jb.status === 'running') { imgTimer.current = setTimeout(poll, 1000); return }
+        if (jb.status === 'error') alert(`이미지 생성 실패: ${jb.error}`)
+        setScript(await getScript(sid))
+      }
+      poll()
+    } catch (e) { alert(`이미지 생성 시작 실패: ${e}`) }
+  }
 
   const save = async (idx: number, patch: Partial<Scene>) => {
     try {
@@ -38,6 +63,16 @@ export default function Storyboard() {
         <span className="meta">{script.fmt === 'reels' ? '릴스' : '롱폼'} ·
           {' '}{script.duration_sec}초 · 진단 {script.diag.score}/4 {script.diag.verdict}</span>
       </h1>
+      <div className="make-bar">
+        <button disabled={imgJob?.status === 'running'}
+                onClick={() => runImages(false)}>
+          {imgJob?.status === 'running'
+            ? `🎨 생성 중… ${imgJob.progress}/${imgJob.total}`
+            : '🎨 이미지 생성'}
+        </button>
+        <button className="ghost" disabled={imgJob?.status === 'running'}
+                onClick={() => runImages(true)}>전부 재생성</button>
+      </div>
       {script.scenes.map(s => (
         <div className={`scene role-${s.role}`} key={s.idx}>
           <div className="scene-head">
@@ -50,6 +85,20 @@ export default function Storyboard() {
                 {busy === s.idx ? '재생성 중…' : '♻ AI 재생성'}
               </button>}
           </div>
+          {s.image_file && (
+            <div className="scene-img">
+              <img src={`/images/${s.image_file}`} alt="" loading="lazy" />
+              {s.image_fallback && <span className="fb-badge">⚠ 폴백</span>}
+              <button className="ghost" disabled={busy !== null}
+                      onClick={async () => {
+                        try {
+                          const ns = await regenSceneImage(sid, s.idx)
+                          setScript(prev => prev && { ...prev,
+                            scenes: prev.scenes.map(x => x.idx === s.idx ? ns : x) })
+                        } catch (e) { alert(`재생성 실패: ${e}`) }
+                      }}>🖼 재생성</button>
+            </div>
+          )}
           <input key={`c${s.idx}:${s.caption}`} defaultValue={s.caption}
                  maxLength={18} placeholder="자막(≤18자)"
                  onBlur={e => e.target.value !== s.caption &&
