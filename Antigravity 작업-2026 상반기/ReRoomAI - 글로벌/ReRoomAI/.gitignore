@@ -42,3 +42,9 @@ next-env.d.ts
 
 # keep the env template in git (secrets stay in .env.local)
 !.env.example
+
+.vercel
+.env*
+
+# keep the env template in git (must come after the .env* rule vercel appended)
+!.env.example

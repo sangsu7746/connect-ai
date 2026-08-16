@@ -1,24 +1,35 @@
 import { cert, getApps, initializeApp, type App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 
 // Server-side Firebase Admin SDK.
 // Requires FIREBASE_SERVICE_ACCOUNT (raw JSON or base64-encoded JSON of the
 // service account key) — when absent the app runs in anonymous demo mode.
+//
+// ID tokens are verified with `jose` directly against Google's JWKS instead of
+// firebase-admin/auth: its jwks-rsa dependency require()s the ESM-only jose v6,
+// which crashes on Vercel's serverless runtime.
+
+let serviceAccountCache: Record<string, string> | null | undefined;
 
 function parseServiceAccount(): Record<string, string> | null {
+  if (serviceAccountCache !== undefined) return serviceAccountCache;
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!raw) return null;
+  if (!raw) {
+    serviceAccountCache = null;
+    return null;
+  }
   try {
     const json = raw.trim().startsWith('{')
       ? raw
       : Buffer.from(raw, 'base64').toString('utf8');
-    return JSON.parse(json);
+    serviceAccountCache = JSON.parse(json);
   } catch {
     console.error('FIREBASE_SERVICE_ACCOUNT is set but could not be parsed.');
-    return null;
+    serviceAccountCache = null;
   }
+  return serviceAccountCache ?? null;
 }
 
 let app: App | null = null;
@@ -43,12 +54,6 @@ function getAdminApp(): App | null {
 
 export const isAdminEnabled = () => getAdminApp() !== null;
 
-export function adminAuth() {
-  const a = getAdminApp();
-  if (!a) throw new Error('Firebase Admin is not configured.');
-  return getAuth(a);
-}
-
 export function adminDb() {
   const a = getAdminApp();
   if (!a) throw new Error('Firebase Admin is not configured.');
@@ -61,14 +66,29 @@ export function adminBucket() {
   return getStorage(a).bucket();
 }
 
-/** Verifies a Bearer token from the Authorization header. Returns uid + email or null. */
+// Google's public JWKS for Firebase Auth ID tokens (securetoken signer)
+const FIREBASE_JWKS = createRemoteJWKSet(
+  new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com')
+);
+
+/** Verifies a Firebase ID token from the Authorization header. Returns uid + email or null. */
 export async function verifyBearer(
   authorization: string | null
 ): Promise<{ uid: string; email?: string } | null> {
   if (!authorization?.startsWith('Bearer ') || !isAdminEnabled()) return null;
+  const projectId = parseServiceAccount()?.project_id;
+  if (!projectId) return null;
   try {
-    const decoded = await adminAuth().verifyIdToken(authorization.slice(7));
-    return { uid: decoded.uid, email: decoded.email };
+    const { payload } = await jwtVerify(authorization.slice(7), FIREBASE_JWKS, {
+      issuer: `https://securetoken.google.com/${projectId}`,
+      audience: projectId,
+    });
+    if (typeof payload.sub !== 'string' || !payload.sub) return null;
+    // Firebase sets auth_time/user_id claims; sub is the uid.
+    return {
+      uid: payload.sub,
+      email: typeof payload.email === 'string' ? payload.email : undefined,
+    };
   } catch {
     return null;
   }
