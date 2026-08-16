@@ -72,3 +72,7 @@ select { background: #171a21; color: #e6e6ea; border: 1px solid #262b36;
 .scene-img { display: flex; gap: 10px; align-items: flex-start; }
 .scene-img img { width: 96px; border-radius: 8px; border: 1px solid #262b36; }
 .fb-badge { font-size: 11px; color: #f59e0b; }
+.preview { width: 100%; max-width: 320px; border-radius: 10px;
+           border: 1px solid #262b36; }
+.renders { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.renders a { color: #a78bfa; }

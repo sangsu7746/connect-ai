@@ -96,3 +96,12 @@ export const getJob = (id: number) =>
 export const regenSceneImage = (sid: number, idx: number) =>
   fetch(`/api/scripts/${sid}/scenes/${idx}/image`, { method: 'POST' })
     .then(r => j<Scene>(r))
+
+export interface RenderInfo {
+  id: number; file: string; duration_sec: number; created_at: string
+}
+export const startRender = (sid: number) =>
+  fetch(`/api/scripts/${sid}/render`, { method: 'POST' })
+    .then(r => j<{ job_id: number }>(r))
+export const getRenders = (sid: number) =>
+  fetch(`/api/scripts/${sid}/renders`).then(r => j<RenderInfo[]>(r))

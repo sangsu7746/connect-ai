@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5175,
-    proxy: { '/api': 'http://127.0.0.1:8792', '/images': 'http://127.0.0.1:8792' },
+    proxy: { '/api': 'http://127.0.0.1:8792', '/images': 'http://127.0.0.1:8792',
+             '/videos': 'http://127.0.0.1:8792' },
   },
 })
