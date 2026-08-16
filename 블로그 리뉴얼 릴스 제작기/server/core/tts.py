@@ -46,24 +46,32 @@ def synth_scenes(scenes: list[dict], voice: str | None = None,
     todo = [(s["idx"], s["narration"]) for s in scenes
             if (s.get("narration") or "").strip()]
     results: dict = {}
+    # 같은 텍스트는 한 번만 합성 — 고정 tmp 경로 동시 쓰기(Windows PermissionError
+    # 연쇄→전체 무음)와 중복 합성 낭비를 함께 제거
+    by_text: dict[str, list[int]] = {}
+    for idx, text in todo:
+        by_text.setdefault(text, []).append(idx)
 
     async def _run_all():
         sem = asyncio.Semaphore(_CONCURRENCY)
 
-        async def one(idx: int, text: str):
+        async def one(text: str, idxs: list[int]):
             out = _cache_path(text, v)
             try:
                 if out.exists() and out.stat().st_size > 0:
-                    results[idx] = out
+                    for i in idxs:
+                        results[i] = out
                     return
                 async with sem:
                     if await _synth_one(text, v, out):
-                        results[idx] = out
+                        for i in idxs:
+                            results[i] = out
             finally:
                 if on_done:
-                    on_done()
+                    for _ in idxs:
+                        on_done()
 
-        await asyncio.gather(*(one(i, t) for i, t in todo))
+        await asyncio.gather(*(one(t, idxs) for t, idxs in by_text.items()))
 
     asyncio.run(_run_all())
     return results

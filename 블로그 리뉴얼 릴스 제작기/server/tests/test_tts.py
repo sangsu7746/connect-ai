@@ -57,8 +57,7 @@ def test_voice_override_changes_cache_key(monkeypatch, tmp_path):
     assert a[0] != b[0]                         # 보이스별 캐시 분리
 
 def test_interrupted_write_leaves_no_final_file(monkeypatch, tmp_path):
-    """save()가 대상 경로에 부분 바이트를 쓴 뒤 죽는 경우 — 원자적 쓰기(.tmp→replace)만이
-    최종 캐시 경로 오염을 막는다. 옛 구현(직접 쓰기)이면 부분 파일이 최종 경로에 남아 실패한다."""
+    """save()가 경로에 부분 바이트를 쓴 뒤 죽는 경우 — 예외 경로에서 tmp가 정리되고 최종 캐시 경로가 오염되지 않음을 검증한다. (원자화의 본질 보호 대상은 프로세스 급사 시 최종 경로 무오염 — 인프로세스로는 재현 불가)"""
     _setup(monkeypatch, tmp_path)
     class PartialCommunicate:
         def __init__(self, text, voice, **kw):
@@ -72,3 +71,14 @@ def test_interrupted_write_leaves_no_final_file(monkeypatch, tmp_path):
     d = pathlib.Path(str(tmp_path / "tts"))
     assert list(d.glob("*.mp3")) == []                    # 최종 경로 무오염
     assert list(d.glob("*.tmp")) == []                    # 임시 잔재도 정리
+
+def test_duplicate_narration_synthesized_once(monkeypatch, tmp_path):
+    _setup(monkeypatch, tmp_path)
+    scenes = [{"idx": 0, "role": "point", "narration": "같은 문장"},
+              {"idx": 1, "role": "cta", "narration": "같은 문장"}]
+    ticks = []
+    out = tts.synth_scenes(scenes, on_done=lambda: ticks.append(1))
+    assert set(out.keys()) == {0, 1} and out[0] == out[1]
+    assert len([c for c in FakeCommunicate.calls
+                if c[0] == "같은 문장"]) == 1        # 1회만 합성
+    assert len(ticks) == 2                            # tick 계약 유지

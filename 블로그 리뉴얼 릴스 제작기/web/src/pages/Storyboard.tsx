@@ -171,7 +171,8 @@ export default function Storyboard() {
                 <a href={`/videos/${r.file}`} download>
                   ⬇ {r.file} ({r.duration_sec}초 · {r.created_at})
                 </a>
-                <button className="ghost" onClick={async () => {
+                <button className="ghost" disabled={renderJob?.status === 'running'}
+                        onClick={async () => {
                   if (!confirm('이 렌더를 삭제할까요?')) return
                   try {
                     await deleteRender(r.id)
