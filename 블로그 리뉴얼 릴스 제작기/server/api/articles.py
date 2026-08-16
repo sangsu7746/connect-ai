@@ -2,7 +2,7 @@ import datetime, json
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from core.db import get_conn
-from core import analysis, article_gen, gemini
+from core import analysis, article_gen, gemini, publisher_bridge
 from core.gemini import GeminiError
 
 router = APIRouter(prefix="/api", tags=["articles"])
@@ -16,6 +16,11 @@ class ArticleIn(BaseModel):
 class ArticleEdit(BaseModel):
     title: str | None = None
     body_md: str | None = None
+
+
+class PublishIn(BaseModel):
+    platform: str
+    force: bool = False
 
 
 def _load_posts(conn, post_ids: list[int]) -> list[dict]:
@@ -108,5 +113,38 @@ def edit_article(aid: int, body: ArticleEdit):
         conn.commit()
         row = conn.execute("SELECT * FROM articles WHERE id=?", (aid,)).fetchone()
         return _row(row)
+    finally:
+        conn.close()
+
+
+@router.post("/articles/{aid}/publish")
+def publish_article(aid: int, body: PublishIn):
+    if body.platform not in ("naver", "tistory"):
+        raise HTTPException(422, "platform은 naver|tistory")
+    if not publisher_bridge.available():
+        raise HTTPException(503, "PUBLISHER_DIR 미설정 — 발행 불가")
+    conn = get_conn()
+    try:
+        row = conn.execute("SELECT * FROM articles WHERE id=?", (aid,)).fetchone()
+        if not row:
+            raise HTTPException(404, "article not found")
+        posts = _load_posts(conn, json.loads(row["post_ids_json"]))
+        corpus = analysis.corpus_text(posts)
+        sources = [p.get("content") or "" for p in posts]
+        warnings = article_gen.gate_article(row["title"], row["body_md"],
+                                            corpus, sources)
+        if warnings and not body.force:
+            raise HTTPException(409, "게이트 경고가 있어 발행 보류: "
+                                + " / ".join(warnings[:3]))
+        r = publisher_bridge.publish(body.platform, row["title"], row["body_md"])
+        if not r["ok"]:
+            raise HTTPException(502, f"발행 실패: {r['error']}")
+        urls = json.loads(row["published_urls_json"] or "{}")
+        urls[body.platform] = r["url"]
+        conn.execute("""UPDATE articles SET status='published',
+                        published_urls_json=? WHERE id=?""",
+                     (json.dumps(urls, ensure_ascii=False), aid))
+        conn.commit()
+        return {"ok": True, "url": r["url"]}
     finally:
         conn.close()

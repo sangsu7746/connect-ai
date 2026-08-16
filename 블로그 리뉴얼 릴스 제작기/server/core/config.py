@@ -11,5 +11,6 @@ class Settings:
     google_cse_id = os.getenv("GOOGLE_CSE_ID", "")
     gemini_api_key = os.getenv("GEMINI_API_KEY", "")
     server_port = int(os.getenv("SERVER_PORT", "8792"))
+    publisher_dir = os.getenv("PUBLISHER_DIR", "")
 
 settings = Settings()
