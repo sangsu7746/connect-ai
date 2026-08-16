@@ -143,6 +143,7 @@ def test_scene_clip_with_narration_uses_apad(monkeypatch, tmp_path):
     clip0 = [c for c in joined if "clip_000" in c][0]
     clip1 = [c for c in joined if "clip_001" in c][0]
     assert str(narr) in clip0 and "apad" in clip0        # 나레이션 씬
+    assert "aresample=44100" in clip0 and "stereo" in clip0  # 오디오 파라미터 통일
     assert "anullsrc" not in clip0
     assert "anullsrc" in clip1                            # 무나레이션 씬은 기존
     assert "-t 4.00" in clip0                             # 길이 클램프 유지
@@ -156,6 +157,7 @@ def test_mux_bgm_preserves_narration_via_amix(monkeypatch, tmp_path):
     joined = [" ".join(map(str, c)) for c in calls]
     mux = [c for c in joined if "volume=0.28" in c][0]
     assert "amix=inputs=2:duration=first" in mux          # 나레이션 보존 믹스
+    assert "normalize=0" in mux                            # normalize=0으로 나레이션 수준 보존
     assert "-map [a]" in mux or '-map "[a]"' in mux
     assert "-map [b]" not in mux                          # 오디오 교체 방식 제거
 

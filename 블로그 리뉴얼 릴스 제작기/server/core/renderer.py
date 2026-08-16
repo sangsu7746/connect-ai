@@ -61,7 +61,7 @@ def _scene_clip(scene: dict, img: pathlib.Path, cap_png: pathlib.Path,
         cmd += ["-i", narration]
         # apad로 나레이션을 씬 길이까지 늘림 — -shortest와 함께 쓰면
         # apad가 무효화되므로 여기서는 -shortest를 넣지 않고 -t로 길이 고정한다.
-        audio = ["-af", "apad", "-map", "2:a"]
+        audio = ["-af", "aresample=44100,aformat=channel_layouts=stereo,apad", "-map", "2:a"]
     else:
         cmd += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
         audio = ["-map", "2:a"]
@@ -89,7 +89,7 @@ def _mux_bgm(video: pathlib.Path, bgm_path: pathlib.Path, total_sec: float,
              out: pathlib.Path) -> None:
     _run(["ffmpeg", "-y", "-i", video, "-stream_loop", "-1", "-i", bgm_path,
           "-filter_complex",
-          "[1:a]volume=0.28[b];[0:a][b]amix=inputs=2:duration=first[a]",
+          "[1:a]volume=0.28[b];[0:a][b]amix=inputs=2:duration=first:normalize=0[a]",
           "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac",
           "-t", f"{total_sec:.2f}", "-shortest", out], timeout=1800)
 
