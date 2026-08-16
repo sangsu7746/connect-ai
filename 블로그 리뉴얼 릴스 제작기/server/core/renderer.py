@@ -89,7 +89,7 @@ def _mux_bgm(video: pathlib.Path, bgm_path: pathlib.Path, total_sec: float,
              out: pathlib.Path) -> None:
     _run(["ffmpeg", "-y", "-i", video, "-stream_loop", "-1", "-i", bgm_path,
           "-filter_complex",
-          "[1:a]volume=0.28[b];[0:a][b]amix=inputs=2:duration=first:normalize=0[a]",
+          "[1:a]volume=0.28[b];[0:a][b]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.98[a]",
           "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac",
           "-t", f"{total_sec:.2f}", "-shortest", out], timeout=1800)
 

@@ -22,7 +22,9 @@ def videos_dir() -> pathlib.Path:
 
 @router.post("/scripts/{sid}/render")
 def start_render(sid: int):
-    if jobs.has_running("images", str(sid)) or jobs.has_running("render", str(sid)):
+    if jobs.has_running_kind("render"):
+        raise HTTPException(409, "다른 렌더가 진행 중입니다 — 완료 후 다시 시도하세요 (동시 렌더 1개)")
+    if jobs.has_running("images", str(sid)):
         raise HTTPException(409, "이 스크립트의 잡이 이미 실행 중입니다 — 완료 후 다시 시도하세요")
     conn = get_conn()
     try:

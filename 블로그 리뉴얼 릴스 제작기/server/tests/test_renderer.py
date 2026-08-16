@@ -161,6 +161,16 @@ def test_mux_bgm_preserves_narration_via_amix(monkeypatch, tmp_path):
     assert "-map [a]" in mux or '-map "[a]"' in mux
     assert "-map [b]" not in mux                          # 오디오 교체 방식 제거
 
+def test_mux_has_limiter(monkeypatch, tmp_path):
+    calls = _setup(monkeypatch, tmp_path)
+    bgm = tmp_path / "m.mp3"
+    bgm.write_bytes(b"mp3")
+    renderer.render_script(SCENES, "reels", "부동산", bgm,
+                           tmp_path / "out.mp4", tmp_path / "work")
+    joined = [" ".join(map(str, c)) for c in calls]
+    mux = [c for c in joined if "volume=0.28" in c][0]
+    assert "alimiter=limit=0.98" in mux
+
 def test_run_wraps_timeout_and_oserror(monkeypatch):
     import subprocess as sp
     import pytest

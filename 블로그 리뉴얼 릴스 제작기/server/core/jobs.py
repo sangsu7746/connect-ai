@@ -77,3 +77,13 @@ def has_running(kind: str, ref: str) -> bool:
             (kind, ref)).fetchone() is not None
     finally:
         conn.close()
+
+
+def has_running_kind(kind: str) -> bool:
+    conn = get_conn()
+    try:
+        return conn.execute(
+            "SELECT 1 FROM jobs WHERE kind=? AND status='running'",
+            (kind,)).fetchone() is not None
+    finally:
+        conn.close()

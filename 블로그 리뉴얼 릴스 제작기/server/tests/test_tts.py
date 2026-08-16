@@ -55,3 +55,17 @@ def test_voice_override_changes_cache_key(monkeypatch, tmp_path):
     a = tts.synth_scenes(SCENES[:1])
     b = tts.synth_scenes(SCENES[:1], voice="ko-KR-InJoonNeural")
     assert a[0] != b[0]                         # 보이스별 캐시 분리
+
+def test_atomic_cache_write(monkeypatch, tmp_path):
+    _setup(monkeypatch, tmp_path)
+    out = tts.synth_scenes(SCENES[:1])
+    assert 0 in out
+    leftovers = list(out[0].parent.glob("*.tmp*"))
+    assert leftovers == []                        # 임시 파일 잔재 없음
+
+def test_partial_tmp_not_cached(monkeypatch, tmp_path):
+    _setup(monkeypatch, tmp_path)
+    FakeCommunicate.fail_texts = {"첫 나레이션"}
+    tts.synth_scenes(SCENES[:1])
+    d = pathlib.Path(str(tmp_path / "tts"))
+    assert list(d.glob("*.mp3")) == []            # 실패는 최종 경로에 안 남음

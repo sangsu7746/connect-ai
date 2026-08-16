@@ -19,18 +19,18 @@ def make_client(monkeypatch, tmp_path):
     importlib.reload(main)
     return TestClient(main.app)
 
-def _make_script(c, monkeypatch):
+def _make_script_for(c, monkeypatch, cid, keyword, url):
     import api.discover as disc
     monkeypatch.setattr(disc.naver, "search_blog", lambda q, display=10: [
         {"source": "naver", "title": "전세 보증보험 총정리",
-         "url": "https://blog.naver.com/a/1", "summary": "",
+         "url": url, "summary": "",
          "blogger": "b", "posted_at": "20260810"}])
     monkeypatch.setattr(disc.google_search, "search_blog", lambda q, num=10: [])
     monkeypatch.setattr(disc.google_search, "available", lambda: True)
     monkeypatch.setattr(disc.crawler, "fetch_content",
                         lambda url: "보증료는 연 0.128%다.")
-    c.post("/api/categories/1/discover", json={"keyword": "전세"})
-    ids = [p["id"] for p in c.get("/api/categories/1/posts").json()]
+    c.post(f"/api/categories/{cid}/discover", json={"keyword": keyword})
+    ids = [p["id"] for p in c.get(f"/api/categories/{cid}/posts").json()]
     import api.scripts as sc
     from core import storyboard
     monkeypatch.setattr(sc.gemini, "available", lambda: True)
@@ -43,8 +43,15 @@ def _make_script(c, monkeypatch):
                 "diag": {"score": 2, "verdict": "회색 소", "answers": [],
                          "hooks": [], "weak": []}}
     monkeypatch.setattr(sc.script_gen, "generate_script", fake_generate)
-    return c.post("/api/scripts", json={"category_id": 1, "post_ids": ids,
+    return c.post("/api/scripts", json={"category_id": cid, "post_ids": ids,
                                         "fmt": "reels", "duration": 30}).json()["id"]
+
+def _make_script(c, monkeypatch):
+    return _make_script_for(c, monkeypatch, 1, "전세", "https://blog.naver.com/a/1")
+
+def _make_script2(c, monkeypatch):
+    # 두 번째 스크립트 헬퍼 — 카테고리 2(재테크)에 discover, URL 충돌 방지용 접미 분리
+    return _make_script_for(c, monkeypatch, 2, "재테크", "https://blog.naver.com/a/2")
 
 def _wait_job(c, jid, timeout=10):
     for _ in range(timeout * 20):
@@ -140,3 +147,23 @@ def test_render_error_marks_job(monkeypatch, tmp_path):
     j = _wait_job(c, c.post(f"/api/scripts/{sid}/render").json()["job_id"])
     assert j["status"] == "error" and "ffmpeg" in j["error"]
     assert c.get(f"/api/scripts/{sid}/renders").json() == []
+
+def test_render_serialized_globally(monkeypatch, tmp_path):
+    import threading
+    c = make_client(monkeypatch, tmp_path)
+    sid1 = _make_script(c, monkeypatch)
+    sid2 = _make_script2(c, monkeypatch)          # 두 번째 스크립트 헬퍼
+    import api.render as rd
+    gate = threading.Event()
+    def slow_render(scenes, fmt, category, bgm_path, out_path, workdir,
+                    on_scene=None, narrations=None):
+        gate.wait(timeout=5)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_bytes(b"mp4")
+    monkeypatch.setattr(rd.renderer, "render_script", slow_render)
+    jid = c.post(f"/api/scripts/{sid1}/render").json()["job_id"]
+    try:
+        assert c.post(f"/api/scripts/{sid2}/render").status_code == 409
+    finally:
+        gate.set()
+    _wait_job(c, jid)

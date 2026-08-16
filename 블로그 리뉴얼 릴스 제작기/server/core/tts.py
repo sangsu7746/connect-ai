@@ -27,11 +27,16 @@ def _cache_path(text: str, voice: str) -> pathlib.Path:
 
 
 async def _synth_one(text: str, voice: str, out: pathlib.Path) -> bool:
+    tmp = out.parent / (out.name + ".tmp")
     try:
-        await edge_tts.Communicate(text, voice).save(str(out))
-        return out.exists() and out.stat().st_size > 0
+        await edge_tts.Communicate(text, voice).save(str(tmp))
+        if tmp.exists() and tmp.stat().st_size > 0:
+            os.replace(tmp, out)
+            return True
+        tmp.unlink(missing_ok=True)
+        return False
     except Exception:
-        out.unlink(missing_ok=True)
+        tmp.unlink(missing_ok=True)
         return False
 
 
