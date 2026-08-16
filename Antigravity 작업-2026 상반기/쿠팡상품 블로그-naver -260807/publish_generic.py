@@ -63,38 +63,58 @@ def _md_to_tistory_html(md: str) -> str:
     tistory_poster.text_to_html()/build_html() 은 affiliate_url 값과 무관하게
     쿠팡 파트너스 대가성 고지 문단을 무조건 넣는다(정독으로 확인) — 그래서
     재사용하지 않고 헤딩(##)·목록(-)·문단만 살리는 자체 변환을 쓴다.
+
+    article_gen._paragraphs() 는 헤딩 단독 블록을 다음 문단에 단일 개행(\n)으로
+    붙여서 저장한다 — 그래서 저장된 body_md 블록은 "## 제목\n본문…" 처럼 여러
+    줄이다. 블록 단위(len(lines)==1)로만 헤딩을 판정하면 이 블록이 그냥 <p>로
+    떨어진다 — 그래서 블록이 아니라 **줄 단위**로 판정한다.
     """
     def esc(s):
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
     out = []
-    bullets = []
+    para_buf = []
+    list_buf = []
 
-    def flush_bullets():
-        if bullets:
-            items = "".join(f"<li>{esc(b)}</li>" for b in bullets)
-            out.append(f"<ul>{items}</ul>")
-            bullets.clear()
+    def flush_para():
+        if para_buf:
+            out.append(f'<p data-ke-size="size16">{esc(" ".join(para_buf))}</p>')
+            para_buf.clear()
+
+    def flush_list():
+        if list_buf:
+            items = "".join(f"<li>{esc(b)}</li>" for b in list_buf)
+            out.append(f'<ul data-ke-list-type="disc">{items}</ul>')
+            list_buf.clear()
 
     for block in re.split(r"\n\s*\n", (md or "").strip()):
         b = block.strip()
         if not b:
             continue
-        lines = [ln.strip() for ln in b.split("\n") if ln.strip()]
-        if not lines:
-            continue
-        if len(lines) == 1 and re.match(r"^#{1,3}\s+", lines[0]):
-            flush_bullets()
-            heading = re.sub(r"^#{1,3}\s+", "", lines[0])
-            out.append(f'<h2 data-ke-size="size23">{esc(heading)}</h2>')
-            continue
-        if all(re.match(r"^[-*•]\s+", ln) for ln in lines):
-            flush_bullets()
-            bullets.extend(re.sub(r"^[-*•]\s+", "", ln) for ln in lines)
-            continue
-        flush_bullets()
-        out.append(f'<p data-ke-size="size16">{esc(" ".join(lines))}</p>')
-    flush_bullets()
+        for raw in b.split("\n"):
+            ln = raw.strip()
+            if not ln:
+                continue
+            if re.match(r"^#{1,3}\s+", ln):
+                flush_para()
+                flush_list()
+                heading = re.sub(r"^#{1,3}\s+", "", ln)
+                out.append(f'<h2 data-ke-size="size26">{esc(heading)}</h2>')
+                continue
+            if re.match(r"^[-*•]\s+", ln):
+                flush_para()
+                list_buf.append(re.sub(r"^[-*•]\s+", "", ln))
+                continue
+            flush_list()
+            if ln.startswith("■"):
+                flush_para()
+                out.append(f'<p data-ke-size="size16">{esc(ln)}</p>')
+                continue
+            para_buf.append(ln)
+        flush_para()
+        flush_list()
+    flush_para()
+    flush_list()
     return "\n".join(out)
 
 

@@ -65,7 +65,9 @@ export default function ArticlePage() {
           {busy === 'tistory' ? '발행 중…' : 'T 티스토리 발행(비공개)'}
         </button>
         {Object.entries(article.published_urls).map(([p, u]) => (
-          <a key={p} href={u} target="_blank" rel="noreferrer">🔗 {p}</a>
+          u
+            ? <a key={p} href={u} target="_blank" rel="noreferrer">🔗 {p}</a>
+            : <span key={p}>🔗 {p} (URL 미확인)</span>
         ))}
       </div>
       <p className="meta">발행은 수 분 걸릴 수 있습니다. 세션이 만료됐으면 브라우저

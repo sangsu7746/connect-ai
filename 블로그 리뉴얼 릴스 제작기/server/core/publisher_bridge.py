@@ -9,7 +9,7 @@ import tempfile
 
 from .config import settings
 
-TIMEOUT_S = 300
+TIMEOUT_S = 600
 
 
 def _script() -> pathlib.Path | None:
@@ -17,6 +17,21 @@ def _script() -> pathlib.Path | None:
         return None
     p = pathlib.Path(settings.publisher_dir) / "publish_generic.py"
     return p if p.exists() else None
+
+
+def _python() -> str:
+    """publish_generic.py 를 실행할 인터프리터를 고른다.
+
+    이 앱의 venv(server/.venv) 에는 selenium 이 없다 — sys.executable 로 그냥
+    실행하면 쿠팡 블로그 프로젝트(publisher_dir)의 publish_generic.py 가
+    ModuleNotFoundError 로 100% 실패한다. publisher_dir 안에 자체 venv가 있으면
+    그 인터프리터를 쓰고, 없으면 sys.executable 로 폴백한다.
+    """
+    if settings.publisher_dir:
+        cand = pathlib.Path(settings.publisher_dir) / ".venv" / "Scripts" / "python.exe"
+        if cand.exists():
+            return str(cand)
+    return sys.executable
 
 
 def available() -> bool:
@@ -35,7 +50,7 @@ def publish(platform: str, title: str, body_md: str, category: str = "") -> dict
                   f, ensure_ascii=False)
         handoff = f.name
     try:
-        r = subprocess.run([sys.executable, str(script), "--file", handoff],
+        r = subprocess.run([_python(), str(script), "--file", handoff],
                            cwd=settings.publisher_dir, capture_output=True,
                            text=True, timeout=TIMEOUT_S, encoding="utf-8")
         for line in reversed((r.stdout or "").strip().splitlines()):
@@ -48,10 +63,14 @@ def publish(platform: str, title: str, body_md: str, category: str = "") -> dict
                             "error": out.get("error", "")}
                 except json.JSONDecodeError:
                     continue
+        tail = (r.stderr or "").strip()[-300:]
         return {"ok": False, "url": "",
-                "error": f"발행 결과를 파싱하지 못함 (exit {r.returncode})"}
+                "error": f"발행 결과를 파싱하지 못함 (exit {r.returncode})"
+                         + (f" — {tail}" if tail else "")}
     except subprocess.TimeoutExpired:
-        return {"ok": False, "url": "", "error": "발행 타임아웃(5분) — 브라우저 로그인 대기 중일 수 있음"}
+        return {"ok": False, "url": "",
+                "error": "발행 타임아웃(10분) — 브라우저 로그인 대기였을 수 있고, "
+                         "실제로 발행됐을 수도 있으니 블로그 관리에서 먼저 확인하세요"}
     except Exception as e:
         return {"ok": False, "url": "", "error": f"발행 실행 실패: {type(e).__name__}"}
     finally:

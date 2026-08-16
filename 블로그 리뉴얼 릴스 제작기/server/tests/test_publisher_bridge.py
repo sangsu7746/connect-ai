@@ -1,5 +1,6 @@
 import json
 import subprocess
+import sys
 from fastapi.testclient import TestClient
 from core import publisher_bridge as pb
 
@@ -24,6 +25,19 @@ def test_publish_parses_result(monkeypatch, tmp_path):
     monkeypatch.setattr(subprocess, "run", fake_run)
     r = pb.publish("tistory", "제목", "본문")
     assert r["ok"] and r["url"] == "https://blog/1"
+
+def test_python_prefers_publisher_venv(monkeypatch, tmp_path):
+    monkeypatch.setattr(pb.settings, "publisher_dir", str(tmp_path))
+    venv_py = tmp_path / ".venv" / "Scripts" / "python.exe"
+    venv_py.parent.mkdir(parents=True)
+    venv_py.write_text("# stub", encoding="utf-8")
+    assert pb._python() == str(venv_py)
+
+def test_python_falls_back_without_publisher_venv(monkeypatch, tmp_path):
+    monkeypatch.setattr(pb.settings, "publisher_dir", str(tmp_path))
+    assert pb._python() == sys.executable
+    monkeypatch.setattr(pb.settings, "publisher_dir", "")
+    assert pb._python() == sys.executable
 
 def test_publish_handles_timeout(monkeypatch, tmp_path):
     (tmp_path / "publish_generic.py").write_text("# stub", encoding="utf-8")
