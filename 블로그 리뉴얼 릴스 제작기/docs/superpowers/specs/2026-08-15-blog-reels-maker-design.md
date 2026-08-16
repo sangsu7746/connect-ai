@@ -22,7 +22,7 @@ Stable Diffusion(ComfyUI) 생성 이미지로 릴스(9:16)와 롱폼 모션영�
 | 산출물 | 릴스 9:16 (30/60초) + 롱폼 16:9 (1/3/5/10분) |
 | 대본 방식 | 상위 3~5개 글 종합 재구성 (원문 문장 복사 금지, 저작권 안전) |
 | 나레이션 | TTS(Edge-TTS) + 자막. 릴스·롱폼 공통 |
-| 이미지 | 로컬 ComfyUI (SDXL), 스타일팩 6종, 라이브러리 캐시 |
+| 이미지 | 로컬 SD WebUI(A1111, DreamShaper 8 — 2026-08-16 실환경 확정), 스타일팩 6종, 라이브러리 캐시 |
 | 기본 구도 | EstateReels-v2 위저드·씬 구조·자막 스타일 이식 |
 | 추가 기능 | 보랏빛 점수 배지, 대본 날조 게이트, GEO 확장(설명란+챕터), 이미지 캐시 — 전부 포함 |
 | 배포 | 개인 PC 전용, 배포 안 함 |
@@ -37,7 +37,7 @@ Stable Diffusion(ComfyUI) 생성 이미지로 릴스(9:16)와 롱폼 모션영�
    ├─ 크롤링: httpx·trafilatura 본문 수집 (jina 폴백)
    ├─ 진단: purple_cow 블로그판 (4문항 → 보랏빛 점수)
    ├─ 대본: Gemini (보랏빛소 지침 + GEO) → guardrails 숫자 대조
-   ├─ 이미지: ComfyUI API (기본 127.0.0.1:8188)
+   ├─ 이미지: SD WebUI API (기본 127.0.0.1:7860)
    ├─ 음성: Edge-TTS (ko-KR)
    └─ 렌더: 네이티브 ffmpeg
         │
@@ -64,7 +64,7 @@ D:\블로그 리뉴얼 릴스 제작기\
       banned_words.py     금지어 공용 모듈 (단일 출처)
       geo.py              GEO 요약박스·챕터·설명란 생성
       script_gen.py       Gemini 대본 생성 (scene_level 구조)
-      comfy.py            ComfyUI API 클라이언트
+      sd_webui.py         SD WebUI(A1111) API 클라이언트
       style_packs.json    이미지 스타일팩 정의
       cache.py            이미지 라이브러리 캐시
       tts.py              Edge-TTS 래퍼
@@ -78,7 +78,7 @@ D:\블로그 리뉴얼 릴스 제작기\
     src\pages\            Dashboard, PostList, Review, Concept,
                           Storyboard, Generate, Result
   .env                    NAVER_CLIENT_ID/SECRET, GOOGLE_CSE_KEY/ID,
-                          GEMINI_API_KEY, COMFYUI_URL, 포트 설정
+                          GEMINI_API_KEY, SD_WEBUI_URL, PUBLISHER_DIR, 포트 설정
 ```
 
 ## 4. 화면 흐름 (7단계 위저드)
@@ -166,11 +166,15 @@ DataLab API는 인기 키워드 "목록"을 주지 않고 지정 키워드의 �
 - **설명란 자동 생성**: 두괄식 요약 박스(객관 단정문 3줄) + 챕터 타임스탬프(h2 구조 대응)
   → 결과 화면에서 복사. 유튜브 검색·생성형 검색 인용 최적화.
 
-## 8. 이미지 파이프라인 (ComfyUI)
+## 8. 이미지 파이프라인 (SD WebUI — 2026-08-16 실환경 확정 개정)
 
-- 대본 생성 시 씬별 영문 이미지 프롬프트 동시 생성 → 스타일팩 프리픽스/네거티브 결합 → ComfyUI API 큐.
-- 스타일팩은 `style_packs.json` 정의(체크포인트·프리픽스·네거티브·해상도) — 코드 수정 없이 추가 가능.
-- 구현 시 확인: 설치된 ComfyUI 경로·보유 체크포인트 목록. SDXL 기준으로 설계하되 SD1.5만 있으면 해상도 조정.
+2026-08-16 확인: 이 PC에는 ComfyUI가 없고 `D:\sd-webui`(A1111 계열)가 API 모드(7860)로
+운용 중이며 체크포인트는 DreamShaper 8(SD1.5). 백엔드를 SD WebUI로 확정한다(사용자 승인).
+
+- 대본 생성 시 씬별 영문 이미지 프롬프트 동시 생성(M2 완료) → 스타일팩 프리픽스/네거티브
+  결합 → `/sdapi/v1/txt2img` 호출(steps 25, DPM++ 2M Karras, CFG 7).
+- 스타일팩은 `style_packs.json` 정의(프리픽스·네거티브·씬롤/카테고리 매핑) — 코드 수정 없이 추가 가능.
+- 오버레이 자막과 겹치지 않도록 공통 네거티브에 text·watermark·letters 계열 고정.
 
 ### 스타일팩 6종
 
@@ -183,12 +187,15 @@ DataLab API는 인기 키워드 "목록"을 주지 않고 지정 키워드의 �
 | papercut | 페이퍼컷 콜라주 | 차별화 씬(보랏빛소) | 2.5D 패럴랙스(옵션) |
 | neon_abstract | 네온 그라디언트 추상 | 숫자·차트 강조 | 펄스/글로우 |
 
-- 씬 롤 자동 매핑: hook=cinematic/neon_abstract, point=카테고리 기본, cta=neon_abstract.
-- 해상도: 릴스 832×1216, 롱폼 1216×832 (SDXL 표준 비율 → ffmpeg 1080 스케일).
-- **캐시**: 프롬프트+스타일 해시 → SQLite 인덱스, 카테고리별 B-roll 재사용.
+- 씬 롤 자동 매핑: hook=cinematic, summary·cta=neon_abstract, twist=papercut,
+  point·chapter=카테고리 기본(부동산=isometric, 재테크·IT=flat_vector,
+  건강·요리·여행=pastel_anime, 그 외=flat_vector).
+- 해상도(SD1.5 조정): 릴스 576×1024, 롱폼 1024×576 (→ ffmpeg 1080 스케일).
+- **캐시**: 프롬프트+스타일+해상도 해시 → SQLite 인덱스, 동일 프롬프트 재사용.
   10분(72씬) 기준 신규 생성 30~40장 목표.
+- 생성은 잡(job)으로 백그라운드 실행, UI는 진행률 폴링(§3의 잡 큐 최소형을 M3에서 도입).
 - 옵션(1차 릴리즈 이후): AnimateDiff 훅 씬 2~4초 루프, depth 기반 2.5D 패럴랙스.
-- ComfyUI 다운 시: 컨셉 색상 그라디언트 카드 폴백 — 렌더는 계속 진행.
+- SD WebUI 다운 시: 스타일 색상 그라디언트 카드 폴백(Pillow) — 진행은 멈추지 않는다.
 
 ## 9. 렌더링
 
