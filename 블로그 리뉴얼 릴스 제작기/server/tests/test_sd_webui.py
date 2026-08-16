@@ -35,6 +35,22 @@ def test_txt2img_raises_on_empty_images(monkeypatch):
     with pytest.raises(sd_webui.SDError):
         sd_webui.txt2img("a", "b", 576, 1024)
 
+def test_txt2img_raises_sderror_on_bad_body(monkeypatch):
+    monkeypatch.setattr(sd_webui.settings, "sd_webui_url", "http://x:7860")
+    monkeypatch.setattr(httpx, "post", lambda url, json=None, timeout=None:
+                        httpx.Response(200, text="<html>proxy error</html>",
+                                       request=httpx.Request("POST", url)))
+    with pytest.raises(sd_webui.SDError):
+        sd_webui.txt2img("a", "b", 576, 1024)
+
+def test_txt2img_raises_sderror_on_bad_base64(monkeypatch):
+    monkeypatch.setattr(sd_webui.settings, "sd_webui_url", "http://x:7860")
+    monkeypatch.setattr(httpx, "post", lambda url, json=None, timeout=None:
+                        httpx.Response(200, json={"images": ["!!!not-base64!!!"]},
+                                       request=httpx.Request("POST", url)))
+    with pytest.raises(sd_webui.SDError):
+        sd_webui.txt2img("a", "b", 576, 1024)
+
 def test_available(monkeypatch):
     monkeypatch.setattr(sd_webui.settings, "sd_webui_url", "http://x:7860")
     monkeypatch.setattr(httpx, "get", lambda url, timeout=None:

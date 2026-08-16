@@ -31,7 +31,12 @@ def txt2img(prompt: str, negative: str, width: int, height: int) -> bytes:
         raise SDError(f"SD WebUI 호출 실패: {type(e).__name__}")
     if r.status_code != 200:
         raise SDError(f"SD WebUI HTTP {r.status_code}")
-    images = r.json().get("images") or []
-    if not images:
-        raise SDError("SD WebUI가 이미지를 반환하지 않음")
-    return base64.b64decode(images[0])
+    try:
+        images = r.json().get("images") or []
+        if not images:
+            raise SDError("SD WebUI가 이미지를 반환하지 않음")
+        return base64.b64decode(images[0], validate=True)
+    except SDError:
+        raise
+    except Exception as e:
+        raise SDError(f"SD WebUI 응답 파싱 실패: {type(e).__name__}")
