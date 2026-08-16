@@ -35,3 +35,14 @@ def test_font_fallback(monkeypatch):
     monkeypatch.setattr(captions, "FONT_CANDIDATES", ["Z:/no/such/font.ttf"])
     data = captions.render_caption("폴백", "", "cta", 540, 960)
     assert _img(data).size == (540, 960)          # 기본 폰트로도 동작
+
+def test_long_sub_wraps_within_frame():
+    dense = "가" * 22                       # 파이프라인 상한(22자) 밀집 한글
+    for role in ("hook", "point"):
+        data = captions.render_caption("자막", dense, role, 1080, 1920)
+        img = _img(data)
+        alpha = img.split()[3]
+        left = alpha.crop((0, 0, 2, 1920))
+        right = alpha.crop((1078, 0, 1080, 1920))
+        assert left.getextrema()[1] < 255    # 좌우 엣지에 불투명 픽셀 없음
+        assert right.getextrema()[1] < 255

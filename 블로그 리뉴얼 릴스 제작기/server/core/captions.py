@@ -52,8 +52,10 @@ def render_caption(caption: str, sub: str, role: str,
         font = load_font(max(int(height * 0.048), 20))
         sub_font = load_font(max(int(height * 0.030), 14))
         lines = _wrap(draw, caption, font, int(width * 0.86))
+        sub_lines = _wrap(draw, sub, sub_font, int(width * 0.86)) if sub else []
         line_h = int(height * 0.062)
-        total = len(lines) * line_h + (line_h if sub else 0)
+        sub_line_h = int(height * 0.042)
+        total = len(lines) * line_h + (len(sub_lines) * sub_line_h if sub else 0)
         y = (height - total) // 2
         for line in lines:
             w = draw.textlength(line, font=font)
@@ -61,9 +63,11 @@ def render_caption(caption: str, sub: str, role: str,
                            (255, 255, 255, 255))
             y += line_h
         if sub:
-            w = draw.textlength(sub, font=sub_font)
-            _draw_outlined(draw, ((width - w) // 2, y), sub, sub_font,
-                           (255, 224, 130, 255))
+            for line in sub_lines:
+                w = draw.textlength(line, font=sub_font)
+                _draw_outlined(draw, ((width - w) // 2, y), line, sub_font,
+                               (255, 224, 130, 255))
+                y += sub_line_h
     else:
         # 하단 스크림 그라디언트 (하단 28% 영역)
         scrim_h = int(height * 0.28)
@@ -74,18 +78,22 @@ def render_caption(caption: str, sub: str, role: str,
         font = load_font(max(int(height * 0.036), 16))
         sub_font = load_font(max(int(height * 0.026), 12))
         lines = _wrap(draw, caption, font, int(width * 0.9))
+        sub_lines = _wrap(draw, sub, sub_font, int(width * 0.9)) if sub else []
         line_h = int(height * 0.048)
+        sub_line_h = int(height * 0.036)
         y = height - int(height * 0.06) - len(lines) * line_h - \
-            (int(height * 0.036) if sub else 0)
+            (len(sub_lines) * sub_line_h if sub else 0)
         for line in lines:
             w = draw.textlength(line, font=font)
             _draw_outlined(draw, ((width - w) // 2, y), line, font,
                            (255, 255, 255, 255))
             y += line_h
         if sub:
-            w = draw.textlength(sub, font=sub_font)
-            _draw_outlined(draw, ((width - w) // 2, y), sub, sub_font,
-                           (200, 200, 210, 255))
+            for line in sub_lines:
+                w = draw.textlength(line, font=sub_font)
+                _draw_outlined(draw, ((width - w) // 2, y), line, sub_font,
+                               (200, 200, 210, 255))
+                y += sub_line_h
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
