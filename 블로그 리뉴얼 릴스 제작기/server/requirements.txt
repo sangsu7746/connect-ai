@@ -7,3 +7,4 @@ trafilatura
 playwright
 pytest
 Pillow
+edge-tts
