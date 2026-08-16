@@ -1,5 +1,14 @@
 import time
+import pytest
 from fastapi.testclient import TestClient
+
+@pytest.fixture(autouse=True)
+def _no_network_tts(monkeypatch):
+    """이 모듈 기본값: TTS no-op (오프라인 보장). 개별 테스트의 명시적
+    monkeypatch.setattr(rd.tts, "synth_scenes", ...)가 이후 적용되어 우선한다."""
+    import api.render as rd
+    monkeypatch.setattr(rd.tts, "synth_scenes",
+                        lambda scenes, voice=None, on_done=None: {})
 
 def make_client(monkeypatch, tmp_path):
     monkeypatch.setenv("APP_DB_PATH", str(tmp_path / "t.db"))
