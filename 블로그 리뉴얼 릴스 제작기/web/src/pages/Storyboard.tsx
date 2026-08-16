@@ -20,9 +20,15 @@ export default function Storyboard() {
   useEffect(() => { getScript(sid).then(setScript).catch(e => alert(e)) }, [sid])
   // 언마운트(페이지 이동) 시 대기 중인 폴링 타이머를 정리 — 안 하면 setTimeout이
   // 계속 돌며 언마운트된 컴포넌트에 setState를 시도한다.
-  useEffect(() => () => {
-    mounted.current = false
-    if (imgTimer.current) clearTimeout(imgTimer.current)
+  // mount 시 true로 되돌려야 한다 — StrictMode는 effect를 mount→unmount→remount로
+  // 두 번 돌리는데, cleanup만 있으면 첫 unmount에서 false가 된 뒤 영영 true로
+  // 안 돌아와 폴링이 시작부터 죽는다 (C4).
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+      if (imgTimer.current) clearTimeout(imgTimer.current)
+    }
   }, [])
   if (!script) return <div className="page">불러오는 중…</div>
 

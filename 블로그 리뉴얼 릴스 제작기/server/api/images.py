@@ -27,8 +27,8 @@ def _category_name(conn, cid: int) -> str:
 def _gen_for_scene(conn, scene: dict, category: str, fmt: str,
                    salt: str = "") -> None:
     style = style_packs.pick(scene["role"], category)
-    prompt = (scene.get("image_prompt") or "") + (f" |r{salt}" if salt else "")
-    r = image_gen.generate(conn, prompt, style, fmt)
+    r = image_gen.generate(conn, scene.get("image_prompt") or "", style, fmt,
+                           salt=salt)
     scene["image_file"] = r["file"]
     scene["image_fallback"] = r["fallback"]
 
@@ -51,21 +51,36 @@ def generate_images(sid: int, body: ImagesIn | None = None):
             row = _load_script(conn, sid)
             scenes = json.loads(row["scenes_json"])
             category = _category_name(conn, cid)
-            todo_scenes = [s for s in scenes
-                           if force or not s.get("image_file")]
-            ctx.set_total(len(todo_scenes))
+            # force가 아니어도 폴백 씬(SD 다운으로 그라디언트 대체)은 재충전 대상 (I5)
+            todo = [s["idx"] for s in scenes
+                    if force or not s.get("image_file") or s.get("image_fallback")]
+            ctx.set_total(len(todo))
             done = 0
-            for scene in scenes:
-                if not force and scene.get("image_file"):
+            for idx in todo:
+                # 프롬프트·스타일은 매번 최신 씬에서 — 사용자가 잡 중 수정해도 반영 (C1)
+                row = _load_script(conn, sid)
+                scenes = json.loads(row["scenes_json"])
+                scene = next((s for s in scenes if s["idx"] == idx), None)
+                if scene is None:
                     continue
                 # force는 캐시를 우회해 새 이미지를 뽑아야 하므로 리트라이 솔트 부여
                 _gen_for_scene(conn, scene, category, fmt,
                                salt=secrets.token_hex(3) if force else "")
+                # SD 호출(수 초~분) 도중 사용자가 다른 필드를 PATCH했을 수 있으므로,
+                # 쓰기 직전에 scenes_json을 다시 읽어 이 씬의 image_* 두 필드만
+                # 병합한다 — 그래야 읽기→쓰기 창이 SD 호출 시간이 아니라 이
+                # 병합 자체(수 ms)로 줄어 concurrent 편집을 덮어쓰지 않는다.
+                latest_row = _load_script(conn, sid)
+                latest_scenes = json.loads(latest_row["scenes_json"])
+                latest_scene = next((s for s in latest_scenes if s["idx"] == idx), None)
+                if latest_scene is not None:
+                    latest_scene["image_file"] = scene["image_file"]
+                    latest_scene["image_fallback"] = scene["image_fallback"]
+                    conn.execute("UPDATE scripts SET scenes_json=? WHERE id=?",
+                                 (json.dumps(latest_scenes, ensure_ascii=False), sid))
+                    conn.commit()
                 done += 1
                 ctx.tick()
-                conn.execute("UPDATE scripts SET scenes_json=? WHERE id=?",
-                             (json.dumps(scenes, ensure_ascii=False), sid))
-                conn.commit()
             return {"generated": done}
         finally:
             conn.close()

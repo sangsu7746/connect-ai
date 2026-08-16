@@ -41,14 +41,19 @@ def gradient_card(color_hex: str, width: int, height: int) -> bytes:
     return buf.getvalue()
 
 
-def generate(conn, image_prompt: str, style_id: str, fmt: str) -> dict:
+def generate(conn, image_prompt: str, style_id: str, fmt: str,
+             salt: str = "") -> dict:
+    """salt는 캐시 키에만 반영된다 — SD로 나가는 prompt에는 절대 섞지 않는다 (I6).
+    force 재생성 시 같은 프롬프트라도 새 캐시 슬롯을 받도록 리트라이마다 다른 값을 준다."""
     packs = style_packs.load()
     pack = packs.get(style_id) or packs["flat_vector"]
     width, height = SIZE[fmt]
     prompt = f"{pack['prefix']}, {image_prompt}" if image_prompt else pack["prefix"]
     negative = f"{style_packs.COMMON_NEGATIVE}, {pack['negative']}".strip(", ")
-    key = hashlib.sha256(
-        f"{prompt}|{negative}|{style_id}|{width}x{height}".encode()).hexdigest()[:32]
+    key_src = f"{prompt}|{negative}|{style_id}|{width}x{height}"
+    if salt:
+        key_src += f"|{salt}"
+    key = hashlib.sha256(key_src.encode()).hexdigest()[:32]
 
     row = conn.execute("SELECT file FROM images WHERE hash=?", (key,)).fetchone()
     if row and (images_dir() / row["file"]).exists():

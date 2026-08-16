@@ -43,6 +43,23 @@ def test_generate_fallback_on_sd_error(db, monkeypatch, tmp_path):
     # 폴백은 캐시 미등록 → SD 복구 후 재생성 가능
     assert db.execute("SELECT COUNT(*) c FROM images").fetchone()["c"] == 0
 
+def test_generate_salt_not_in_prompt_but_changes_key(db, monkeypatch, tmp_path):
+    """I6 — 리트라이 솔트는 캐시 키에만 반영돼야 한다. SD로 나가는 prompt에
+    솔트 문자열이 섞이면 안 되고(그림 품질과 무관한 노이즈), 대신 솔트가
+    다르면 캐시 파일명(=해시 키)이 달라져서 강제 재생성 시 새 이미지를 받는다."""
+    _setup_dir(monkeypatch, tmp_path)
+    seen = []
+    def fake(prompt, negative, width, height):
+        seen.append(prompt)
+        return PNG
+    monkeypatch.setattr(image_gen.sd_webui, "txt2img", fake)
+    r1 = image_gen.generate(db, "a cozy room", "isometric", "reels", salt="abc123")
+    assert "abc123" not in seen[0]
+    r2 = image_gen.generate(db, "a cozy room", "isometric", "reels", salt="def456")
+    assert "def456" not in seen[1]
+    assert seen[0] == seen[1]                        # 프롬프트 자체는 솔트와 무관하게 동일
+    assert r1["file"] != r2["file"]                   # 솔트 다르면 캐시 키(파일명)도 다름
+
 def test_gradient_card_is_png():
     data = image_gen.gradient_card("#7c3aed", 64, 128)
     assert data[:8] == b"\x89PNG\r\n\x1a\n"
