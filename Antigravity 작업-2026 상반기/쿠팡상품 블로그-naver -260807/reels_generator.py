@@ -243,6 +243,13 @@ def build_estatereels_storyboard(product_info: dict, scene_photos: list, concept
     # original_price 가 0 으로 온다. 이걸 그대로 쓰면 "정가 0원이 4,130원입니다" 가 된다.
     has_discount = orig_price > curr_price > 0
 
+    # 여기서 말하는 '정가'는 판매자가 상세페이지에 적어 둔 값이지, 시장에서 확인된
+    # 값이 아니다. 실제로 1L 아메리카노 12개 묶음의 정가가 167,700원(개당 13,975원)
+    # 으로 적힌 상품이 있었다 — 89% 할인이 된다. 이런 부풀린 정가를 우리가 보증하듯
+    # "정가보다 149,620원 낮음"이라고 쓰면 표시광고법 문제가 우리 쪽으로 넘어온다.
+    # 그래서 정가를 말할 때는 반드시 출처를 붙인다.
+    ORIG_LABEL = "쿠팡 표시 정가"
+
     storyboard = [
         {
             # 원칙 1·2 — 상품명이 아니라 숫자 하나로 연다. 1초를 넘기면 스크롤된다.
@@ -252,7 +259,7 @@ def build_estatereels_storyboard(product_info: dict, scene_photos: list, concept
             "badge": concept["hook_badge"],
             "caption": _hook_short,
             "sub": clean_title_short,
-            "narration": (f"{spoken_title}. 정가 {orig_price:,}원이 {curr_price:,}원입니다."
+            "narration": (f"{spoken_title}. {ORIG_LABEL} {orig_price:,}원이 {curr_price:,}원입니다."
                           if has_discount else f"{spoken_title}. 지금 {curr_price:,}원입니다."),
             "kb": KB_CYCLE[0]
         },
@@ -263,12 +270,12 @@ def build_estatereels_storyboard(product_info: dict, scene_photos: list, concept
             "role": "point",
             "seq": 1,
             "photo": scene_photos[1],
-            "badge": (f"정가 {orig_price:,}원 → {curr_price:,}원" if has_discount
+            "badge": (f"{ORIG_LABEL} {orig_price:,}원 → {curr_price:,}원" if has_discount
                       else f"현재가 {curr_price:,}원"),
             "caption": (f"어제보다 {diff_val:,}원 내림" if diff_val
                         else (f"{disc_rate}% 할인가 유지" if has_discount and disc_rate
                               else f"{curr_price:,}원")),
-            "sub": (f"정가 {orig_price:,}원" if has_discount else "할인 없이 책정된 가격"),
+            "sub": (f"{ORIG_LABEL} {orig_price:,}원" if has_discount else "할인 없이 책정된 가격"),
             "narration": (f"어제보다 {diff_val:,}원 내렸습니다."
                           if diff_val
                           # '며칠째'는 이전 관측이 있을 때만 할 수 있는 말이다.
@@ -293,9 +300,9 @@ def build_estatereels_storyboard(product_info: dict, scene_photos: list, concept
             "badge": (monthly[:22] if monthly
                       else (f"상품평 {review_cnt:,}개" if review_cnt else f"{disc_rate}% 할인")),
             "caption": (f"상품평 {review_cnt:,}개" if review_cnt
-                        else f"정가 {orig_price:,}원"),
-            "sub": (f"정가보다 {orig_price - curr_price:,}원 낮음"
-                    if orig_price > curr_price else f"현재가 {curr_price:,}원"),
+                        else f"{ORIG_LABEL} {orig_price:,}원"),
+            "sub": (f"{ORIG_LABEL} 대비 {orig_price - curr_price:,}원 낮음"
+                    if has_discount else f"현재가 {curr_price:,}원"),
             "narration": (monthly if monthly
                           else (f"상품평이 {review_cnt:,}개 쌓인 상품입니다." if review_cnt
                                 else f"현재 판매가는 {curr_price:,}원입니다.")),
@@ -348,8 +355,12 @@ def build_estatereels_storyboard(product_info: dict, scene_photos: list, concept
 자막: (caption)
 대사: (narration)
 """
+                    # 모델명을 여기에 박아 두면 구글이 그 버전을 내릴 때 404 로 죽는다.
+                    # (실제로 gemini-2.5-flash 가 신규 사용자에게 막혀 조용히 폴백됐다)
+                    # ai_writer 한 곳에서만 관리한다.
+                    import ai_writer
                     resp = client.models.generate_content(
-                        model="gemini-2.5-flash",
+                        model=ai_writer.MODEL,
                         contents=[sc["photo"], prompt]
                     )
                     text = resp.text.strip()
@@ -380,11 +391,18 @@ def build_estatereels_storyboard(product_info: dict, scene_photos: list, concept
 
     return storyboard
 
-def generate_scene_tts(script_text: str, output_audio_path: str) -> bool:
+def generate_scene_tts(script_text: str, output_audio_path: str, rate: str = "+12%") -> bool:
+    """
+    나레이션 음성을 만든다.
+
+    rate 는 edge-tts 의 증감률 표기다. 기본 속도 대비 얼마나 빠른가를 뜻한다.
+      +12%  블로그용 기본
+      +50%  1.5배속 — 릴스처럼 짧게 끊어 가는 영상에 쓴다
+    """
     if HAS_EDGE_TTS:
         try:
             async def _main():
-                communicate = edge_tts.Communicate(script_text, "ko-KR-SunHiNeural", rate="+12%")
+                communicate = edge_tts.Communicate(script_text, "ko-KR-SunHiNeural", rate=rate)
                 await communicate.save(output_audio_path)
             asyncio.run(_main())
             return True
@@ -473,19 +491,58 @@ def render_estatereels_frame(
     sub_y = 1140
     draw.rectangle([(card_margin, sub_y), (width - card_margin, sub_y + 410)], fill="#14151f", outline="#313150", width=2)
 
-    caption = scene_data.get("caption", "")
-    draw.text((card_margin + 30, sub_y + 30), caption, fill="#a6e3a1", font=f_cap)
-    draw.line([(card_margin + 30, sub_y + 100), (width - card_margin - 30, sub_y + 100)], fill="#313150", width=2)
+    # 자막은 반드시 줄을 접는다. 예전에는 한 줄로 그려서 긴 문장이 화면 밖으로
+    # 잘려 나갔다 — "…다른 것과 함께 담는" 에서 끝나 버려 뜻이 뒤집히기도 한다.
+    text_x = card_margin + 30
+    avail = (width - card_margin - 30) - text_x
 
-    sub_text = scene_data.get("sub", "")
-    draw.text((card_margin + 30, sub_y + 130), sub_text, fill="#cdd6f4", font=f_sub)
+    def _wrap(s: str, font, max_w: int, max_lines: int) -> list:
+        """어절 단위로 접는다. 한 어절이 통째로 넘치면 글자 단위로 끊는다."""
+        out, cur = [], ""
+        for word in (s or "").split():
+            trial = (cur + " " + word).strip()
+            if draw.textlength(trial, font=font) <= max_w:
+                cur = trial
+                continue
+            if cur:
+                out.append(cur)
+                cur = ""
+            if draw.textlength(word, font=font) <= max_w:
+                cur = word
+            else:
+                for ch in word:
+                    if draw.textlength(cur + ch, font=font) <= max_w:
+                        cur += ch
+                    else:
+                        out.append(cur)
+                        cur = ch
+            if len(out) >= max_lines:
+                break
+        if cur and len(out) < max_lines:
+            out.append(cur)
+        return out[:max_lines]
+
+    cap_lines = _wrap(scene_data.get("caption", ""), f_cap, avail, 3)
+    y = sub_y + 26
+    for ln in cap_lines:
+        draw.text((text_x, y), ln, fill="#a6e3a1", font=f_cap)
+        y += 60
+    y += 8
+    draw.line([(text_x, y), (width - card_margin - 30, y)], fill="#313150", width=2)
+
+    y += 26
+    for ln in _wrap(scene_data.get("sub", ""), f_sub, avail, 2):
+        draw.text((text_x, y), ln, fill="#cdd6f4", font=f_sub)
+        y += 46
 
     # 나레이션은 TTS 로 '들리는' 것이다. 화면에 대본을 찍지 않는다.
     # (예전에는 여기에 🗣️ 대사: "..." 를 22자로 잘라 노출해서, 말할 내용이
     #  자막으로 중복되고 문장이 잘려 보였다. 자막=사실 / 음성=이점 원칙에도 어긋난다.)
     extra = scene_data.get("detail", "")
     if extra:
-        draw.text((card_margin + 30, sub_y + 210), extra, fill="#f9e2af", font=f_sub)
+        for ln in _wrap(extra, f_sub, avail, 2):
+            draw.text((text_x, y), ln, fill="#f9e2af", font=f_sub)
+            y += 46
 
     draw.rectangle([(card_margin, 1580), (width - card_margin, 1740)], fill="#89b4fa")
     draw.text((width//2 - 300, 1635), "프로필 · 본문 링크에서 구매", fill="#11111b", font=f_btn)
@@ -495,7 +552,8 @@ def render_estatereels_frame(
 # ════════════════════════════════════════════════════════════════
 # 5. EstateReels 비디오 렌더링 메인 파이프라인 (타임스탬프 신규 파일 생성)
 # ════════════════════════════════════════════════════════════════
-def generate_product_reels_video(product_id_or_url: str, concept_id: str = "price_focus") -> str:
+def generate_product_reels_video(product_id_or_url: str, concept_id: str = "price_focus",
+                                 script_lines: list = None, tts_rate: str = "+12%") -> str:
     """
     D:\\부동산릴스-EstateReels-v2 구성 적용 릴스 비디오 생성
     타임스탬프 기반 파일명을 적용하여 이전 파일 타임스탬프 미갱신 문제 및 파일 잠금 오류를 완벽 방지합니다.
@@ -531,73 +589,81 @@ def generate_product_reels_video(product_id_or_url: str, concept_id: str = "pric
     # 3. EstateReels-v2 스토리보드 구축
     storyboard = build_estatereels_storyboard(product_info, scene_photos, concept_id)
 
-    # 4. 비디오 씬 결합
-    video_clips = []
+    # 호출자가 대사를 직접 준 경우 그것으로 갈아끼운다.
+    # video_pipeline 은 가드레일을 통과한 대사를 만들어 넘긴다 — 스토리보드가
+    # 자체 생성한 문구보다 검증된 문장을 쓰는 편이 낫다.
+    if script_lines:
+        for i, sc in enumerate(storyboard):
+            if i < len(script_lines):
+                sc["narration"] = script_lines[i]
+                sc["caption"] = script_lines[i]   # 렌더러가 줄을 접는다. 자르지 않는다.
+        # 대사가 씬보다 적으면 남는 씬을 잘라 낸다(빈 나레이션으로 정적이 남는 걸 막는다)
+        storyboard = storyboard[:max(1, len(script_lines))]
+
+    # 4. 장면별 영상 만들기
+    #
+    # 예전에는 moviepy 로 붙였는데, moviepy 2.2.1 은 pillow<12.0 을 요구한다.
+    # 이 PC 의 rembg(>=12.1)·pdfplumber(>=12.2) 와 같이 설치될 수 없어 걷어냈다.
+    # 지금은 video_assemble 이 ffmpeg 를 직접 부른다. 하는 일이 프레임 잇기와
+    # 오디오 얹기뿐이라 중간 라이브러리가 필요 없다.
+    import video_assemble as VA
+
+    scene_files = []
+    temp_files = []
     for sc in storyboard:
         seq = sc["seq"]
         audio_file = os.path.join(REELS_DIR, f"audio_{product_id}_sc{seq}_{timestamp_str}.mp3")
-        
-        generate_scene_tts(sc["narration"], audio_file)
-        
-        duration = 3.5
-        if HAS_MOVIEPY and os.path.exists(audio_file):
+
+        generate_scene_tts(sc["narration"], audio_file, rate=tts_rate)
+        temp_files.append(audio_file)
+
+        # 장면 길이는 나레이션 길이에 맞춘다. 말이 끝나기 전에 화면이 넘어가면
+        # 다음 장면에서 앞 문장이 이어져 들린다.
+        dur = VA.audio_duration(audio_file)
+        duration = max(3.0, dur + 0.4) if dur else 3.5
+
+        fps = RENDER_FPS
+        num_frames = max(1, int(duration * fps))
+        frames = [
+            render_estatereels_frame(photo=sc["photo"], scene_data=sc,
+                                     progress=i / max(1, num_frames - 1))
+            for i in range(num_frames)
+        ]
+
+        clip_path = os.path.join(REELS_DIR, f"_scene_{product_id}_{seq}_{timestamp_str}.mp4")
+        try:
+            VA.scene_clip(frames, audio_file, clip_path, fps=fps)
+            scene_files.append(clip_path)
+            temp_files.append(clip_path)
+        except Exception as e:
+            print(f"[EstateReels Clip Error] 장면 {seq} 실패: {e}")
+
+    # 5. 최종 MP4 내보내기
+    #
+    # 예전에는 여기서 만들어지지도 않은 파일의 경로를 반환했다. 호출한 쪽은
+    # 성공으로 알고 원장에 기록했고, 정작 파일은 없었다. 이제는 예외를 던진다.
+    if not scene_files:
+        raise RuntimeError(
+            f"장면을 하나도 만들지 못했습니다 (상품 {product_id}). "
+            "ffmpeg 설치 여부와 위 [Clip Error] 를 확인하세요.")
+
+    try:
+        VA.concat(scene_files, output_mp4_timestamped)
+        try:
+            import shutil
+            shutil.copy2(output_mp4_timestamped, output_mp4_static)
+        except Exception as fe:
+            print(f"[EstateReels Generator Note] 대표 파일 갱신 실패(잠김): {fe}")
+        print(f"[EstateReels Generator] 영상 완성: {output_mp4_timestamped}")
+    finally:
+        for f in temp_files:
             try:
-                a_clip = AudioFileClip(audio_file)
-                duration = max(3.0, a_clip.duration + 0.3)
+                os.remove(f)
             except Exception:
                 pass
-                
-        fps = RENDER_FPS
-        num_frames = int(duration * fps)
-        
-        frames = []
-        for i in range(num_frames):
-            progress = i / max(1, num_frames - 1)
-            frame_img = render_estatereels_frame(
-                photo=sc["photo"],
-                scene_data=sc,
-                progress=progress
-            )
-            frames.append(np.array(frame_img))
-            
-        if HAS_MOVIEPY:
-            try:
-                v_clip = ImageSequenceClip(frames, fps=fps)
-                if os.path.exists(audio_file):
-                    audio_clip = AudioFileClip(audio_file)
-                    if hasattr(v_clip, "with_audio"):
-                        v_clip = v_clip.with_audio(audio_clip)
-                    elif hasattr(v_clip, "set_audio"):
-                        v_clip = v_clip.set_audio(audio_clip)
-                    else:
-                        v_clip.audio = audio_clip
-                video_clips.append(v_clip)
-            except Exception as e:
-                print(f"[EstateReels Clip Error] Scene {seq} error: {e}")
 
-    # 5. 최종 MP4 타임스탬프 파일 내보내기 및 검증
-    if HAS_MOVIEPY and video_clips:
-        try:
-            final_clip = concatenate_videoclips(video_clips, method="compose")
-            
-            # 타임스탬프 포함 고유 신규 파일 저장
-            final_clip.write_videofile(output_mp4_timestamped, fps=OUTPUT_FPS, codec="libx264",
-                                       audio_codec="aac", bitrate=VIDEO_BITRATE, logger=None)
-            
-            # 대표 고정파일명 복사 시도 (잠금 시 타임스탬프 파일로 반환)
-            try:
-                import shutil
-                shutil.copy2(output_mp4_timestamped, output_mp4_static)
-                print(f"[EstateReels Generator] Video updated and saved to static file: {output_mp4_static}")
-            except Exception as fe:
-                print(f"[EstateReels Generator Note] Could not overwrite static file due to file lock: {fe}")
-                
-            print(f"[EstateReels Generator] BRAND NEW Timestamped Video exported: {output_mp4_timestamped}")
-            return output_mp4_timestamped
-        except Exception as e:
-            print(f"[EstateReels Export Error] Concatenate failed: {e}")
-            raise RuntimeError(f"MoviePy export failed: {e}")
-
+    if not os.path.exists(output_mp4_timestamped):
+        raise RuntimeError(f"영상 파일이 만들어지지 않았습니다: {output_mp4_timestamped}")
     return output_mp4_timestamped
 
 if __name__ == "__main__":
