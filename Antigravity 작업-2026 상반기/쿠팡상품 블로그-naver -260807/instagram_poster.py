@@ -33,12 +33,54 @@ HOME = "https://www.instagram.com/"
 
 #: 업로드 사이 간격(초). 연속 업로드는 자동화로 읽힌다.
 UPLOAD_GAP = 90
-#: 사람이 로그인할 때까지 기다리는 시간(분)
-LOGIN_WAIT_MIN = 12.0
+#: 사람이 로그인할 때까지 기다리는 시간(분).
+#: 인스타는 2단계 인증·기기 확인 메일을 요구할 때가 있어 넉넉해야 한다.
+LOGIN_WAIT_MIN = 30.0
+
+
+def _release_profile_lock(log=None) -> int:
+    """
+    앞선 실행이 남긴 크로미움을 정리한다.
+
+    persistent context 는 프로필 디렉터리를 한 프로세스만 쓸 수 있다. 앞 실행이
+    비정상 종료하면 크로미움이 살아남아 잠금을 쥐고, 다음 실행은 시작하자마자
+    "프로필이 이미 사용 중"으로 죽는다 — 실제로 그렇게 한 번 날렸다.
+    """
+    import re
+    import subprocess
+
+    killed = 0
+    try:
+        out = subprocess.run(
+            ["wmic", "process", "where", "name='chrome.exe'",
+             "get", "processid,commandline", "/format:csv"],
+            capture_output=True).stdout.decode("utf-8", "replace")
+        for line in out.splitlines():
+            if os.path.basename(PROFILE_DIR) not in line:
+                continue
+            m = re.search(r"(\d+)\s*$", line.strip())
+            if m:
+                subprocess.run(["taskkill", "/PID", m.group(1), "/T", "/F"],
+                               capture_output=True)
+                killed += 1
+    except Exception:
+        pass
+
+    for name in ("SingletonLock", "SingletonCookie", "SingletonSocket"):
+        try:
+            os.remove(os.path.join(PROFILE_DIR, name))
+        except Exception:
+            pass
+
+    if killed and log:
+        log(f"  이전 실행이 남긴 브라우저 {killed}개를 정리했습니다.")
+    return killed
 
 
 def _log(msg: str) -> None:
-    print(f"[{datetime.now():%m-%d %H:%M:%S}] {msg}")
+    # flush 를 안 하면 파일로 리다이렉트했을 때 진행 상황이 한참 뒤에야 보인다.
+    # 로그인 대기처럼 '지금 뭘 기다리는지'가 중요한 단계에서 치명적이다.
+    print(f"[{datetime.now():%m-%d %H:%M:%S}] {msg}", flush=True)
 
 
 def _wait_login(page, log=_log, minutes: float = LOGIN_WAIT_MIN) -> bool:
@@ -49,43 +91,79 @@ def _wait_login(page, log=_log, minutes: float = LOGIN_WAIT_MIN) -> bool:
     죽은 세션이었던 적이 있다. 화면에서 확인되는 것만 정상으로 친다.
     """
     log("  브라우저에서 인스타그램에 직접 로그인해 주세요. (비밀번호는 이 스크립트가 다루지 않습니다)")
+    log(f"  {minutes:.0f}분 기다립니다. 천천히 하셔도 됩니다 — 화면은 건드리지 않습니다.")
+
+    # 처음 한 번만 연다.
+    #
+    # 예전에는 이 루프가 5초마다 page.goto(HOME) 을 다시 걸었다. 그러면 아이디를
+    # 입력하는 중에 페이지가 새로 열려 입력한 것이 날아간다. 로그인 자체가 불가능했다.
+    # 로그인 여부는 화면을 다시 여는 것이 아니라 지금 떠 있는 DOM 을 보고 판단한다.
+    try:
+        page.goto(HOME, wait_until="domcontentloaded", timeout=30000)
+    except Exception:
+        pass
+
+    MARKS = ('svg[aria-label="새로운 게시물"]', 'svg[aria-label="New post"]',
+             'a[href="/explore/"]', 'svg[aria-label="홈"]', 'svg[aria-label="Home"]')
+
     deadline = time.time() + minutes * 60
+    notified = 0
     while time.time() < deadline:
         try:
-            page.goto(HOME, wait_until="domcontentloaded", timeout=30000)
-            page.wait_for_timeout(2500)
-            for sel in ('svg[aria-label="새로운 게시물"]', 'svg[aria-label="New post"]',
-                        'a[href="#"] >> text=만들기', 'a[href="/explore/"]'):
+            for sel in MARKS:
                 if page.locator(sel).count():
                     log("  ✔ 로그인 확인")
                     return True
         except Exception:
+            # 사용자가 페이지를 옮기는 중이면 조회가 잠깐 실패한다. 그냥 넘어간다.
             pass
-        time.sleep(5)
+
+        left = int(deadline - time.time())
+        if left // 60 != notified:
+            notified = left // 60
+            log(f"    로그인 대기 중… {left // 60}분 남음")
+        time.sleep(3)
+
     log("  ✘ 로그인 대기 시간이 지났습니다.")
     return False
 
 
-def _open_composer(page, log=_log) -> bool:
-    """'만들기' 를 눌러 업로드 창을 연다."""
-    for sel in ('svg[aria-label="새로운 게시물"]', 'svg[aria-label="New post"]'):
-        loc = page.locator(sel)
-        if loc.count():
-            loc.first.click()
-            page.wait_for_timeout(1500)
-            # 사이드바 '만들기' 를 누르면 게시물/릴스 선택이 한 번 더 뜨는 경우가 있다
-            for sub in ("게시물", "Post"):
-                s = page.locator(f'span:has-text("{sub}")')
-                if s.count():
-                    try:
-                        s.first.click()
-                        page.wait_for_timeout(1000)
-                    except Exception:
-                        pass
-                    break
-            return True
-    log("  ✘ '만들기' 버튼을 찾지 못했습니다.")
+def _click_icon(page, labels, wait_ms: int = 3000) -> bool:
+    """
+    아이콘을 화면 좌표로 누른다.
+
+    svg 를 locator.click() 으로 누르면 부모 div 가 클릭을 가로챈다
+    ("subtree intercepts pointer events"). 아이콘을 감싼 a 를 :has() 로 잡아도
+    같은 이유로 실패했다. 결국 좌표를 구해 그 자리를 마우스로 누르는 것이 확실하다.
+    """
+    for label in labels:
+        loc = page.locator(f'svg[aria-label="{label}"]')
+        if not loc.count():
+            continue
+        try:
+            box = loc.first.bounding_box()
+        except Exception:
+            continue
+        if not box:
+            continue
+        page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+        page.wait_for_timeout(wait_ms)
+        return True
     return False
+
+
+def _open_composer(page, log=_log) -> bool:
+    """
+    '만들기 → 게시물' 로 업로드 창을 연다.
+
+    메뉴에 '릴스' 항목은 없다. 세로 영상을 게시물로 올리면 인스타가 알아서 릴스로 만든다.
+    """
+    if not _click_icon(page, ("새로운 게시물", "New post", "만들기", "Create")):
+        log("  ✘ '만들기' 아이콘을 찾지 못했습니다.")
+        return False
+    # 만들기를 누르면 '게시물 / 라이브 방송 / 광고' 가 펼쳐진다.
+    _click_icon(page, ("게시물", "Post"), wait_ms=4000)
+    return True
 
 
 def _click_text(page, texts, timeout_ms=8000) -> bool:
@@ -112,14 +190,23 @@ def _upload_one(page, video_path: str, caption: str, log=_log) -> dict:
     if not _open_composer(page, log):
         return {"ok": False, "why": "업로드 창을 열지 못했습니다."}
 
-    # 파일 선택
+    # 파일 넣기
+    #
+    # '컴퓨터에서 선택' 을 눌러 파일 대화상자를 받는 방식은 계속 시간 초과가 났다.
+    # 인스타는 업로드 창을 열 때 숨겨진 input[type=file] 을 DOM 에 넣어 둔다
+    # (accept 에 video/mp4 가 들어 있다). 거기에 파일을 직접 꽂는 편이 확실하다.
+    # set_input_files 는 숨겨진 input 에도 동작하고, change 이벤트까지 발생시킨다.
     try:
-        with page.expect_file_chooser(timeout=15000) as fc:
-            if not _click_text(page, ["컴퓨터에서 선택", "Select from computer"], 10000):
-                return {"ok": False, "why": "'컴퓨터에서 선택' 버튼을 찾지 못했습니다."}
-        fc.value.set_files(video_path)
+        inp = page.locator('input[type="file"]')
+        page.wait_for_selector('input[type="file"]', state="attached", timeout=20000)
+        target = inp.first
+        for i in range(inp.count()):
+            if "video" in (inp.nth(i).get_attribute("accept") or ""):
+                target = inp.nth(i)
+                break
+        target.set_input_files(video_path)
     except Exception as e:
-        return {"ok": False, "why": f"파일 선택 실패: {str(e)[:120]}"}
+        return {"ok": False, "why": f"파일 넣기 실패: {str(e)[:120]}"}
 
     page.wait_for_timeout(6000)
     # 영상은 업로드 후 인스타가 릴스로 처리하겠다고 물어보는 단계가 끼기도 한다
@@ -171,6 +258,7 @@ def upload_reels(jobs: list, headless: bool = False, log=_log) -> dict:
 
     results = {}
     os.makedirs(PROFILE_DIR, exist_ok=True)
+    _release_profile_lock(log)
     with sync_playwright() as pw:
         ctx = pw.chromium.launch_persistent_context(
             PROFILE_DIR,

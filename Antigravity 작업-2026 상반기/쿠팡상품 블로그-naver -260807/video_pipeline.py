@@ -36,8 +36,11 @@ DB = os.path.join(BASE_DIR, "price_history.db")
 OUT_DIR = os.path.join(BASE_DIR, "reels_output")
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 
-#: 나레이션 배속. edge-tts 의 rate 는 기본 대비 증감률이라 1.5배는 +50% 다.
-TTS_RATE = "+50%"
+#: 나레이션 배속. edge-tts 의 rate 는 기본 대비 증감률이다.
+#: 처음에는 요청대로 1.5배(+50%)로 넣었는데 실제 영상에서 알아듣기 어려웠다.
+#: 자막을 눈으로 따라 읽을 시간도 안 나온다. +15% 로 낮춘다.
+#: 더 빠르게 하려면 이 값만 올리면 된다("+30%" 처럼).
+TTS_RATE = "+15%"
 #: 릴스 목표 길이(초). 인스타는 90초까지 되지만 상품 소개는 짧을수록 끝까지 본다.
 TARGET_SECONDS = 20
 
@@ -156,13 +159,20 @@ def build_script(product: dict, log=log) -> dict:
         facts.append(f"- 상품평 수: {product['review_count']:,}개")
     context = "[쿠팡에서 실제로 수집한 값 — 이 밖의 사실을 지어내지 말 것]\n" + "\n".join(facts)
 
+    # 문장 수를 쓸 수 있는 사진 수에 맞춘다.
+    # 사진보다 문장이 많으면 남는 장면을 같은 사진으로 채우게 되는데, 그러면
+    # 한 병 사진이 네 장면 내내 나온다. 짧아도 반복 없는 편이 낫다.
+    import reels_generator as R
+    n_scenes = min(4, R.count_product_images(product))
+
     prompt = f"""{context}
 
-위 값만 써서 20초짜리 세로 영상(릴스) 대사를 만들어라.
+세로 영상(릴스) 대사를 만들어라.
 
 규칙:
-- 정확히 4문장. 문장마다 짧게. 전체 160자 안쪽.
-  (영상이 4개 장면이라 문장이 남으면 잘려 나간다)
+- 정확히 {n_scenes}문장. 문장마다 짧게. 한 문장 45자 안쪽.
+  (이 상품은 쓸 수 있는 사진이 {n_scenes}장뿐이라 장면도 {n_scenes}개다.
+   문장이 남으면 잘려 나가고, 모자라면 빈 장면이 생긴다)
 - 첫 문장은 이 상품이 필요한 '한 사람의 상황'으로 시작한다. 상품명으로 시작하지 마라.
 - 가격을 말할 때는 확인 시점을 함께 말한다.
 - 개당 단가가 위에 있으면 반드시 쓴다. 총액보다 판단이 선다.
@@ -179,7 +189,7 @@ def build_script(product: dict, log=log) -> dict:
     client = genai.Client(api_key=api_key)
     r = client.models.generate_content(model=ai_writer.MODEL, contents=prompt)
     lines = [x.strip(" -•\t") for x in (r.text or "").strip().split("\n") if x.strip()]
-    lines = [x for x in lines if len(x) > 4][:4]
+    lines = [x for x in lines if len(x) > 4][:n_scenes]
 
     narration = " ".join(lines)
     guard = G.check(narration, context)

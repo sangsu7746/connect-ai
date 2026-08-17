@@ -116,9 +116,29 @@ def fetch_product_multi_images(product_info: dict) -> list:
     if main_url:
         image_urls.append(main_url)
 
-    detail_urls = product_info.get("detail_images", [])
+    # detail_images 는 DB 에 JSON 문자열로 들어 있다.
+    # collector.get_all_products_from_db() 는 파싱해서 주지만, DB 를 직접 조회한
+    # 쪽(video_pipeline.pick_targets 등)은 문자열 그대로 넘긴다. 예전에는 리스트가
+    # 아니면 조용히 버려서, 사진이 여러 장 있어도 대표 이미지 1장만 쓰였다.
+    detail_urls = product_info.get("detail_images") or []
+    if isinstance(detail_urls, str):
+        try:
+            detail_urls = json.loads(detail_urls)
+        except Exception:
+            detail_urls = []
     if isinstance(detail_urls, list):
         image_urls.extend(detail_urls)
+
+    # 갤러리 썸네일이 따로 저장되는 상품이 있다(수집기의 thumbnails 컬럼).
+    # 이걸 안 읽어서 쓸 수 있는 사진을 놓치고 있었다.
+    thumbs = product_info.get("thumbnails") or []
+    if isinstance(thumbs, str):
+        try:
+            thumbs = json.loads(thumbs)
+        except Exception:
+            thumbs = []
+    if isinstance(thumbs, list):
+        image_urls.extend(thumbs)
 
     # image_url 은 detail_images[0] 과 같은 주소인 경우가 많다.
     # 중복을 안 걸러 씬 0 과 씬 1 에 똑같은 사진이 들어간 적이 있다.
@@ -182,27 +202,17 @@ def fetch_product_multi_images(product_info: dict) -> list:
         draw.text((120, 360), f"📸 {product_info.get('title','')[:16]}", fill="#ffffff", font=f)
         loaded_images.append(base_img)
         
-    main_photo = loaded_images[0]
-    scene_photos = [main_photo]
-    
-    if len(loaded_images) > 1:
-        scene_photos.append(loaded_images[1])
-    else:
-        w, h = main_photo.size
-        scene_photos.append(main_photo.crop((int(w*0.1), int(h*0.1), int(w*0.9), int(h*0.7))))
-        
-    if len(loaded_images) > 2:
-        scene_photos.append(loaded_images[2])
-    else:
-        w, h = main_photo.size
-        scene_photos.append(main_photo.crop((int(w*0.05), int(h*0.2), int(w*0.95), int(h*0.9))))
-        
-    if len(loaded_images) > 3:
-        scene_photos.append(loaded_images[3])
-    else:
-        scene_photos.append(main_photo)
-        
-    return scene_photos
+    # 있는 만큼만 돌려준다.
+    #
+    # 예전에는 무조건 4장을 맞추느라 사진이 모자라면 대표 이미지를 잘라 쓰거나
+    # 그대로 한 번 더 넣었다. 그러면 같은 병 사진이 네 장면에 계속 나온다.
+    # 장면 수를 사진 수에 맞추는 편이 낫다 — 짧아지더라도 반복은 없다.
+    return loaded_images[:4]
+
+
+def count_product_images(product_info: dict) -> int:
+    """이 상품으로 만들 수 있는 장면 수. 대사 길이를 여기에 맞춘다."""
+    return max(1, len(fetch_product_multi_images(product_info)))
 
 # ════════════════════════════════════════════════════════════════
 # 3. EstateReels-v2 하이브리드 나레이션 & 자막 생성기
@@ -255,7 +265,7 @@ def build_estatereels_storyboard(product_info: dict, scene_photos: list, concept
             # 원칙 1·2 — 상품명이 아니라 숫자 하나로 연다. 1초를 넘기면 스크롤된다.
             "role": "hook",
             "seq": 0,
-            "photo": scene_photos[0],
+            "photo": scene_photos[0] if len(scene_photos) > 0 else None,
             "badge": concept["hook_badge"],
             "caption": _hook_short,
             "sub": clean_title_short,
@@ -269,7 +279,7 @@ def build_estatereels_storyboard(product_info: dict, scene_photos: list, concept
             #  모델이 원가·재고 사정을 지어냈다)
             "role": "point",
             "seq": 1,
-            "photo": scene_photos[1],
+            "photo": scene_photos[1] if len(scene_photos) > 1 else None,
             "badge": (f"{ORIG_LABEL} {orig_price:,}원 → {curr_price:,}원" if has_discount
                       else f"현재가 {curr_price:,}원"),
             "caption": (f"어제보다 {diff_val:,}원 내림" if diff_val
@@ -294,7 +304,7 @@ def build_estatereels_storyboard(product_info: dict, scene_photos: list, concept
             # 상세페이지에서 정확한 값을 받아온 경우에만(rating_precise) 노출한다.
             "role": "point",
             "seq": 2,
-            "photo": scene_photos[2],
+            "photo": scene_photos[2] if len(scene_photos) > 2 else None,
             # 상품평 수를 못 읽었으면(0) 그 문구를 아예 쓰지 않는다.
             # "상품평이 0개 쌓인 상품입니다"가 나레이션으로 나가던 문제.
             "badge": (monthly[:22] if monthly
@@ -312,7 +322,7 @@ def build_estatereels_storyboard(product_info: dict, scene_photos: list, concept
             # 원칙 4 — 허락자산. '사세요'가 아니라 '무엇을 언제 알려줄지' 약속한다.
             "role": "cta",
             "seq": 3,
-            "photo": scene_photos[3],
+            "photo": scene_photos[3] if len(scene_photos) > 3 else None,
             "badge": "가격 내려가면 다시 올립니다",
             "caption": "링크는 프로필과 본문에",
             "sub": "쿠팡 파트너스 활동으로 수수료를 받습니다",
@@ -389,6 +399,12 @@ def build_estatereels_storyboard(product_info: dict, scene_photos: list, concept
         except Exception as e:
             print(f"[EstateReels AI Note] Storyboard AI enhancement fallback: {e}")
 
+    # 사진이 없는 장면은 버린다. 사진이 2장이면 장면도 2개다.
+    # 예전처럼 대표 이미지를 재탕해 4장면을 억지로 채우지 않는다.
+    storyboard = [sc for sc in storyboard if sc.get("photo") is not None]
+    if not storyboard:
+        raise ValueError("쓸 수 있는 상품 이미지가 한 장도 없습니다.")
+
     return storyboard
 
 def generate_scene_tts(script_text: str, output_audio_path: str, rate: str = "+12%") -> bool:
@@ -441,60 +457,80 @@ def render_estatereels_frame(
     except:
         f_hdr = f_badge = f_cap = f_sub = f_btn = ImageFont.load_default()
 
-    draw.rectangle([(0, 0), (width, 150)], fill="#14151f")
+    # ── 릴스 안전영역 ────────────────────────────────────────────
+    # 인스타 릴스는 영상을 다 보여주지 않는다. 위쪽은 상태바와 'Reels' 헤더가,
+    # 아래쪽은 계정명·캡션·음원 표시가, 오른쪽은 좋아요/댓글/공유 버튼이 덮는다.
+    # 예전 배치는 헤더(y 0~150)와 구매 안내 띠(y 1580~1740)가 통째로 가려졌고,
+    # 자막 상자 아래쪽도 캡션에 묻혔다 — 실제 게시물에서 잘려 보였다.
+    # 그래서 내용을 y 240~1430, x 60~900 안에만 그린다.
+    SAFE_TOP = 240
+    SAFE_BOTTOM = 1430
+    SAFE_RIGHT = width - 180        # 오른쪽 버튼 세로줄을 피한다
+
+    draw.rectangle([(0, SAFE_TOP - 90), (width, SAFE_TOP - 10)], fill="#14151f")
     # 헤더는 부동산릴스에서 넘어온 '🏡 EstateReels' 가 그대로 박혀 있었다.
     # 배지는 이미지 위에 따로 그려지므로 여기서 반복하지 않는다.
-    draw.text((50, 45), scene_data.get("header", "쿠팡 가격 추적"), fill="#f9e2af", font=f_hdr)
+    draw.text((60, SAFE_TOP - 78), scene_data.get("header", "쿠팡 가격 추적"),
+              fill="#f9e2af", font=f_hdr)
 
-    card_margin = 50
-    card_w = width - (card_margin * 2)
-    img_y = 170
-    img_h = 940
+    card_margin = 60
+    card_w = SAFE_RIGHT - card_margin
+    img_y = SAFE_TOP
+    img_h = 700
 
     kb = scene_data.get("kb", "in")
     bw, bh = photo.size if photo else (800, 800)
     
-    zoom = 1.0
+    # 움직임은 항상 '확대에서 시작해 전체가 보이는 상태로' 끝난다.
+    #
+    # 예전에는 확대한 채로 끝나거나(kb="in") 내내 1.1 배로 잘라 놓고 좌우로 밀었다.
+    # 상품 사진은 그래도 괜찮지만 영양성분표·성분표시 같은 정보 이미지는 양옆이
+    # 잘려 글자가 사라진다(실제로 '나트륨'이 '트륨'으로 보였다).
+    # 끝에서 zoom 이 1.0 이 되면 적어도 장면이 끝날 때는 전부 읽을 수 있다.
+    zoom = 1.08 - (progress * 0.08)
     pan_x = 0
     pan_y = 0
-    
-    if kb == "in":
-        zoom = 1.0 + (progress * 0.12)
-    elif kb == "out":
-        zoom = 1.12 - (progress * 0.12)
-    elif kb == "left":
-        zoom = 1.1
-        pan_x = int((progress - 0.5) * 60)
+
+    fade = 1.0 - progress          # 끝으로 갈수록 밀림도 0 이 된다
+    if kb == "left":
+        pan_x = int(-30 * fade)
     elif kb == "right":
-        zoom = 1.1
-        pan_x = int((0.5 - progress) * 60)
+        pan_x = int(30 * fade)
     elif kb == "up":
-        zoom = 1.1
-        pan_y = int((0.5 - progress) * 60)
+        pan_y = int(30 * fade)
+
+    draw.rectangle([(card_margin, img_y), (card_margin + card_w, img_y + img_h)], fill="#1f2335")
 
     if photo:
+        # 예전에는 잘라낸 조각을 카드 크기로 그냥 늘렸다. 카드가 가로로 넓어서
+        # 정사각 상품 사진이 옆으로 퍼지고, 영양성분표 같은 세로 이미지는 글자가
+        # 잘려 나갔다(실제 게시물에서 표 절반이 사라졌다).
+        # 이제 비율을 지켜 카드 안에 통째로 넣는다 — 남는 자리는 배경으로 둔다.
         cw = int(bw / zoom)
         ch = int(bh / zoom)
         left = max(0, min(bw - cw, (bw - cw) // 2 + pan_x))
         top = max(0, min(bh - ch, (bh - ch) // 2 + pan_y))
         cropped = photo.crop((left, top, left + cw, top + ch))
-        resized = cropped.resize((card_w, img_h), Image.Resampling.LANCZOS)
-        canvas.paste(resized, (card_margin, img_y))
-    else:
-        draw.rectangle([(card_margin, img_y), (card_margin + card_w, img_y + img_h)], fill="#1f2335")
+
+        scale = min(card_w / cropped.width, img_h / cropped.height)
+        nw, nh = max(1, int(cropped.width * scale)), max(1, int(cropped.height * scale))
+        resized = cropped.resize((nw, nh), Image.Resampling.LANCZOS)
+        canvas.paste(resized,
+                     (card_margin + (card_w - nw) // 2, img_y + (img_h - nh) // 2))
 
     draw.rectangle([(card_margin, img_y), (card_margin + card_w, img_y + img_h)], outline="#89b4fa", width=3)
 
     draw.rectangle([(card_margin + 20, img_y + 20), (card_margin + 620, img_y + 110)], fill="#89b4fa")
     draw.text((card_margin + 40, img_y + 38), scene_data.get("badge", ""), fill="#11111b", font=f_badge)
 
-    sub_y = 1140
-    draw.rectangle([(card_margin, sub_y), (width - card_margin, sub_y + 410)], fill="#14151f", outline="#313150", width=2)
+    sub_y = img_y + img_h + 30
+    draw.rectangle([(card_margin, sub_y), (SAFE_RIGHT, SAFE_BOTTOM)],
+                   fill="#14151f", outline="#313150", width=2)
 
     # 자막은 반드시 줄을 접는다. 예전에는 한 줄로 그려서 긴 문장이 화면 밖으로
     # 잘려 나갔다 — "…다른 것과 함께 담는" 에서 끝나 버려 뜻이 뒤집히기도 한다.
     text_x = card_margin + 30
-    avail = (width - card_margin - 30) - text_x
+    avail = SAFE_RIGHT - 30 - text_x
 
     def _wrap(s: str, font, max_w: int, max_lines: int) -> list:
         """어절 단위로 접는다. 한 어절이 통째로 넘치면 글자 단위로 끊는다."""
@@ -528,7 +564,7 @@ def render_estatereels_frame(
         draw.text((text_x, y), ln, fill="#a6e3a1", font=f_cap)
         y += 60
     y += 8
-    draw.line([(text_x, y), (width - card_margin - 30, y)], fill="#313150", width=2)
+    draw.line([(text_x, y), (SAFE_RIGHT - 30, y)], fill="#313150", width=2)
 
     y += 26
     for ln in _wrap(scene_data.get("sub", ""), f_sub, avail, 2):
@@ -544,8 +580,14 @@ def render_estatereels_frame(
             draw.text((text_x, y), ln, fill="#f9e2af", font=f_sub)
             y += 46
 
-    draw.rectangle([(card_margin, 1580), (width - card_margin, 1740)], fill="#89b4fa")
-    draw.text((width//2 - 300, 1635), "프로필 · 본문 링크에서 구매", fill="#11111b", font=f_btn)
+    # 구매 안내 띠는 예전에 y 1580~1740 에 있었다. 릴스에서는 그 자리를 계정명과
+    # 캡션이 덮어 아예 보이지 않았다. 자막 상자 안 맨 아래에 넣는다.
+    draw.rectangle([(card_margin + 20, SAFE_BOTTOM - 96),
+                    (SAFE_RIGHT - 20, SAFE_BOTTOM - 20)], fill="#89b4fa")
+    _cta = "프로필 링크에서 구매"
+    _cw = draw.textlength(_cta, font=f_btn)
+    draw.text(((card_margin + SAFE_RIGHT) / 2 - _cw / 2, SAFE_BOTTOM - 84),
+              _cta, fill="#11111b", font=f_btn)
 
     return canvas
 
@@ -619,8 +661,9 @@ def generate_product_reels_video(product_id_or_url: str, concept_id: str = "pric
 
         # 장면 길이는 나레이션 길이에 맞춘다. 말이 끝나기 전에 화면이 넘어가면
         # 다음 장면에서 앞 문장이 이어져 들린다.
+        # 뒤에 0.9초를 더 둔다 — 말이 끝나자마자 넘어가면 자막을 끝까지 못 읽는다.
         dur = VA.audio_duration(audio_file)
-        duration = max(3.0, dur + 0.4) if dur else 3.5
+        duration = max(3.5, dur + 0.9) if dur else 4.0
 
         fps = RENDER_FPS
         num_frames = max(1, int(duration * fps))
