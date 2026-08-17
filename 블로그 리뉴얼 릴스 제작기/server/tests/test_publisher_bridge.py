@@ -16,7 +16,7 @@ def test_publish_parses_result(monkeypatch, tmp_path):
     (tmp_path / "publish_generic.py").write_text("# stub", encoding="utf-8")
     monkeypatch.setattr(pb.settings, "publisher_dir", str(tmp_path))
     def fake_run(cmd, cwd=None, capture_output=None, text=None,
-                 timeout=None, encoding=None):
+                 timeout=None, encoding=None, errors=None):
         class R:
             returncode = 0
             stdout = 'log line\n{"ok": true, "url": "https://blog/1", "error": ""}'
