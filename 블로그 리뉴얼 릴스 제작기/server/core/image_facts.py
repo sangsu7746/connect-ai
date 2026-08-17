@@ -103,15 +103,25 @@ def _download(url: str) -> bytes:
     return buf.getvalue()
 
 
-def extract_facts(post: dict) -> list[dict]:
+def extract_facts(post: dict) -> list[dict] | None:
     """글 하나의 이미지들에서 사실을 뽑아 팩트 시트 행으로 돌려준다.
 
     반환 형태는 analysis.build_fact_sheet 와 같고, 이미지 출처임을 알 수 있게
     from_image=True 를 단다.
+
+    **빈 목록과 None 을 구분한다.**
+      · []   판독은 됐지만 쓸 사실이 없었다 → 캐시에 굳혀도 된다
+      · None 판독 자체를 못 했다(호출 한도·네트워크·키 없음) → 캐시에 굳히면 안 된다
+
+    이 구분이 없으면 한도 초과 한 번에 그 글의 이미지 사실을 영구히 잃는다.
+    호출부가 실패를 빈 결과로 저장하고, 캐시가 있다는 이유로 다시는 판독하지
+    않기 때문이다 — 2026-08-17 실제로 10건 중 9건이 이렇게 날아갔다.
     """
     urls = post.get("image_urls") or []
-    if not urls or not gemini.available():
-        return []
+    if not urls:
+        return []             # 이미지가 없으면 사실도 없다 (실패가 아니다)
+    if not gemini.available():
+        return None           # 키가 생기면 그때 판독해야 한다
 
     images: list[bytes] = []
     for url in urls:
@@ -120,15 +130,15 @@ def extract_facts(post: dict) -> list[dict]:
         except Exception:
             continue          # 개별 이미지 실패는 건너뛴다
     if not images:
-        return []
+        return None           # 전부 못 받았다 — 일시적일 수 있다
 
     try:
         parsed = gemini.parse_json(
             gemini.generate_vision(_PROMPT, images, mime="image/jpeg"))
     except Exception:
-        return []
+        return None
     if not isinstance(parsed, list):
-        return []
+        return None
 
     facts: list[dict] = []
     seen: set[str] = set()

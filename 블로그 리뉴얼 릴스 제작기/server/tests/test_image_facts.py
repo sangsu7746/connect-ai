@@ -32,15 +32,24 @@ def test_extract_drops_factless_lines(monkeypatch):
 
 
 def test_extract_empty_when_no_images(monkeypatch):
+    # 이미지가 없으면 사실도 없다 — 실패가 아니므로 캐시에 굳혀도 된다
     _setup(monkeypatch)
     assert image_facts.extract_facts({**POST, "image_urls": []}) == []
 
 
+def test_extract_returns_empty_list_when_model_finds_nothing(monkeypatch):
+    # 판독은 성공했으나 쓸 사실이 없는 경우 — None 이 아니라 [] 여야 캐시된다
+    _setup(monkeypatch, "[]")
+    assert image_facts.extract_facts(POST) == []
+
+
+# 아래 넷은 "판독 실패"라 None 이어야 한다. [] 로 돌려주면 호출부가 빈 결과를
+# 캐시에 굳혀 그 글의 이미지 사실을 영구히 잃는다(2026-08-17 실제 발생).
 def test_extract_survives_download_failure(monkeypatch):
     _setup(monkeypatch)
     monkeypatch.setattr(image_facts, "_download",
                         lambda url: (_ for _ in ()).throw(OSError("down")))
-    assert image_facts.extract_facts(POST) == []
+    assert image_facts.extract_facts(POST) is None
 
 
 def test_extract_survives_gemini_failure(monkeypatch):
@@ -48,18 +57,18 @@ def test_extract_survives_gemini_failure(monkeypatch):
     def boom(prompt, images, **kw):
         raise RuntimeError("gemini down")
     monkeypatch.setattr(image_facts.gemini, "generate_vision", boom)
-    assert image_facts.extract_facts(POST) == []
+    assert image_facts.extract_facts(POST) is None
 
 
 def test_extract_skips_when_gemini_unavailable(monkeypatch):
     _setup(monkeypatch)
     monkeypatch.setattr(image_facts.gemini, "available", lambda: False)
-    assert image_facts.extract_facts(POST) == []
+    assert image_facts.extract_facts(POST) is None
 
 
 def test_extract_handles_non_list_response(monkeypatch):
     _setup(monkeypatch, '{"facts": "wrong shape"}')
-    assert image_facts.extract_facts(POST) == []
+    assert image_facts.extract_facts(POST) is None
 
 
 @pytest.mark.parametrize("text", [

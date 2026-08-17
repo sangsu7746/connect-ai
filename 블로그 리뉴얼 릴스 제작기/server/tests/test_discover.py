@@ -115,6 +115,38 @@ def test_discover_image_facts_cached(monkeypatch, tmp_path):
     assert len(calls) == n           # 캐시 — 비전 재호출 없음
 
 
+def test_discover_retries_after_failed_read(monkeypatch, tmp_path):
+    """판독 실패(None)는 캐시에 굳히지 않고 다음 수집에서 다시 시도해야 한다.
+
+    실패를 빈 결과로 저장하면 캐시가 있다는 이유로 다시는 판독하지 않는다 —
+    호출 한도 한 번에 그 글의 이미지 사실을 영구히 잃는다(2026-08-17 실제 발생).
+    """
+    c = make_client(monkeypatch, tmp_path)
+    import api.discover as disc
+    monkeypatch.setattr(disc.crawler, "fetch_images", lambda url: ["https://x.net/t.jpg"])
+    calls = []
+    failed: dict[str, str] = {}
+
+    def flaky(post):
+        calls.append(post["url"])
+        if not failed:                       # 맨 처음 만난 글 하나만 판독 실패
+            failed["url"] = post["url"]
+            return None
+        return [{"fact": "한도는 7억원이다.", "source_title": "", "source_url": "",
+                 "from_image": True}]
+
+    monkeypatch.setattr(disc.image_facts, "extract_facts", flaky)
+    c.post("/api/categories/1/discover", json={"keyword": "전세 보증보험"})
+    failed_url = failed["url"]
+
+    calls.clear()
+    c.post("/api/categories/1/discover", json={"keyword": "전세 보증보험"})
+    assert calls == [failed_url]             # 실패한 글만 재시도, 나머지는 캐시
+
+    facts = {p["url"]: p["image_facts"] for p in c.get("/api/categories/1/posts").json()}
+    assert facts[failed_url] and facts[failed_url][0]["from_image"]
+
+
 def test_discover_survives_image_failure(monkeypatch, tmp_path):
     c = make_client(monkeypatch, tmp_path)
     import api.discover as disc

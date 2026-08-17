@@ -77,11 +77,17 @@ def discover(cid: int, body: DiscoverIn):
             except Exception:
                 urls = []
             row["image_urls"] = urls
-            row["image_facts"] = image_facts.extract_facts(row) if urls else []
+            facts = image_facts.extract_facts(row)
+            if facts is None:
+                # 판독 실패(호출 한도 등) — 캐시에 굳히지 않는다. 굳히면 다음
+                # 수집이 캐시를 믿고 건너뛰어 이 글의 사실을 영구히 잃는다.
+                row["image_facts"] = []
+                continue
+            row["image_facts"] = facts
             conn.execute(
                 "UPDATE posts SET image_urls_json=?, image_facts_json=? WHERE id=?",
                 (json.dumps(urls, ensure_ascii=False),
-                 json.dumps(row["image_facts"], ensure_ascii=False), row["id"]))
+                 json.dumps(facts, ensure_ascii=False), row["id"]))
         conn.commit()
 
         # 진단 (순수 계산 — 트랜잭션 짧음)
