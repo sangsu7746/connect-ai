@@ -108,8 +108,25 @@ def get_conn() -> sqlite3.Connection:
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
+#: 나중에 추가된 컬럼들. SCHEMA는 CREATE TABLE IF NOT EXISTS 라서 **이미 만들어진
+#: 테이블에는 새 컬럼이 붙지 않는다** — 새 DB로만 돌리는 테스트는 통과하고 사용자
+#: DB에서만 "no such column"으로 죽는다(실제로 발생). 여기에 적어 두면 기동 시 채운다.
+ADDED_COLUMNS = [
+    ("posts", "image_urls_json", "TEXT DEFAULT '[]'"),
+    ("posts", "image_facts_json", "TEXT DEFAULT '[]'"),
+]
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    for table, column, ddl in ADDED_COLUMNS:
+        have = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+        if have and column not in have:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+
+
 def init_db() -> None:
     conn = get_conn()
     conn.executescript(SCHEMA)
+    _migrate(conn)
     conn.commit()
     conn.close()
