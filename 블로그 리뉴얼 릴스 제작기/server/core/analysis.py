@@ -10,11 +10,32 @@ from .purple_cow_blog import extract_numbers
 
 
 def corpus_text(posts: list[dict]) -> str:
-    return "\n".join((p.get("content") or p.get("summary") or "") for p in posts)
+    """게이트(guardrails)의 숫자 대조 근거가 되는 원문 뭉치.
+
+    이미지에서 읽은 사실도 포함해야 한다 — 안 그러면 이미지 표에서 가져온
+    숫자를 대본에 썼을 때 "수집 글에 없는 숫자"로 차단되는 모순이 생긴다.
+    """
+    chunks = []
+    for p in posts:
+        chunks.append(p.get("content") or p.get("summary") or "")
+        for f in (p.get("image_facts") or []):
+            chunks.append(f.get("fact", ""))
+    return "\n".join(c for c in chunks if c)
 
 
 def build_fact_sheet(posts: list[dict], limit: int = 40) -> list[dict]:
     facts, seen = [], set()
+    # 이미지에서 읽은 사실을 먼저 넣는다 — 본문에 없는 표 속 수치라 가치가 높고,
+    # limit 에 걸려 잘리더라도 살아남게 한다.
+    for p in posts:
+        for f in (p.get("image_facts") or []):
+            text = (f.get("fact") or "").strip()
+            if not text or text in seen:
+                continue
+            seen.add(text)
+            facts.append(f)
+            if len(facts) >= limit:
+                return facts
     for p in posts:
         for line in (p.get("content") or "").splitlines():
             line = line.strip()

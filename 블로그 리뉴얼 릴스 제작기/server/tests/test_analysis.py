@@ -50,3 +50,35 @@ def test_extract_chapters_gates_titles(monkeypatch):
     ch = analysis.extract_chapters(POSTS, 2)
     assert len(ch) == 2 and "가입 절차" in ch
     assert all("92" not in c for c in ch)      # 코퍼스에 없는 숫자 타이틀 교체됨
+
+
+IMG_POSTS = [
+    {"title": "보증보험 정리", "url": "https://a/1",
+     "content": "본문 텍스트에는 숫자가 없다.",
+     "image_facts": [{"fact": "보증료는 연 0.128%다.", "source_title": "보증보험 정리",
+                      "source_url": "https://a/1", "from_image": True}]},
+]
+
+
+def test_fact_sheet_merges_image_facts():
+    facts = analysis.build_fact_sheet(IMG_POSTS)
+    texts = [f["fact"] for f in facts]
+    assert "보증료는 연 0.128%다." in texts
+    img = [f for f in facts if f.get("from_image")]
+    assert len(img) == 1
+
+
+def test_corpus_includes_image_facts_for_gate():
+    """이미지에서 읽은 숫자를 대본에 썼는데 게이트가 막으면 모순이다 —
+    corpus(게이트의 유일한 근거)에 이미지 팩트도 들어가야 한다."""
+    corpus = analysis.corpus_text(IMG_POSTS)
+    assert "0.128" in corpus
+
+    from core import guardrails
+    r = guardrails.check("보증료는 연 0.128% 수준이다.", corpus)
+    assert r["ok"], r["blocking"]
+
+
+def test_corpus_without_image_facts_unchanged():
+    plain = [{"title": "t", "url": "u", "content": "보증료는 연 0.128%다."}]
+    assert "0.128" in analysis.corpus_text(plain)

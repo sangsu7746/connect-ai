@@ -41,3 +41,43 @@ def test_fetch_jina_status_and_exception(monkeypatch):
         raise OSError("net down")
     monkeypatch.setattr(httpx, "get", boom)
     assert crawler.fetch_jina("https://x.com/1") == ""
+
+
+NAVER_IMG_HTML = """
+<div class="se-main-container">
+  <p>본문</p>
+  <img class="se-image-resource" width="886" src="https://x.pstatic.net/big1.jpg">
+  <img class="se-image-resource" width="886" data-lazy-src="https://x.pstatic.net/big2.jpg">
+  <img class="icon" width="20" src="https://x.pstatic.net/icon.gif">
+  <img class="se-sticker-image" width="300" src="https://x.pstatic.net/sticker.png">
+  <img src="https://ssl.pstatic.net/static/blog/profile.png">
+</div>
+"""
+
+
+def test_extract_images_keeps_content_only():
+    urls = crawler.extract_images(NAVER_IMG_HTML, "https://blog.naver.com/a/1")
+    assert "https://x.pstatic.net/big1.jpg" in urls
+    assert "https://x.pstatic.net/big2.jpg" in urls      # lazy-src 도 수집
+    assert not any("icon" in u for u in urls)            # 작은 아이콘 제외
+    assert not any("sticker" in u for u in urls)         # 스티커 제외
+    assert not any("profile" in u for u in urls)         # 프로필 제외
+
+
+def test_extract_images_caps_and_dedups():
+    many = '<div class="se-main-container">' + "".join(
+        f'<img class="se-image-resource" width="886" src="https://x.net/{i}.jpg">'
+        for i in range(12)) + '<img class="se-image-resource" width="886" src="https://x.net/0.jpg"></div>'
+    urls = crawler.extract_images(many, "https://blog.naver.com/a/1")
+    assert len(urls) == crawler.MAX_IMAGES
+    assert len(set(urls)) == len(urls)                   # 중복 없음
+
+
+def test_extract_images_relative_to_absolute():
+    html = '<article><img width="800" src="/img/chart.png"></article>'
+    urls = crawler.extract_images(html, "https://blog.example.com/post/1")
+    assert urls == ["https://blog.example.com/img/chart.png"]
+
+
+def test_extract_images_empty_on_no_content():
+    assert crawler.extract_images("<html><body></body></html>", "https://x.com/1") == []

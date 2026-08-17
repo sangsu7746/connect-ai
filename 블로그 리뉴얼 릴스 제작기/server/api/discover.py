@@ -2,7 +2,7 @@ import datetime, json
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from core.db import get_conn
-from core import naver, google_search, crawler, purple_cow_blog
+from core import naver, google_search, crawler, image_facts, purple_cow_blog
 
 router = APIRouter(prefix="/api/categories", tags=["discover"])
 
@@ -64,6 +64,26 @@ def discover(cid: int, body: DiscoverIn):
                          (content, ts, pid))
         conn.commit()
 
+        # 본문 이미지 수집 + 이미지 속 사실 판독 (spec §12-B).
+        # 이미지 실패는 조용히 건너뛴다 — 수집 전체가 멈추면 안 된다.
+        # 판독 결과는 글에 캐시해 재수집 시 비전 호출을 반복하지 않는다.
+        for row in rows:
+            if json.loads(row.get("image_urls_json") or "[]"):
+                row["image_urls"] = json.loads(row["image_urls_json"])
+                row["image_facts"] = json.loads(row.get("image_facts_json") or "[]")
+                continue
+            try:
+                urls = crawler.fetch_images(row["url"])
+            except Exception:
+                urls = []
+            row["image_urls"] = urls
+            row["image_facts"] = image_facts.extract_facts(row) if urls else []
+            conn.execute(
+                "UPDATE posts SET image_urls_json=?, image_facts_json=? WHERE id=?",
+                (json.dumps(urls, ensure_ascii=False),
+                 json.dumps(row["image_facts"], ensure_ascii=False), row["id"]))
+        conn.commit()
+
         # 진단 (순수 계산 — 트랜잭션 짧음)
         for row in rows:
             corpus = [{"title": r["title"], "source": r["source"]}
@@ -89,7 +109,8 @@ def list_posts(cid: int, source: str = "all"):
     conn = get_conn()
     try:
         q = """SELECT p.id, p.source, p.title, p.url, p.summary, p.blogger,
-                      p.posted_at, p.keyword, d.score, d.verdict, d.hooks_json
+                      p.posted_at, p.keyword, p.image_urls_json, p.image_facts_json,
+                      d.score, d.verdict, d.hooks_json
                FROM posts p LEFT JOIN diagnoses d ON d.post_id = p.id
                WHERE p.category_id=?"""
         args: list = [cid]
@@ -101,6 +122,8 @@ def list_posts(cid: int, source: str = "all"):
         for r in conn.execute(q, args):
             row = dict(r)
             row["hooks"] = json.loads(row.pop("hooks_json") or "[]")
+            row["image_urls"] = json.loads(row.pop("image_urls_json") or "[]")
+            row["image_facts"] = json.loads(row.pop("image_facts_json") or "[]")
             out.append(row)
         return out
     finally:

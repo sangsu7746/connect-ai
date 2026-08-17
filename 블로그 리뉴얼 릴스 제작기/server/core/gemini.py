@@ -1,4 +1,5 @@
 """Gemini REST 클라이언트. SDK 없이 httpx 직접 호출, 모델 체인 폴백 (spec §7)."""
+import base64
 import json
 import re
 
@@ -26,6 +27,23 @@ def available() -> bool:
 
 
 def generate(prompt: str, temperature: float = 0.8, max_tokens: int = 4096) -> str:
+    return _call([{"text": prompt}], temperature, max_tokens)
+
+
+def generate_vision(prompt: str, images: list[bytes], temperature: float = 0.2,
+                    max_tokens: int = 2048, mime: str = "image/png") -> str:
+    """이미지와 함께 묻는다 (spec §12-B). 수집 이미지의 '사실'을 읽는 용도라
+    temperature 를 낮게 둔다 — 추론이 아니라 판독이 목적이다."""
+    if not images:
+        raise GeminiError("이미지가 없습니다")
+    parts = [{"text": prompt}]
+    for raw in images:
+        parts.append({"inline_data": {"mime_type": mime,
+                                      "data": base64.b64encode(raw).decode()}})
+    return _call(parts, temperature, max_tokens)
+
+
+def _call(parts: list, temperature: float, max_tokens: int) -> str:
     if not available():
         raise GeminiError("GEMINI_API_KEY 미설정")
     last = None
@@ -33,7 +51,7 @@ def generate(prompt: str, temperature: float = 0.8, max_tokens: int = 4096) -> s
         try:
             r = httpx.post(
                 _URL.format(model=model),
-                json={"contents": [{"parts": [{"text": prompt}]}],
+                json={"contents": [{"parts": parts}],
                       "generationConfig": {
                           "temperature": temperature,
                           "maxOutputTokens": max_tokens + THINKING_HEADROOM}},
@@ -42,8 +60,10 @@ def generate(prompt: str, temperature: float = 0.8, max_tokens: int = 4096) -> s
             if r.status_code != 200:
                 last = f"{model}: HTTP {r.status_code}"
                 continue
-            parts = r.json()["candidates"][0]["content"]["parts"]
-            text = "".join(p.get("text", "") for p in parts).strip()
+            # 응답을 parts 에 덮어쓰면 안 된다 — 빈 응답으로 다음 모델을 시도할 때
+            # 요청 본문이 앞 모델의 응답으로 바뀌어 엉뚱한 걸 보내게 된다.
+            got = r.json()["candidates"][0]["content"]["parts"]
+            text = "".join(p.get("text", "") for p in got).strip()
             if text:
                 return text
             last = f"{model}: 빈 응답"

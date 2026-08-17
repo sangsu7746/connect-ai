@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS posts(
   blogger TEXT DEFAULT '',
   posted_at TEXT DEFAULT '',
   content TEXT DEFAULT '',
+  image_urls_json TEXT DEFAULT '[]',
+  image_facts_json TEXT DEFAULT '[]',
   crawled_at TEXT,
   fetched_at TEXT
 );

@@ -80,3 +80,48 @@ def test_discover_survives_naver_failure(monkeypatch, tmp_path):
     assert r.status_code == 200                       # 구글만으로 진행
     posts = c.get("/api/categories/1/posts").json()
     assert {p["source"] for p in posts} == {"google"}
+
+
+def test_discover_stores_images_and_facts(monkeypatch, tmp_path):
+    c = make_client(monkeypatch, tmp_path)
+    import api.discover as disc
+    monkeypatch.setattr(disc.crawler, "fetch_images",
+                        lambda url: ["https://x.net/table.jpg"])
+    monkeypatch.setattr(disc.image_facts, "extract_facts",
+                        lambda post: [{"fact": "보증료는 연 0.128%다.",
+                                       "source_title": post["title"],
+                                       "source_url": post["url"],
+                                       "from_image": True}])
+    c.post("/api/categories/1/discover", json={"keyword": "전세 보증보험"})
+    posts = c.get("/api/categories/1/posts").json()
+    assert all(p["image_urls"] == ["https://x.net/table.jpg"] for p in posts)
+    assert all(p["image_facts"][0]["from_image"] for p in posts)
+
+
+def test_discover_image_facts_cached(monkeypatch, tmp_path):
+    c = make_client(monkeypatch, tmp_path)
+    import api.discover as disc
+    monkeypatch.setattr(disc.crawler, "fetch_images", lambda url: ["https://x.net/t.jpg"])
+    calls = []
+    def spy(post):
+        calls.append(post["url"])
+        return [{"fact": "한도는 7억원이다.", "source_title": "", "source_url": "",
+                 "from_image": True}]
+    monkeypatch.setattr(disc.image_facts, "extract_facts", spy)
+    c.post("/api/categories/1/discover", json={"keyword": "전세 보증보험"})
+    n = len(calls)
+    assert n > 0
+    c.post("/api/categories/1/discover", json={"keyword": "전세 보증보험"})
+    assert len(calls) == n           # 캐시 — 비전 재호출 없음
+
+
+def test_discover_survives_image_failure(monkeypatch, tmp_path):
+    c = make_client(monkeypatch, tmp_path)
+    import api.discover as disc
+    def boom(url):
+        raise OSError("image fetch down")
+    monkeypatch.setattr(disc.crawler, "fetch_images", boom)
+    r = c.post("/api/categories/1/discover", json={"keyword": "전세 보증보험"})
+    assert r.status_code == 200      # 이미지 실패가 수집을 멈추지 않는다
+    posts = c.get("/api/categories/1/posts").json()
+    assert len(posts) == 3 and all(p["image_urls"] == [] for p in posts)

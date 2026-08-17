@@ -71,3 +71,63 @@ def test_model_chain_has_no_retired_models():
     assert "gemini-1.5-flash" not in gemini.MODEL_CHAIN
     assert "gemini-2.5-flash" not in gemini.MODEL_CHAIN
     assert gemini.MODEL_CHAIN[0] == "gemini-3.5-flash"
+
+
+def _vision_resp(status, text="응답"):
+    body = {"candidates": [{"content": {"parts": [{"text": text}]}}]}
+    return httpx.Response(status, json=body if status == 200 else {"error": {}},
+                          request=httpx.Request("POST", "u"))
+
+
+def test_generate_vision_sends_inline_images(monkeypatch):
+    monkeypatch.setattr(gemini.settings, "gemini_api_key", "k")
+    seen = {}
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        seen["body"] = json
+        return _vision_resp(200, '["보증료 연 0.128%"]')
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    out = gemini.generate_vision("이 표의 수치를 읽어라",
+                                 [b"\x89PNG_a", b"\x89PNG_b"])
+    assert out == '["보증료 연 0.128%"]'
+    parts = seen["body"]["contents"][0]["parts"]
+    assert parts[0]["text"] == "이 표의 수치를 읽어라"
+    assert len(parts) == 3                                   # 프롬프트 + 이미지 2장
+    assert parts[1]["inline_data"]["mime_type"] == "image/png"
+    import base64
+    assert base64.b64decode(parts[1]["inline_data"]["data"]) == b"\x89PNG_a"
+
+
+def test_generate_vision_without_images_raises(monkeypatch):
+    monkeypatch.setattr(gemini.settings, "gemini_api_key", "k")
+    with pytest.raises(gemini.GeminiError):
+        gemini.generate_vision("p", [])
+
+
+def test_generate_vision_falls_back_across_models(monkeypatch):
+    monkeypatch.setattr(gemini.settings, "gemini_api_key", "k")
+    calls = []
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        calls.append(url)
+        return _vision_resp(500) if len(calls) == 1 else _vision_resp(200, "ok")
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    assert gemini.generate_vision("p", [b"img"]) == "ok"
+    assert len(calls) == 2
+
+
+def test_empty_response_does_not_corrupt_next_request(monkeypatch):
+    """빈 응답 뒤 재시도 때 요청 본문이 앞 모델의 응답으로 바뀌면 안 된다."""
+    monkeypatch.setattr(gemini.settings, "gemini_api_key", "k")
+    bodies = []
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        bodies.append(json["contents"][0]["parts"])
+        # 1차: HTTP 200 이지만 본문이 비어 있음 → 2차 모델로 넘어간다
+        return _resp(200, "" if len(bodies) == 1 else "폴백 성공")
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    assert gemini.generate("원래 프롬프트") == "폴백 성공"
+    assert bodies[0] == bodies[1] == [{"text": "원래 프롬프트"}]
