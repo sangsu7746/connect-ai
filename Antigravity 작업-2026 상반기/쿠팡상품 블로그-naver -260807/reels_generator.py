@@ -202,11 +202,22 @@ def fetch_product_multi_images(product_info: dict) -> list:
         draw.text((120, 360), f"📸 {product_info.get('title','')[:16]}", fill="#ffffff", font=f)
         loaded_images.append(base_img)
         
-    # 있는 만큼만 돌려준다.
+    # 상품 사진이 모자라면 상품평 사진으로 채운다.
     #
-    # 예전에는 무조건 4장을 맞추느라 사진이 모자라면 대표 이미지를 잘라 쓰거나
-    # 그대로 한 번 더 넣었다. 그러면 같은 병 사진이 네 장면에 계속 나온다.
-    # 장면 수를 사진 수에 맞추는 편이 낫다 — 짧아지더라도 반복은 없다.
+    # 예전에는 무조건 4장을 맞추느라 대표 이미지를 잘라 쓰거나 그대로 한 번 더
+    # 넣었다. 그러면 같은 병 사진이 네 장면에 계속 나온다. 재탕은 하지 않는다.
+    # 상품평 사진은 구매자가 찍은 것이라 얼굴·문서가 섞여 있다 — review_photos 가
+    # 그것들을 걸러 낸다. 자세한 사정은 그 모듈 설명에 적어 두었다.
+    if len(loaded_images) < 4:
+        try:
+            import review_photos
+            extra = review_photos.usable_review_photos(
+                product_info, want=4 - len(loaded_images))
+            loaded_images.extend(extra)
+        except Exception as e:
+            print(f"[Review Photo Note] 상품평 사진을 쓰지 못했습니다: {str(e)[:90]}")
+
+    # 그래도 모자라면 있는 만큼만 쓴다. 장면 수를 사진 수에 맞춘다.
     return loaded_images[:4]
 
 

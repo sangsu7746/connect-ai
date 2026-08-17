@@ -99,6 +99,7 @@ NEW_COLUMNS = [
     ("delivery_info", "TEXT"),     # "내일(월) 8/10 도착 보장"
     ("specs", "TEXT"),             # JSON — 제조년월일/재질/구성 등
     ("thumbnails", "TEXT"),        # JSON — 갤러리 이미지(고해상도 치환본)
+    ("review_images", "TEXT"),     # JSON — 상품평 사진. 상품 사진이 모자랄 때 쓰는 보조 소재
     ("is_real", "INTEGER DEFAULT 0"),   # 1 = 실제 수집, 0 = 기존 더미
     ("collected_at", "DATETIME"),
 ]
@@ -151,7 +152,8 @@ def save_real_products(products: list) -> int:
         # 목록 수집은 대표 이미지 1장만 주는데, 그게 상세 수집으로 모은 16장을
         # 덮어써 버린 적이 있다. 더 많이 가진 쪽을 남긴다.
         row = cur.execute(
-            "SELECT detail_images, thumbnails, detail_url FROM products WHERE product_id=?",
+            "SELECT detail_images, thumbnails, detail_url, review_images "
+            "FROM products WHERE product_id=?",
             (p["product_id"],)).fetchone()
         if row:
             # 옵션 파라미터(itemId)가 붙은 URL 이 더 정확하다. 파라미터 없는 URL 로
@@ -160,7 +162,8 @@ def save_real_products(products: list) -> int:
             new_url = p.get("detail_url") or ""
             if "itemId=" in old_url and "itemId=" not in new_url:
                 p["detail_url"] = old_url
-            for key, idx in (("detail_images", 0), ("thumbnails", 1)):
+            for key, idx in (("detail_images", 0), ("thumbnails", 1),
+                             ("review_images", 3)):
                 try:
                     old = json.loads(row[idx] or "[]")
                 except Exception:
@@ -174,8 +177,9 @@ def save_real_products(products: list) -> int:
             product_id, title, category, original_price, current_price, discount_rate,
             image_url, detail_images, affiliate_url, is_rocket, review_count, rating,
             rank_num, updated_at, detail_url, vendor_item_id, item_id, brand,
-            monthly_buyers, delivery_info, specs, thumbnails, is_real, collected_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)
+            monthly_buyers, delivery_info, specs, thumbnails, review_images,
+            is_real, collected_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)
         ON CONFLICT(product_id) DO UPDATE SET
             -- 빈 값으로 기존 값을 덮어쓰지 않는다.
             -- 상세 수집만 단독 실행하면 목록에서 얻은 가격·리뷰수가 0 으로 밀려
@@ -208,6 +212,7 @@ def save_real_products(products: list) -> int:
             delivery_info=CASE WHEN excluded.delivery_info<>'' THEN excluded.delivery_info ELSE products.delivery_info END,
             specs=CASE WHEN excluded.specs NOT IN ('','{}') THEN excluded.specs ELSE products.specs END,
             thumbnails=CASE WHEN excluded.thumbnails NOT IN ('','[]') THEN excluded.thumbnails ELSE products.thumbnails END,
+            review_images=CASE WHEN excluded.review_images NOT IN ('','[]') THEN excluded.review_images ELSE products.review_images END,
             is_real=1, collected_at=excluded.collected_at
         """, (
             p["product_id"], p["title"], p.get("category", ""),
@@ -218,7 +223,8 @@ def save_real_products(products: list) -> int:
             p.get("detail_url", ""), p.get("vendor_item_id", ""), p.get("item_id", ""),
             p.get("brand", ""), p.get("monthly_buyers", ""), p.get("delivery_info", ""),
             json.dumps(p.get("specs", {}), ensure_ascii=False),
-            json.dumps(p.get("thumbnails", []), ensure_ascii=False), now,
+            json.dumps(p.get("thumbnails", []), ensure_ascii=False),
+            json.dumps(p.get("review_images", []), ensure_ascii=False), now,
         ))
         if p.get("current_price"):
             cur.execute("""
@@ -399,8 +405,10 @@ def collect_goldbox(limit: int = 60, headless: bool = False) -> list:
 _DETAIL_JS = r"""
 async () => {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
-  // 상세 설명 이미지는 lazy-load — 아래까지 훑어야 src 가 채워진다
-  for (let y = 0; y < 6; y++) { window.scrollTo(0, document.body.scrollHeight * y / 6); await sleep(450); }
+  // 상세 설명 이미지는 lazy-load — 아래까지 훑어야 src 가 채워진다.
+  // 상품평은 그보다 더 아래에 있어서 6단계로는 못 닿는다. 12단계로 끝까지 내린다.
+  for (let y = 0; y <= 12; y++) { window.scrollTo(0, document.body.scrollHeight * y / 12); await sleep(450); }
+  await sleep(1200);
   window.scrollTo(0, 0);
   await sleep(400);
 
@@ -433,6 +441,17 @@ async () => {
     .map(i => i.src || i.dataset.src || '')
     .filter(u => /thumbnail\d*\.coupangcdn\.com\/thumbnails\/remote\/\d+x\d+ex\//.test(u))
     .filter(u => !/logo|icon|badge|sprite/i.test(u));
+
+  // 상품평 사진 — 상품 사진이 모자랄 때 장면을 채우는 소재.
+  // 경로가 PRODUCTREVIEW 다. 반드시 상품평 영역(#sdpReview) 안에서만 긁는다 —
+  // 페이지 전체에서 긁으면 '이 상품을 본 사람들이 산 상품' 캐러셀이 섞인다.
+  // 기본 크기는 320px 인데 릴스에 넣기엔 너무 작다. 경로의 크기 숫자만 바꾸면
+  // 1000px 이 내려온다(실측: 320→(320,427), 1000→(1000,1333)).
+  const revRoot = document.querySelector('#sdpReview, [class*="sdp-review"]');
+  const reviewImgs = (revRoot ? [...revRoot.querySelectorAll('img')] : [])
+    .map(i => i.src || i.dataset.src || i.getAttribute('data-original') || '')
+    .filter(u => /coupangcdn\.com\/thumbnails\/local\/\d+\/.*PRODUCTREVIEW/i.test(u))
+    .map(u => u.replace(/\/thumbnails\/local\/\d+\//, '/thumbnails/local/1000/'));
 
   // 스펙 — "키: 값" 형태로 나열되는 구간
   const specs = {};
@@ -474,6 +493,7 @@ async () => {
     current_price: cur,
     detail_images: [...new Set(detailImgs)].slice(0, 20),
     thumbnails: [...new Set(thumbs)].slice(0, 12),
+    review_images: [...new Set(reviewImgs)].slice(0, 24),
     specs,
   };
 }

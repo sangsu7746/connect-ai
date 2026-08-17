@@ -78,8 +78,40 @@ def _conn():
     return conn
 
 
-def pick_targets(n: int, channel: str = "instagram") -> list:
-    """딥링크가 있고 아직 이 채널에 영상을 안 올린 상품."""
+#: 영상 한 편에 필요한 최소 사진 수.
+#: 사진이 1~2장인 상품은 장면이 두 개도 안 나와 영상이 너무 짧고 빈약하다.
+#: 예전에는 대표 이미지를 잘라 쓰거나 재탕해 네 장면을 채웠는데, 같은 병 사진이
+#: 계속 나오는 결과가 됐다. 모자란 상품은 아예 만들지 않는 편이 낫다.
+MIN_IMAGES = 3
+
+
+def _unique_image_count(row: dict) -> int:
+    """
+    이 상품으로 만들 수 있는 장면 수. 내려받기 전에 URL 로만 센다(빠르다).
+
+    상품평 사진도 센다 — 상품 사진이 한 장뿐이어도 상품평 사진으로 채우면
+    영상이 나온다. 다만 상품평 쪽은 얼굴·문서 필터에서 걸러지는 것이 있어
+    실제 채택 수는 이보다 적을 수 있다. 여기서는 후보 수만 본다.
+    """
+    urls = [row.get("image_url") or ""]
+    for key in ("detail_images", "thumbnails", "review_images"):
+        v = row.get(key) or []
+        if isinstance(v, str):
+            try:
+                v = json.loads(v)
+            except Exception:
+                v = []
+        if isinstance(v, list):
+            urls.extend(v)
+    return len({u for u in urls if u and "/image/displayitem" not in u})
+
+
+def pick_targets(n: int, channel: str = "instagram", min_images: int = MIN_IMAGES) -> list:
+    """
+    딥링크가 있고, 사진이 넉넉하고, 아직 이 채널에 영상을 안 올린 상품.
+
+    사진 수는 SQL 로 못 세서(JSON 문자열이다) 후보를 넉넉히 받아 파이썬에서 거른다.
+    """
     conn = _conn()
     conn.row_factory = sqlite3.Row
     try:
@@ -91,11 +123,24 @@ def pick_targets(n: int, channel: str = "instagram") -> list:
                AND p.product_id NOT IN (
                      SELECT product_id FROM published_videos WHERE channel = ?)
              ORDER BY p.discount_rate DESC, p.review_count DESC
-             LIMIT ?
-        """, (channel, n)).fetchall()
+        """, (channel,)).fetchall()
     finally:
         conn.close()
-    return [dict(r) for r in rows]
+
+    out, thin = [], 0
+    for r in rows:
+        d = dict(r)
+        if _unique_image_count(d) < min_images:
+            thin += 1
+            continue
+        out.append(d)
+        if len(out) >= n:
+            break
+    if thin:
+        log(f"사진이 {min_images}장 미만이라 건너뛴 상품: {thin}건")
+        log("   보충하려면: python coupang_live_collector.py enrich 10")
+        log("   (상세 수집을 해야 상품평 사진까지 들어온다 — 목록 수집만으로는 1장뿐이다)")
+    return out
 
 
 def record_video(product_id: str, channel: str, video_path: str = "") -> None:

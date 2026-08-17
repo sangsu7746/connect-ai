@@ -40,3 +40,4 @@ commitmsg*.txt
 
 # 실행 상태 파일
 .daily_state.json
+temp_review_imgs/
