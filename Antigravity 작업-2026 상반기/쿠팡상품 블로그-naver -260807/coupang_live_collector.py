@@ -408,7 +408,26 @@ async () => {
   // 상세 설명 이미지는 lazy-load — 아래까지 훑어야 src 가 채워진다.
   // 상품평은 그보다 더 아래에 있어서 6단계로는 못 닿는다. 12단계로 끝까지 내린다.
   for (let y = 0; y <= 12; y++) { window.scrollTo(0, document.body.scrollHeight * y / 12); await sleep(450); }
-  await sleep(1200);
+  await sleep(1500);
+
+  // 상품평 사진은 '맨 아래에 있는 지금' 걷어야 한다.
+  //
+  // 예전에는 아래까지 내렸다가 scrollTo(0,0) 으로 되돌린 뒤에 읽었다. 그러면
+  // 화면 밖으로 나간 상품평 영역이 통째로 사라져(가상 스크롤) 한 장도 안 잡힌다.
+  // 리뷰 18만 개짜리 상품에서도 0장이 나왔다. 상품평 수(review_count)까지 0 이었다.
+  // 경로가 PRODUCTREVIEW 다. 반드시 상품평 영역 안에서만 긁는다 —
+  // 페이지 전체에서 긁으면 '이 상품을 본 사람들이 산 상품' 캐러셀이 섞인다.
+  // 기본 크기는 320px 인데 릴스에 넣기엔 작다. 경로의 크기 숫자만 바꾸면
+  // 1000px 이 내려온다(실측: 320→(320,427), 1000→(1000,1333)).
+  const revRoot = document.querySelector('#sdpReview, [class*="sdp-review"]');
+  const reviewImgs = (revRoot ? [...revRoot.querySelectorAll('img')] : [])
+    .map(i => i.src || i.dataset.src || i.getAttribute('data-original') || '')
+    .filter(u => /coupangcdn\.com\/thumbnails\/local\/\d+\/.*PRODUCTREVIEW/i.test(u))
+    .map(u => u.replace(/\/thumbnails\/local\/\d+\//, '/thumbnails/local/1000/'));
+
+  // 상품평 수도 이 시점의 본문에서 읽는다(위로 돌아가면 문구가 사라진다).
+  const reviewText = document.body.innerText;
+
   window.scrollTo(0, 0);
   await sleep(400);
 
@@ -442,17 +461,6 @@ async () => {
     .filter(u => /thumbnail\d*\.coupangcdn\.com\/thumbnails\/remote\/\d+x\d+ex\//.test(u))
     .filter(u => !/logo|icon|badge|sprite/i.test(u));
 
-  // 상품평 사진 — 상품 사진이 모자랄 때 장면을 채우는 소재.
-  // 경로가 PRODUCTREVIEW 다. 반드시 상품평 영역(#sdpReview) 안에서만 긁는다 —
-  // 페이지 전체에서 긁으면 '이 상품을 본 사람들이 산 상품' 캐러셀이 섞인다.
-  // 기본 크기는 320px 인데 릴스에 넣기엔 너무 작다. 경로의 크기 숫자만 바꾸면
-  // 1000px 이 내려온다(실측: 320→(320,427), 1000→(1000,1333)).
-  const revRoot = document.querySelector('#sdpReview, [class*="sdp-review"]');
-  const reviewImgs = (revRoot ? [...revRoot.querySelectorAll('img')] : [])
-    .map(i => i.src || i.dataset.src || i.getAttribute('data-original') || '')
-    .filter(u => /coupangcdn\.com\/thumbnails\/local\/\d+\/.*PRODUCTREVIEW/i.test(u))
-    .map(u => u.replace(/\/thumbnails\/local\/\d+\//, '/thumbnails/local/1000/'));
-
   // 스펙 — "키: 값" 형태로 나열되는 구간
   const specs = {};
   T.split('\n').forEach(line => {
@@ -484,7 +492,9 @@ async () => {
     title: (q('h1')?.innerText || q('.prod-buy-header__title')?.innerText || document.title.split(' - ')[0]).trim(),
     brand,
     category: crumbs.slice(0, 4).join(' > '),
-    review_count: num(one(/([\d,]+)\s*개\s*상품평/)),
+    // 상품평 수는 위로 돌아오면 문구가 사라진다. 아래에서 떠 둔 본문으로 읽는다.
+    review_count: num((reviewText.match(/([\d,]+)\s*개\s*상품평/) || [])[1]
+                      || (T.match(/([\d,]+)\s*개\s*상품평/) || [])[1]),
     rating,
     monthly_buyers: one(/(한 달간 [^\n]{2,40}구매했어요)/),
     delivery_info: one(/(내일[^\n]{0,40}도착[^\n]{0,20}|모레[^\n]{0,40}도착[^\n]{0,20}|무료배송[^\n]{0,24})/),
