@@ -408,7 +408,29 @@ async () => {
   // 상세 설명 이미지는 lazy-load — 아래까지 훑어야 src 가 채워진다.
   // 상품평은 그보다 더 아래에 있어서 6단계로는 못 닿는다. 12단계로 끝까지 내린다.
   for (let y = 0; y <= 12; y++) { window.scrollTo(0, document.body.scrollHeight * y / 12); await sleep(450); }
-  await sleep(1500);
+
+  // 상품평 사진이 뜰 때까지 기다린다.
+  //
+  // 고정 시간(1.5초)만 기다렸더니 리뷰 수는 읽히는데 사진은 0장인 경우가 많았다
+  // (아이깨끗해 111,969개·순수한면 184,322개 리뷰인데 사진 0장).
+  // 리뷰 개수 문구는 상품평 영역 맨 위라 일찍 뜨고, 사진 목록은 그보다 늦게 붙는다.
+  // 그래서 시간이 아니라 '사진이 나타났는가'를 기다린다.
+  // 사진이 정말 없는 상품도 있으니 최대 8초에서 끊는다.
+  const REV_RE = /coupangcdn\.com\/thumbnails\/local\/\d+\/.*PRODUCTREVIEW/i;
+  const countRev = () => {
+    const root = document.querySelector('#sdpReview, [class*="sdp-review"]');
+    if (!root) return 0;
+    return [...root.querySelectorAll('img')]
+      .map(i => i.src || i.dataset.src || '')
+      .filter(u => REV_RE.test(u)).length;
+  };
+  for (let t = 0; t < 16; t++) {
+    if (countRev() >= 4) break;
+    // 스크롤을 조금씩 흔들어 lazy-load 를 깨운다. 가만히 있으면 안 뜨는 경우가 있다.
+    window.scrollBy(0, t % 2 ? -240 : 240);
+    await sleep(500);
+  }
+  await sleep(600);
 
   // 상품평 사진은 '맨 아래에 있는 지금' 걷어야 한다.
   //
