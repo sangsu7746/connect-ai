@@ -10,6 +10,14 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 // ID tokens are verified with `jose` directly against Google's JWKS instead of
 // firebase-admin/auth: its jwks-rsa dependency require()s the ESM-only jose v6,
 // which crashes on Vercel's serverless runtime.
+//
+// The AUTH project and the DATA project are deliberately separate:
+//   auth  — FIREBASE_AUTH_PROJECT_ID (headjim-ai), the shared HEADJIM user pool,
+//           so a uid here is the same uid across every HEADJIM service.
+//   data  — the service account's own project, holding this app's credits,
+//           orders and share images, kept out of the production project.
+// When FIREBASE_AUTH_PROJECT_ID is unset both collapse to the service account's
+// project, which is the single-project setup.
 
 let serviceAccountCache: Record<string, string> | null | undefined;
 
@@ -71,12 +79,17 @@ const FIREBASE_JWKS = createRemoteJWKSet(
   new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com')
 );
 
+/** Firebase project whose ID tokens are accepted (the shared HEADJIM user pool). */
+export function authProjectId(): string | null {
+  return process.env.FIREBASE_AUTH_PROJECT_ID || parseServiceAccount()?.project_id || null;
+}
+
 /** Verifies a Firebase ID token from the Authorization header. Returns uid + email or null. */
 export async function verifyBearer(
   authorization: string | null
 ): Promise<{ uid: string; email?: string } | null> {
   if (!authorization?.startsWith('Bearer ') || !isAdminEnabled()) return null;
-  const projectId = parseServiceAccount()?.project_id;
+  const projectId = authProjectId();
   if (!projectId) return null;
   try {
     const { payload } = await jwtVerify(authorization.slice(7), FIREBASE_JWKS, {

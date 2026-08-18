@@ -13,6 +13,34 @@ Nothing crashes when a tier is unconfigured — the related UI simply hides itse
 
 ---
 
+## 0. Two Firebase projects, on purpose
+
+ReRoom deliberately splits identity from data:
+
+| Role | Project | Why |
+|---|---|---|
+| Sign-in / uid | `headjim-ai` (`FIREBASE_AUTH_PROJECT_ID`) | The shared HEADJIM user pool — one account across every HEADJIM service, and the same uid as the shared coin wallet at `wallets/{uid}` |
+| Credits, orders, share images | `reroom-ai-studio` (`FIREBASE_SERVICE_ACCOUNT`) | Keeps this app's writes out of the production project |
+
+Because the uid comes from `headjim-ai`, ReRoom's own ledger is already keyed by the
+shared uid — so moving the balance onto the shared wallet later is a straight match,
+with no user migration.
+
+Leave `FIREBASE_AUTH_PROJECT_ID` unset to collapse both roles into the service
+account's own project (single-project setup).
+
+**Do NOT run `firebase deploy --only auth` against `headjim-ai`.** This repo's
+`firebase.json` declares only `googleSignIn`, while the hub also uses Apple and
+Email/Password — deploying from here could disable them platform-wide. Authorized
+domains for `headjim-ai` are added by hand in the console; nothing adds them
+automatically (not Hosting custom domains, not App Hosting).
+
+Read the current authorized-domain list without any credentials:
+
+```bash
+curl -s "https://identitytoolkit.googleapis.com/v1/projects?key=$NEXT_PUBLIC_FIREBASE_API_KEY"
+```
+
 ## 1. Firebase (accounts, credits, share pages)
 
 1. Create a project at https://console.firebase.google.com (Analytics optional).
