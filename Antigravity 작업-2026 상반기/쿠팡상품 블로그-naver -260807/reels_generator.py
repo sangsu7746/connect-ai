@@ -449,6 +449,15 @@ def generate_scene_tts(script_text: str, output_audio_path: str, rate: str = "+1
 # ════════════════════════════════════════════════════════════════
 # 4. EstateReels-v2 프레임 렌더러 (Ken Burns & 캔버스 자막)
 # ════════════════════════════════════════════════════════════════
+def _fit_font(paths, size):
+    for path in paths:
+        try:
+            return ImageFont.truetype(path, size)
+        except Exception:
+            continue
+    return ImageFont.load_default()
+
+
 def render_estatereels_frame(
     photo: Image.Image,
     scene_data: dict,
@@ -456,97 +465,47 @@ def render_estatereels_frame(
     height: int = 1920,
     progress: float = 0.0
 ) -> Image.Image:
-    canvas = Image.new("RGB", (width, height), color="#0c0d12")
+    """
+    릴스 한 프레임을 그린다.
+
+    ## 배치 원칙
+    인스타 릴스는 영상을 다 보여주지 않는다. 위는 상태바와 헤더가, 아래는 계정명·
+    캡션·음원 표시가, 오른쪽은 좋아요/댓글/공유 버튼이 덮는다. 그래서 내용을
+    y 210~1500, x 60~950 안에만 그린다.
+
+    ## 예전 배치에서 고친 것
+    - 상품 사진 칸이 700px 로 작아 상품이 잘 안 보였다. 880px 로 키웠다.
+    - 사진을 칸 크기로 늘려 넣어 정보 이미지 글자가 잘렸다. 비율을 지켜 통째로 넣는다.
+    - 파란 테두리·꽉 찬 배지·굵은 구분선이 상품보다 눈에 띄었다. 다 덜어 냈다.
+    - 자막이 한 줄로 그려져 화면 밖으로 잘렸다. 어절 단위로 접는다.
+    """
+    BG = "#0b0c10"
+    CARD = "#15171f"
+    LINE = "#262a38"
+    TEXT = "#f2f4f8"
+    MUTED = "#9aa3b8"
+    ACCENT = "#7cc4ff"
+    GOLD = "#ffd479"
+
+    BOLD = ["C:/Windows/Fonts/malgunbd.ttf", "C:/Windows/Fonts/malgun.ttf"]
+    REG = ["C:/Windows/Fonts/malgun.ttf"]
+    f_head = _fit_font(BOLD, 30)
+    f_badge = _fit_font(BOLD, 36)
+    f_cap = _fit_font(BOLD, 56)
+    f_sub = _fit_font(REG, 36)
+    f_cta = _fit_font(BOLD, 44)
+
+    canvas = Image.new("RGB", (width, height), color=BG)
     draw = ImageDraw.Draw(canvas)
-    
-    try:
-        f_hdr = ImageFont.truetype("C:/Windows/Fonts/malgunbd.ttf", 36)
-        f_badge = ImageFont.truetype("C:/Windows/Fonts/malgunbd.ttf", 40)
-        f_cap = ImageFont.truetype("C:/Windows/Fonts/malgunbd.ttf", 48)
-        f_sub = ImageFont.truetype("C:/Windows/Fonts/malgun.ttf", 36)
-        f_btn = ImageFont.truetype("C:/Windows/Fonts/malgunbd.ttf", 44)
-    except:
-        f_hdr = f_badge = f_cap = f_sub = f_btn = ImageFont.load_default()
 
-    # ── 릴스 안전영역 ────────────────────────────────────────────
-    # 인스타 릴스는 영상을 다 보여주지 않는다. 위쪽은 상태바와 'Reels' 헤더가,
-    # 아래쪽은 계정명·캡션·음원 표시가, 오른쪽은 좋아요/댓글/공유 버튼이 덮는다.
-    # 예전 배치는 헤더(y 0~150)와 구매 안내 띠(y 1580~1740)가 통째로 가려졌고,
-    # 자막 상자 아래쪽도 캡션에 묻혔다 — 실제 게시물에서 잘려 보였다.
-    # 그래서 내용을 y 240~1430, x 60~900 안에만 그린다.
-    SAFE_TOP = 240
-    SAFE_BOTTOM = 1430
-    SAFE_RIGHT = width - 180        # 오른쪽 버튼 세로줄을 피한다
+    SAFE_TOP, SAFE_BOTTOM = 210, 1500
+    L, R = 60, 950          # 오른쪽 버튼 세로줄을 피한다
+    inner = R - L
 
-    draw.rectangle([(0, SAFE_TOP - 90), (width, SAFE_TOP - 10)], fill="#14151f")
-    # 헤더는 부동산릴스에서 넘어온 '🏡 EstateReels' 가 그대로 박혀 있었다.
-    # 배지는 이미지 위에 따로 그려지므로 여기서 반복하지 않는다.
-    draw.text((60, SAFE_TOP - 78), scene_data.get("header", "쿠팡 가격 추적"),
-              fill="#f9e2af", font=f_hdr)
-
-    card_margin = 60
-    card_w = SAFE_RIGHT - card_margin
-    img_y = SAFE_TOP
-    img_h = 700
-
-    kb = scene_data.get("kb", "in")
-    bw, bh = photo.size if photo else (800, 800)
-    
-    # 움직임은 항상 '확대에서 시작해 전체가 보이는 상태로' 끝난다.
-    #
-    # 예전에는 확대한 채로 끝나거나(kb="in") 내내 1.1 배로 잘라 놓고 좌우로 밀었다.
-    # 상품 사진은 그래도 괜찮지만 영양성분표·성분표시 같은 정보 이미지는 양옆이
-    # 잘려 글자가 사라진다(실제로 '나트륨'이 '트륨'으로 보였다).
-    # 끝에서 zoom 이 1.0 이 되면 적어도 장면이 끝날 때는 전부 읽을 수 있다.
-    zoom = 1.08 - (progress * 0.08)
-    pan_x = 0
-    pan_y = 0
-
-    fade = 1.0 - progress          # 끝으로 갈수록 밀림도 0 이 된다
-    if kb == "left":
-        pan_x = int(-30 * fade)
-    elif kb == "right":
-        pan_x = int(30 * fade)
-    elif kb == "up":
-        pan_y = int(30 * fade)
-
-    draw.rectangle([(card_margin, img_y), (card_margin + card_w, img_y + img_h)], fill="#1f2335")
-
-    if photo:
-        # 예전에는 잘라낸 조각을 카드 크기로 그냥 늘렸다. 카드가 가로로 넓어서
-        # 정사각 상품 사진이 옆으로 퍼지고, 영양성분표 같은 세로 이미지는 글자가
-        # 잘려 나갔다(실제 게시물에서 표 절반이 사라졌다).
-        # 이제 비율을 지켜 카드 안에 통째로 넣는다 — 남는 자리는 배경으로 둔다.
-        cw = int(bw / zoom)
-        ch = int(bh / zoom)
-        left = max(0, min(bw - cw, (bw - cw) // 2 + pan_x))
-        top = max(0, min(bh - ch, (bh - ch) // 2 + pan_y))
-        cropped = photo.crop((left, top, left + cw, top + ch))
-
-        scale = min(card_w / cropped.width, img_h / cropped.height)
-        nw, nh = max(1, int(cropped.width * scale)), max(1, int(cropped.height * scale))
-        resized = cropped.resize((nw, nh), Image.Resampling.LANCZOS)
-        canvas.paste(resized,
-                     (card_margin + (card_w - nw) // 2, img_y + (img_h - nh) // 2))
-
-    draw.rectangle([(card_margin, img_y), (card_margin + card_w, img_y + img_h)], outline="#89b4fa", width=3)
-
-    draw.rectangle([(card_margin + 20, img_y + 20), (card_margin + 620, img_y + 110)], fill="#89b4fa")
-    draw.text((card_margin + 40, img_y + 38), scene_data.get("badge", ""), fill="#11111b", font=f_badge)
-
-    sub_y = img_y + img_h + 30
-    draw.rectangle([(card_margin, sub_y), (SAFE_RIGHT, SAFE_BOTTOM)],
-                   fill="#14151f", outline="#313150", width=2)
-
-    # 자막은 반드시 줄을 접는다. 예전에는 한 줄로 그려서 긴 문장이 화면 밖으로
-    # 잘려 나갔다 — "…다른 것과 함께 담는" 에서 끝나 버려 뜻이 뒤집히기도 한다.
-    text_x = card_margin + 30
-    avail = SAFE_RIGHT - 30 - text_x
-
-    def _wrap(s: str, font, max_w: int, max_lines: int) -> list:
+    def wrap(text, font, max_w, max_lines):
         """어절 단위로 접는다. 한 어절이 통째로 넘치면 글자 단위로 끊는다."""
         out, cur = [], ""
-        for word in (s or "").split():
+        for word in (text or "").split():
             trial = (cur + " " + word).strip()
             if draw.textlength(trial, font=font) <= max_w:
                 cur = trial
@@ -569,36 +528,74 @@ def render_estatereels_frame(
             out.append(cur)
         return out[:max_lines]
 
-    cap_lines = _wrap(scene_data.get("caption", ""), f_cap, avail, 3)
-    y = sub_y + 26
-    for ln in cap_lines:
-        draw.text((text_x, y), ln, fill="#a6e3a1", font=f_cap)
-        y += 60
-    y += 8
-    draw.line([(text_x, y), (SAFE_RIGHT - 30, y)], fill="#313150", width=2)
+    # ── 머리말 ───────────────────────────────────────────────
+    head = scene_data.get("header", "쿠팡 가격 추적")
+    draw.text((L, SAFE_TOP - 58), head, fill=MUTED, font=f_head)
+    draw.line([(L, SAFE_TOP - 16), (R, SAFE_TOP - 16)], fill=LINE, width=2)
 
-    y += 26
-    for ln in _wrap(scene_data.get("sub", ""), f_sub, avail, 2):
-        draw.text((text_x, y), ln, fill="#cdd6f4", font=f_sub)
-        y += 46
+    # ── 상품 사진 ────────────────────────────────────────────
+    img_y, img_h = SAFE_TOP + 20, 880
+    draw.rectangle([(L, img_y), (R, img_y + img_h)], fill=CARD)
 
-    # 나레이션은 TTS 로 '들리는' 것이다. 화면에 대본을 찍지 않는다.
-    # (예전에는 여기에 🗣️ 대사: "..." 를 22자로 잘라 노출해서, 말할 내용이
-    #  자막으로 중복되고 문장이 잘려 보였다. 자막=사실 / 음성=이점 원칙에도 어긋난다.)
-    extra = scene_data.get("detail", "")
+    if photo:
+        # 움직임은 살짝 확대에서 시작해 전체가 보이는 상태로 끝난다.
+        # 내내 확대해 두면 영양성분표 같은 정보 이미지의 양옆 글자가 잘린다.
+        zoom = 1.05 - (progress * 0.05)
+        bw, bh = photo.size
+        cw, ch = int(bw / zoom), int(bh / zoom)
+        left = max(0, (bw - cw) // 2)
+        top = max(0, (bh - ch) // 2)
+        crop = photo.crop((left, top, left + cw, top + ch))
+
+        # 비율을 지켜 칸 안에 통째로 넣는다. 늘리면 상품이 일그러진다.
+        scale = min(inner / crop.width, img_h / crop.height)
+        nw, nh = max(1, int(crop.width * scale)), max(1, int(crop.height * scale))
+        canvas.paste(crop.resize((nw, nh), Image.Resampling.LANCZOS),
+                     (L + (inner - nw) // 2, img_y + (img_h - nh) // 2))
+
+    # 배지 — 사진 위에 얇게 얹는다
+    badge = (scene_data.get("badge") or "").strip()
+    if badge:
+        bw_ = draw.textlength(badge, font=f_badge)
+        pad = 20
+        bx, by = L + 24, img_y + 24
+        draw.rectangle([(bx, by), (bx + bw_ + pad * 2, by + 62)], fill=ACCENT)
+        draw.text((bx + pad, by + 12), badge, fill="#0b0c10", font=f_badge)
+
+    # ── 자막 ─────────────────────────────────────────────────
+    #
+    # 글이 구매 안내 띠를 넘어가면 안 된다. 예전 배치에서 상품명 줄이 띠 위에
+    # 겹쳐 찍혀 둘 다 읽을 수 없었다. 남은 높이를 보고, 자리가 없으면 그 줄을 뺀다.
+    # 자막이 우선이다 — 상품명은 캡션에도 적히지만 자막은 여기밖에 없다.
+    cy = SAFE_BOTTOM - 92           # 구매 안내 띠의 윗변
+    limit = cy - 24                 # 글이 넘어서면 안 되는 선
+
+    def put(text, font, fill, step, max_lines):
+        nonlocal y
+        for ln in wrap(text, font, inner, max_lines):
+            if y + step > limit:
+                return
+            draw.text((L, y), ln, fill=fill, font=font)
+            y += step
+
+    y = img_y + img_h + 40
+    put(scene_data.get("caption", ""), f_cap, TEXT, 70, 3)
+
+    sub = (scene_data.get("sub") or "").strip()
+    if sub:
+        y += 8
+        put(sub, f_sub, MUTED, 48, 2)
+
+    extra = (scene_data.get("detail") or "").strip()
     if extra:
-        for ln in _wrap(extra, f_sub, avail, 2):
-            draw.text((text_x, y), ln, fill="#f9e2af", font=f_sub)
-            y += 46
+        put(extra, f_sub, GOLD, 48, 1)
 
-    # 구매 안내 띠는 예전에 y 1580~1740 에 있었다. 릴스에서는 그 자리를 계정명과
-    # 캡션이 덮어 아예 보이지 않았다. 자막 상자 안 맨 아래에 넣는다.
-    draw.rectangle([(card_margin + 20, SAFE_BOTTOM - 96),
-                    (SAFE_RIGHT - 20, SAFE_BOTTOM - 20)], fill="#89b4fa")
-    _cta = "프로필 링크에서 구매"
-    _cw = draw.textlength(_cta, font=f_btn)
-    draw.text(((card_margin + SAFE_RIGHT) / 2 - _cw / 2, SAFE_BOTTOM - 84),
-              _cta, fill="#11111b", font=f_btn)
+    # ── 구매 안내 ────────────────────────────────────────────
+    # 릴스에서는 화면 맨 아래를 계정명과 캡션이 덮는다. 안전영역 안에 둔다.
+    cta = "프로필 링크에서 구매"
+    draw.rectangle([(L, cy), (R, cy + 84)], fill=ACCENT)
+    cw_ = draw.textlength(cta, font=f_cta)
+    draw.text((L + (inner - cw_) / 2, cy + 18), cta, fill="#0b0c10", font=f_cta)
 
     return canvas
 

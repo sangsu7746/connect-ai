@@ -18,6 +18,7 @@
 계정이 잠기면 이 스크립트로는 풀 수 없다 — 사람이 앱에서 직접 확인해야 한다.
 """
 import io
+import json
 import os
 import sys
 import time
@@ -31,6 +32,20 @@ if hasattr(sys.stdout, "reconfigure"):
 PROFILE_DIR = os.path.join(BASE_DIR, ".instagram_profile")
 HOME = "https://www.instagram.com/"
 
+
+def profile_dir(account: str = "") -> str:
+    """
+    계정별 세션 폴더.
+
+    한 폴더를 여러 계정이 나눠 쓰면, 로그인해 둔 계정이 조용히 바뀌어 엉뚱한 곳에
+    올라간다. 광고 계정과 개인 계정을 섞어 쓰는 상황에서는 되돌리기도 어렵다.
+    계정 이름을 주면 그 계정 전용 폴더를 쓴다.
+    """
+    if not account:
+        return PROFILE_DIR
+    safe = "".join(c for c in account if c.isalnum() or c in "_-.")
+    return os.path.join(BASE_DIR, f".instagram_profile_{safe}")
+
 #: 업로드 사이 간격(초). 연속 업로드는 자동화로 읽힌다.
 UPLOAD_GAP = 90
 #: 사람이 로그인할 때까지 기다리는 시간(분).
@@ -38,7 +53,7 @@ UPLOAD_GAP = 90
 LOGIN_WAIT_MIN = 30.0
 
 
-def _release_profile_lock(log=None) -> int:
+def _release_profile_lock(log=None, pdir: str = "") -> int:
     """
     앞선 실행이 남긴 크로미움을 정리한다.
 
@@ -56,7 +71,7 @@ def _release_profile_lock(log=None) -> int:
              "get", "processid,commandline", "/format:csv"],
             capture_output=True).stdout.decode("utf-8", "replace")
         for line in out.splitlines():
-            if os.path.basename(PROFILE_DIR) not in line:
+            if os.path.basename(pdir or PROFILE_DIR) not in line:
                 continue
             m = re.search(r"(\d+)\s*$", line.strip())
             if m:
@@ -68,7 +83,7 @@ def _release_profile_lock(log=None) -> int:
 
     for name in ("SingletonLock", "SingletonCookie", "SingletonSocket"):
         try:
-            os.remove(os.path.join(PROFILE_DIR, name))
+            os.remove(os.path.join(pdir or PROFILE_DIR, name))
         except Exception:
             pass
 
@@ -128,6 +143,42 @@ def _wait_login(page, log=_log, minutes: float = LOGIN_WAIT_MIN) -> bool:
     return False
 
 
+def _dump(page, tag: str, log=None) -> None:
+    """
+    막힌 시점의 화면과 버튼 목록을 남긴다.
+
+    "업로드됐을 수도 있습니다" 로 끝내면 다음에도 똑같이 모른다.
+    실제로 그 문구를 믿었다가, 확인해 보니 안 올라간 경우가 있었다.
+    """
+    out = os.path.join(BASE_DIR, "logs", "ig_fail")
+    try:
+        os.makedirs(out, exist_ok=True)
+        stamp = datetime.now().strftime("%m%d_%H%M%S")
+        png = os.path.join(out, f"{tag}_{stamp}.png")
+        page.screenshot(path=png)
+        info = page.evaluate("""() => {
+            const vis = el => { const r = el.getBoundingClientRect();
+                                return r.width > 0 && r.height > 0; };
+            return {
+              url: location.href,
+              buttons: [...document.querySelectorAll('div[role="button"],button')]
+                .filter(vis)
+                .map(el => (el.getAttribute('aria-label') || el.innerText || '').trim().slice(0, 40))
+                .filter(Boolean).slice(0, 30),
+              dialogs: [...document.querySelectorAll('div[role="dialog"]')]
+                .map(el => (el.innerText || '').trim().slice(0, 300)).slice(0, 3),
+            };
+        }""")
+        with io.open(os.path.join(out, f"{tag}_{stamp}.json"), "w", encoding="utf-8") as f:
+            f.write(json.dumps(info, ensure_ascii=False, indent=2))
+        if log:
+            log(f"    화면을 남겼습니다: logs/ig_fail/{os.path.basename(png)}")
+            if info.get("dialogs"):
+                log(f"    화면 문구: {info['dialogs'][0][:120]}")
+    except Exception:
+        pass
+
+
 def _click_icon(page, labels, wait_ms: int = 3000) -> bool:
     """
     아이콘을 화면 좌표로 누른다.
@@ -158,6 +209,15 @@ def _open_composer(page, log=_log) -> bool:
 
     메뉴에 '릴스' 항목은 없다. 세로 영상을 게시물로 올리면 인스타가 알아서 릴스로 만든다.
     """
+    # 사이드바가 다 그려지기 전에 좌표를 누르면 엉뚱한 자리를 누른다.
+    # 세션이 살아 있어 로그인 확인이 순식간에 끝난 실행에서 이 문제가 났다.
+    try:
+        page.wait_for_selector('svg[aria-label="새로운 게시물"], svg[aria-label="New post"]',
+                               timeout=15000)
+    except Exception:
+        pass
+    page.wait_for_timeout(1500)
+
     if not _click_icon(page, ("새로운 게시물", "New post", "만들기", "Create")):
         log("  ✘ '만들기' 아이콘을 찾지 못했습니다.")
         return False
@@ -187,23 +247,47 @@ def _upload_one(page, video_path: str, caption: str, log=_log) -> dict:
     if not os.path.exists(video_path):
         return {"ok": False, "why": f"영상 파일이 없습니다: {video_path}"}
 
-    if not _open_composer(page, log):
-        return {"ok": False, "why": "업로드 창을 열지 못했습니다."}
-
     # 파일 넣기
     #
     # '컴퓨터에서 선택' 을 눌러 파일 대화상자를 받는 방식은 계속 시간 초과가 났다.
     # 인스타는 업로드 창을 열 때 숨겨진 input[type=file] 을 DOM 에 넣어 둔다
     # (accept 에 video/mp4 가 들어 있다). 거기에 파일을 직접 꽂는 편이 확실하다.
     # set_input_files 는 숨겨진 input 에도 동작하고, change 이벤트까지 발생시킨다.
-    try:
+    #
+    # 창 열기는 한 번에 안 될 때가 있다. 아이콘 좌표를 눌렀는데 메뉴가 안 뜨거나,
+    # 떴는데 '게시물' 클릭이 먹지 않는다 — 같은 코드로 성공한 다음 실행에서 실패했다.
+    # 그래서 '파일 입력칸이 생겼는가'를 기준으로 최대 세 번까지 다시 연다.
+    target = None
+    for attempt in range(3):
+        if attempt:
+            log(f"    업로드 창을 다시 엽니다 ({attempt + 1}/3)")
+            try:
+                page.keyboard.press("Escape")
+                page.wait_for_timeout(800)
+                page.goto(HOME, wait_until="domcontentloaded", timeout=30000)
+                page.wait_for_timeout(3000)
+            except Exception:
+                pass
+
+        if not _open_composer(page, log):
+            continue
+        try:
+            page.wait_for_selector('input[type="file"]', state="attached", timeout=15000)
+        except Exception:
+            continue
+
         inp = page.locator('input[type="file"]')
-        page.wait_for_selector('input[type="file"]', state="attached", timeout=20000)
         target = inp.first
         for i in range(inp.count()):
             if "video" in (inp.nth(i).get_attribute("accept") or ""):
                 target = inp.nth(i)
                 break
+        break
+
+    if target is None:
+        return {"ok": False, "why": "업로드 창의 파일 입력칸이 끝내 나타나지 않았습니다."}
+
+    try:
         target.set_input_files(video_path)
     except Exception as e:
         return {"ok": False, "why": f"파일 넣기 실패: {str(e)[:120]}"}
@@ -237,19 +321,39 @@ def _upload_one(page, video_path: str, caption: str, log=_log) -> dict:
 
     # 공유
     if not _click_text(page, ["공유하기", "Share"], 15000):
+        _dump(page, "no_share_button", log)
         return {"ok": False, "why": "'공유하기' 버튼을 찾지 못했습니다."}
 
-    # 처리 대기 — 영상은 인코딩 때문에 오래 걸린다
+    # 처리 대기 — 영상은 인코딩 때문에 오래 걸린다.
+    #
+    # 완료 판정을 '공유했습니다' 문구로 하면 안 된다. 그 안내는 잠깐 떴다 사라져서
+    # 3초 간격 확인에 걸리지 않는다. 실제로 게시가 다 된 뒤에도 실패로 보고했고,
+    # 그 말을 믿고 "안 올라갔다"고 잘못 알렸다(인스타에는 멀쩡히 올라가 있었다).
+    #
+    # 확실한 신호는 '업로드 창이 닫혔는가'다. 게시가 끝나면 인스타가 대화상자를
+    # 닫는다. 실패했다면 창이 그대로 남아 오류를 보여 준다.
     for _ in range(60):
         page.wait_for_timeout(3000)
         for t in ("게시물을 공유했습니다", "Your post has been shared",
                   "릴스를 공유했습니다", "Your reel has been shared"):
             if page.locator(f'text={t}').count():
                 return {"ok": True, "url": ""}
-    return {"ok": False, "why": "공유 완료 확인 문구가 뜨지 않았습니다(업로드됐을 수도 있습니다 — 앱에서 확인하세요)."}
+        try:
+            if page.locator('div[role="dialog"]').count() == 0:
+                return {"ok": True, "url": ""}
+        except Exception:
+            pass
+
+    # 여기까지 오면 무엇이 막고 있는지 화면을 남긴다.
+    # 예전에는 "업로드됐을 수도 있습니다" 라고만 하고 끝냈는데, 실제로 확인해 보니
+    # 안 올라간 경우였다. 다음에 원인을 찾을 수 있게 증거를 남긴다.
+    _dump(page, "share_no_confirm", log)
+    return {"ok": False,
+            "why": "공유 후 완료 문구가 3분 안에 뜨지 않았습니다. logs/ig_fail 의 화면을 확인하세요."}
 
 
-def upload_reels(jobs: list, headless: bool = False, log=_log) -> dict:
+def upload_reels(jobs: list, headless: bool = False, log=_log,
+                 account: str = "") -> dict:
     """
     jobs: [{"key":..., "video":<mp4 경로>, "caption":<문구>}, ...]
     한 세션에서 전부 처리한다.
@@ -257,11 +361,14 @@ def upload_reels(jobs: list, headless: bool = False, log=_log) -> dict:
     from playwright.sync_api import sync_playwright
 
     results = {}
-    os.makedirs(PROFILE_DIR, exist_ok=True)
-    _release_profile_lock(log)
+    pdir = profile_dir(account)
+    os.makedirs(pdir, exist_ok=True)
+    _release_profile_lock(log, pdir)
+    if account:
+        log(f"  대상 계정: @{account}  (세션 폴더 {os.path.basename(pdir)})")
     with sync_playwright() as pw:
         ctx = pw.chromium.launch_persistent_context(
-            PROFILE_DIR,
+            pdir,
             headless=headless,
             locale="ko-KR",
             viewport={"width": 1280, "height": 900},

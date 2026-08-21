@@ -4,9 +4,11 @@
 video_pipeline.py --upload 은 '새 상품을 골라 영상부터 만든다'. 이미 만든 영상을
 올리기만 할 때 쓰는 것이 이 스크립트다. 첫 업로드처럼 셀렉터가 맞는지 확인할 때 편하다.
 
-    python upload_one_reels.py <mp4 경로> [상품ID]
+    python upload_one_reels.py <mp4 경로> [상품ID] [--account=headjim_03]
 
 상품ID 를 주면 그 상품의 캡션을 만들어 붙이고, 성공 시 원장에 발행으로 기록한다.
+--account 를 주면 그 계정 전용 세션 폴더를 쓴다. 계정마다 로그인을 따로 해야 하지만,
+한 폴더를 여러 계정이 나눠 쓰다가 엉뚱한 곳에 올리는 사고를 막는다.
 """
 import io
 import os
@@ -22,8 +24,14 @@ def main() -> int:
     if len(sys.argv) < 2:
         print(__doc__)
         return 2
-    video = sys.argv[1]
-    pid = sys.argv[2] if len(sys.argv) > 2 else ""
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    account = ""
+    for a in sys.argv[1:]:
+        if a.startswith("--account="):
+            account = a.split("=", 1)[1].strip().lstrip("@")
+
+    video = args[0] if args else ""
+    pid = args[1] if len(args) > 1 else ""
 
     if not os.path.exists(video):
         print(f"영상이 없습니다: {video}")
@@ -60,12 +68,14 @@ def main() -> int:
     print("올릴 내용")
     print("=" * 58)
     print(f"영상  : {os.path.basename(video)} ({os.path.getsize(video)//1024:,} KB)")
+    print(f"계정  : @{account}" if account else "계정  : (기본 세션)")
     print("-" * 58)
     print(caption)
     print("=" * 58)
 
     import instagram_poster as IG
-    res = IG.upload_reels([{"key": pid or "one", "video": video, "caption": caption}])
+    res = IG.upload_reels([{"key": pid or "one", "video": video, "caption": caption}],
+                          account=account)
     r = res.get(pid or "one", {})
     if r.get("ok"):
         if pid:
