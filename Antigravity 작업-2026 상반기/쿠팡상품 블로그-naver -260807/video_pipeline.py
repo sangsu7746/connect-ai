@@ -335,10 +335,18 @@ def main() -> int:
             log(f"      · {line[:52]}")
 
         caption = build_caption(prod, sc)
-        cap_path = os.path.join(OUT_DIR, f"caption_{prod['product_id']}.txt")
         os.makedirs(OUT_DIR, exist_ok=True)
+        cap_path = os.path.join(OUT_DIR, f"caption_{prod['product_id']}.txt")
         io.open(cap_path, "w", encoding="utf-8").write(caption)
-        log(f"    캡션 저장: {os.path.basename(cap_path)}")
+
+        # 대사도 같이 남긴다. 이걸 안 남겨서 사고가 났다 —
+        # 예전 시험 때 손으로 써 둔 script 파일이 그대로 남아 있었고, 다시 렌더할 때
+        # 그 옛 대사가 자막이 됐다. 영상에는 '08월 10일 18,080원', 캡션에는
+        # '08월 18일 18,670원' 이 적힌 게시물이 그대로 올라갔다.
+        # 자막과 캡션은 반드시 같은 생성분에서 나와야 한다.
+        io.open(os.path.join(OUT_DIR, f"script_{prod['product_id']}.txt"),
+                "w", encoding="utf-8").write("\n".join(sc["lines"]))
+        log(f"    캡션·대사 저장: {os.path.basename(cap_path)}")
 
         try:
             path = make_video(prod, sc)

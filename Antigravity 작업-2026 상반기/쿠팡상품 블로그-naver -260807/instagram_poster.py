@@ -143,6 +143,48 @@ def _wait_login(page, log=_log, minutes: float = LOGIN_WAIT_MIN) -> bool:
     return False
 
 
+def current_account(page) -> str:
+    """
+    지금 로그인된 계정 이름. 못 읽으면 빈 문자열.
+
+    사이드바의 프로필 링크는 '/<계정>/' 한 칸짜리 경로에 아바타 이미지를 담고 있다.
+    """
+    try:
+        return page.evaluate("""() => {
+            const a = [...document.querySelectorAll('a[href^="/"]')].find(
+                x => x.querySelector('img')
+                  && x.getAttribute('href').split('/').filter(Boolean).length === 1);
+            return a ? a.getAttribute('href').replace(/\\//g, '') : '';
+        }""") or ""
+    except Exception:
+        return ""
+
+
+def _wait_account(page, account: str, log=_log, minutes: float = 10.0) -> bool:
+    """
+    요청한 계정으로 로그인됐는지 확인한다. 아니면 바꿀 때까지 기다린다.
+
+    계정별 폴더를 나눠 놓고도 이 확인을 안 해서 사고가 났다 — headjim_03 으로
+    올리라고 했는데 그 창에 headjim_01 이 로그인돼 있었고, 광고 릴스가 엉뚱한
+    계정에 게시됐다. 로그인 여부만 보고 '누가' 로그인했는지는 안 봤기 때문이다.
+    """
+    deadline = time.time() + minutes * 60
+    warned = ""
+    while time.time() < deadline:
+        who = current_account(page)
+        if who and who.lower() == account.lower():
+            log(f"  ✔ 계정 확인: @{who}")
+            return True
+        if who and who != warned:
+            warned = who
+            log(f"  ⛔ 지금 로그인된 계정은 @{who} 입니다. 올릴 곳은 @{account} 입니다.")
+            log("     브라우저에서 계정을 바꿔 주세요(프로필 → 계정 전환).")
+            log("     바뀌면 자동으로 이어서 올립니다.")
+        time.sleep(4)
+    log(f"  ✘ @{account} 로 바뀌지 않아 중단합니다. 아무것도 올리지 않았습니다.")
+    return False
+
+
 def _dump(page, tag: str, log=None) -> None:
     """
     막힌 시점의 화면과 버튼 목록을 남긴다.
@@ -386,6 +428,19 @@ def upload_reels(jobs: list, headless: bool = False, log=_log,
                 results[j["key"]] = {"ok": False, "why": "로그인하지 못했습니다."}
             ctx.close()
             return results
+
+        # 어느 계정에 올리는지 반드시 확인한다. 게시는 되돌리기 어렵다.
+        if account and not _wait_account(page, account, log):
+            for j in jobs:
+                results[j["key"]] = {
+                    "ok": False,
+                    "why": f"@{account} 가 아닌 계정으로 로그인돼 있어 중단했습니다."}
+            ctx.close()
+            return results
+        if not account:
+            who = current_account(page)
+            log(f"  올릴 계정: @{who or '(확인 못 함)'}"
+                " — 계정을 지정하려면 --account=<아이디> 를 쓰세요.")
 
         for i, j in enumerate(jobs):
             log(f"  [{i+1}/{len(jobs)}] 업로드: {os.path.basename(j['video'])}")
