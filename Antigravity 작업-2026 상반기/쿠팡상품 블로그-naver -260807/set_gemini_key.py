@@ -59,8 +59,12 @@ def main() -> int:
     print("\n  키를 확인하는 중...")
     try:
         from google import genai
+        # 모델명을 여기에 박아 두면 안 된다. gemini-2.5-flash 가 박혀 있었는데
+        # 구글이 신규 사용자에게 막아서, 멀쩡한 키를 넣어도 404 로 거부당했다.
+        # 실제로 쓰는 모델과 같은 것으로 확인해야 검증에 의미가 있다.
+        import ai_writer
         r = genai.Client(api_key=new).models.generate_content(
-            model="gemini-2.5-flash", contents="ok 이라고만 답하세요")
+            model=ai_writer.MODEL, contents="ok 이라고만 답하세요")
         print(f"  ✅ 응답 확인: {(r.text or '').strip()[:30]}")
     except Exception as e:
         msg = str(e)
@@ -68,6 +72,13 @@ def main() -> int:
         if "dunning" in msg or "PERMISSION_DENIED" in msg:
             print("\n     → 결제가 정지된 프로젝트의 키입니다.")
             print("       AI Studio 에서 '새 프로젝트에서 API 키 만들기' 를 고르세요.")
+        elif "prepayment" in msg or "RESOURCE_EXHAUSTED" in msg:
+            print("\n     → 키는 살아 있는데 선불 잔액이 0 입니다.")
+            print("       ai.studio/projects 에서 충전하거나, 결제가 걸린")
+            print("       다른 프로젝트의 키를 쓰세요.")
+        elif "NOT_FOUND" in msg or "404" in msg:
+            print(f"\n     → 모델 '{__import__('ai_writer').MODEL}' 을 못 찾습니다.")
+            print("       ai_writer.py 의 MODEL 값을 확인하세요.")
         print("\n  파일을 바꾸지 않았습니다.")
         return 1
 

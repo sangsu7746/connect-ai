@@ -231,9 +231,14 @@ def build_script(product: dict, log=log) -> dict:
         raise RuntimeError("config.json 에 gemini_api_key 가 없습니다.")
     from google import genai
     import ai_writer
+    # ai_writer._generate 를 거친다. 여기서 직접 generate_content 를 부르면
+    # 모델 순환·재시도를 통째로 건너뛴다 — 무료 등급은 모델별 하루 20회라
+    # 한 모델이 막히면 그 자리에서 끝나 버린다(실제로 그래서 0건이 나왔다).
     client = genai.Client(api_key=api_key)
-    r = client.models.generate_content(model=ai_writer.MODEL, contents=prompt)
-    lines = [x.strip(" -•\t") for x in (r.text or "").strip().split("\n") if x.strip()]
+    text, used = ai_writer._generate(client, prompt, log=log)
+    if used != ai_writer.MODEL:
+        log(f"    ({used} 로 생성)")
+    lines = [x.strip(" -•\t") for x in text.strip().split("\n") if x.strip()]
     lines = [x for x in lines if len(x) > 4][:n_scenes]
 
     narration = " ".join(lines)
