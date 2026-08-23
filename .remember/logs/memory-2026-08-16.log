@@ -1,0 +1,62 @@
+08:44:11 [hook] session-start: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 REMEMBER_DIR=D:\/.remember
+08:44:21 [hook] session-start: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 REMEMBER_DIR=D:\/.remember
+08:45:44 [hook] save-session: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+08:45:50 [force] bypassing cooldown + min msgs
+08:45:50 [extract] session e2e397c9-3254-4aea-9f3d-18efe9afd7ba
+08:45:52 [hook] save-session: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+08:45:53 [extract] 220 exchanges (7 human)
+08:45:56 [lock] another save holds the lock, skipping
+08:45:56 [hook] run-consolidation: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+08:46:01 [hook] run-consolidation: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+08:46:04 [haiku] calling (branch: feat/adstudio-youtube-homage)
+08:46:05 [rotate] archived 1 logs → logs-2026-08-part8.tar.gz
+08:46:07 [rotate] ERROR: tar failed for 1 logs: tar: memory-2026-08-07.log: Cannot stat: No such file or directory
+08:46:15 [consolidation] start
+08:46:16 [haiku] WARNING: this CLI rejected --setting-sources (Failed to authenticate: OAuth session expired and could not be refreshed); retrying WITHOUT hook isolation so saves keep working. The nested call will run with your hooks registered — a hook that blocks it returns its block message as if it were the model's reply (#202).
+08:46:16 [consolidation] another consolidation holds the lock, skip
+08:46:18 [haiku] WARNING: declined to spawn a summarizer: 4 already running and the limit is 4 (REMEMBER_MAX_CONCURRENT_SUMMARIZERS). A summarizer that reaches this limit is nested inside another one — the guard that should have stopped it did not reach the child (#204). This save is skipped, not failed: the span is kept and summarized on a later run.
+08:46:19 [consolidation] DECLINED: consolidate declined: declined to spawn a summarizer: 4 already running and the limit is 4 (REMEMBER_MAX_CONCURRENT_SUMMARIZERS). A summarizer that reaches this limit is nested inside another one — the guard that should have stopped it did not reach the child (#204). This save is skipped, not failed: the span is kept and summarized on a later run.
+08:46:40 [haiku] call exited 1; tokens already spent are unknown — the failure carried no usage block, so this run's reported cost is lower than what it actually cost
+08:46:40 [haiku] ERROR: call-haiku error: claude exited 1: Failed to authenticate: OAuth session expired and could not be refreshed
+08:46:40 [haiku] failure 1/3 on this span — will retry next run
+12:31:17 [hook] session-start: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 REMEMBER_DIR=D:\/.remember
+12:31:20 [hook] session-start: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 REMEMBER_DIR=D:\/.remember
+12:31:53 [hook] save-session: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+12:32:00 [hook] save-session: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+12:32:01 [force] bypassing cooldown + min msgs
+12:32:02 [extract] session c690b3fd-5c59-4d80-81ed-eb79bb6fd570
+12:32:13 [extract] 0 exchanges (0 human)
+12:32:14 [extract] 0 exchanges, skip — position → 43
+12:32:15 [lock] another save holds the lock, skipping
+12:32:22 [hook] run-consolidation: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+12:32:33 [hook] run-consolidation: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+12:32:41 [consolidation] another consolidation holds the lock, skip
+12:32:43 [consolidation] start
+12:32:53 [haiku] WARNING: this CLI rejected --setting-sources (Failed to authenticate: OAuth session expired and could not be refreshed); retrying WITHOUT hook isolation so saves keep working. The nested call will run with your hooks registered — a hook that blocks it returns its block message as if it were the model's reply (#202).
+12:33:13 [haiku] call exited 1; tokens already spent are unknown — the failure carried no usage block, so this run's reported cost is lower than what it actually cost
+12:33:13 [consolidation] ERROR: pipeline failed — Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\0\.claude\plugins\cache\claude-plugins-official\remember\0.20.0\pipeline\shell.py", line 683, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\0\.claude\plugins\cache\claude-plugins-official\remember\0.20.0\pipeline\shell.py", line 670, in main
+    cmd_consolidate(
+    ~~~~~~~~~~~~~~~^
+        staging_dir=sys.argv[2],
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        snapshot_dir=sys.argv[6] if len(sys.argv) > 6 else "",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\0\.claude\plugins\cache\claude-plugins-official\remember\0.20.0\pipeline\shell.py", line 525, in cmd_consolidate
+    result = consolidate(staging_contents, recent, archive,
+                         max_prompt_bytes=max_prompt_bytes)
+  File "C:\Users\0\.claude\plugins\cache\claude-plugins-official\remember\0.20.0\pipeline\consolidate.py", line 324, in consolidate
+    result = call_haiku(prompt, timeout=180)
+  File "C:\Users\0\.claude\plugins\cache\claude-plugins-official\remember\0.20.0\pipeline\haiku.py", line 735, in call_haiku
+    raise RuntimeError(
+    ...<2 lines>...
+    )
+RuntimeError: claude exited 1: Failed to authenticate: OAuth session expired and could not be refreshed
