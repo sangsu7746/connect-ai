@@ -74,6 +74,14 @@ os.makedirs(TEMP_IMG_DIR, exist_ok=True)
 # ════════════════════════════════════════════════════════════════
 KB_CYCLE = ['in', 'left', 'out', 'right', 'up']
 
+#: 영상 한 편에 쓸 최대 장면 수 = 최대 사진 수.
+#:
+#: 예전에는 4 였다. 실측해 보니 딥링크 상품 55건 중 25건이 사진을 6장 이상
+#: 가지고 있었는데, 그 상한 때문에 4장만 쓰고 나머지를 버리고 있었다.
+#: "사진이 부족하다"의 실제 원인은 사진이 없어서가 아니라 안 쓰고 있어서였다.
+#: 장면당 4초 안팎이므로 8장면이면 25~35초가 된다 — 릴스 완주율이 유지되는 길이다.
+MAX_SCENES = 8
+
 CONCEPTS = {
     "price_focus": {
         "id": "price_focus",
@@ -156,9 +164,11 @@ def fetch_product_multi_images(product_info: dict) -> list:
     gallery = [u for u in image_urls if "thumbnails/remote" in u]
     vendor = [u for u in image_urls if "vendor_inventory" in u]
     rest = [u for u in image_urls if u not in gallery and u not in vendor]
-    # 갤러리가 2장 이상이면 그것만 쓴다. 모자란 씬은 크롭으로 파생하는 편이
-    # 남의 상품 사진을 넣는 것보다 낫다. (틀린 사진은 광고로서 치명적이다.)
-    image_urls = gallery + rest if len(gallery) >= 2 else gallery + vendor + rest
+    # 예전에는 갤러리가 2장 이상이면 판매자 이미지를 통째로 버렸다. 남의 상품 사진이
+    # 섞이는 걸 막으려던 것인데, 실측해 보니 그 규칙 하나로 73장이 버려지고 있었다.
+    # 지금은 버리지 않고 뒤로 보낸다 — 확실한 갤러리 사진을 앞 장면에 쓰고,
+    # 판매자 이미지는 뒷 장면에서만 쓰이므로 혹시 섞여도 첫인상은 망치지 않는다.
+    image_urls = gallery + rest + vendor
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -208,17 +218,17 @@ def fetch_product_multi_images(product_info: dict) -> list:
     # 넣었다. 그러면 같은 병 사진이 네 장면에 계속 나온다. 재탕은 하지 않는다.
     # 상품평 사진은 구매자가 찍은 것이라 얼굴·문서가 섞여 있다 — review_photos 가
     # 그것들을 걸러 낸다. 자세한 사정은 그 모듈 설명에 적어 두었다.
-    if len(loaded_images) < 4:
+    if len(loaded_images) < MAX_SCENES:
         try:
             import review_photos
             extra = review_photos.usable_review_photos(
-                product_info, want=4 - len(loaded_images))
+                product_info, want=MAX_SCENES - len(loaded_images))
             loaded_images.extend(extra)
         except Exception as e:
             print(f"[Review Photo Note] 상품평 사진을 쓰지 못했습니다: {str(e)[:90]}")
 
     # 그래도 모자라면 있는 만큼만 쓴다. 장면 수를 사진 수에 맞춘다.
-    return loaded_images[:4]
+    return loaded_images[:MAX_SCENES]
 
 
 def count_product_images(product_info: dict) -> int:
@@ -341,6 +351,34 @@ def build_estatereels_storyboard(product_info: dict, scene_photos: list, concept
             "kb": KB_CYCLE[3]
         }
     ]
+
+    # 사진이 4장을 넘으면 그만큼 장면을 더 만든다.
+    #
+    # 예전에는 이 목록이 4개로 고정이라, 사진을 6~8장 가진 상품도 4장만 쓰고
+    # 나머지를 버렸다(딥링크 55건 중 25건이 그랬다). 운영자가 "사진 사용이 너무
+    # 부족하다"고 한 실제 원인이 이것이다.
+    #
+    # 끼워 넣는 자리는 CTA 앞이다. CTA('링크는 프로필과 본문에')는 마무리 인사라
+    # 중간에 오면 영상이 거기서 끝난 것처럼 보인다.
+    if len(scene_photos) > 4:
+        cta = storyboard.pop()
+        for i in range(3, min(len(scene_photos), MAX_SCENES) - 1):
+            storyboard.append({
+                # 문구는 video_pipeline 이 대사로 덮어쓴다. 여기서는 사진과 움직임만
+                # 정해 두고, 덮어쓰지 않는 경우를 위해 사실만 적힌 기본값을 둔다.
+                "role": "point",
+                "seq": i,
+                "photo": scene_photos[i],
+                "badge": f"{disc_rate}% 할인" if disc_rate else f"{curr_price:,}원",
+                "caption": clean_title_short,
+                "sub": (f"{ORIG_LABEL} {orig_price:,}원" if has_discount
+                        else f"현재가 {curr_price:,}원"),
+                "narration": f"현재 판매가는 {curr_price:,}원입니다.",
+                "kb": KB_CYCLE[i % len(KB_CYCLE)],
+            })
+        cta["seq"] = len(storyboard)
+        cta["photo"] = scene_photos[min(len(scene_photos), MAX_SCENES) - 1]
+        storyboard.append(cta)
 
     config_data = cfg.load_config()
     api_key = config_data.get("gemini_api_key", "")

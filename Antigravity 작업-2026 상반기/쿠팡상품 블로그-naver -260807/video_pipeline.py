@@ -208,7 +208,7 @@ def build_script(product: dict, log=log) -> dict:
     # 사진보다 문장이 많으면 남는 장면을 같은 사진으로 채우게 되는데, 그러면
     # 한 병 사진이 네 장면 내내 나온다. 짧아도 반복 없는 편이 낫다.
     import reels_generator as R
-    n_scenes = min(4, R.count_product_images(product))
+    n_scenes = min(R.MAX_SCENES, R.count_product_images(product))
 
     prompt = f"""{context}
 
@@ -216,8 +216,11 @@ def build_script(product: dict, log=log) -> dict:
 
 규칙:
 - 정확히 {n_scenes}문장. 문장마다 짧게. 한 문장 45자 안쪽.
-  (이 상품은 쓸 수 있는 사진이 {n_scenes}장뿐이라 장면도 {n_scenes}개다.
+  (이 상품은 쓸 수 있는 사진이 {n_scenes}장이라 장면도 {n_scenes}개다.
    문장이 남으면 잘려 나가고, 모자라면 빈 장면이 생긴다)
+- 문장마다 다른 이야기를 해라. 같은 값을 두 번 말하지 마라 —
+  장면마다 다른 사진이 나오므로 같은 말이 반복되면 지루해진다.
+- 마지막 문장은 마무리다. 구매를 재촉하지 말고 '링크에서 확인하라'로 끝내라.
 - 첫 문장은 이 상품이 필요한 '한 사람의 상황'으로 시작한다. 상품명으로 시작하지 마라.
 - 가격을 말할 때는 확인 시점을 함께 말한다.
 - 개당 단가가 위에 있으면 반드시 쓴다. 총액보다 판단이 선다.

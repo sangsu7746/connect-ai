@@ -98,5 +98,3 @@
 08:22:32 [write] position → 6050
 08:22:50 [git-backup] removed per-slug .gitignore (legacy bootstrap artifact)
 08:22:55 [git-backup] untracked .remember/logs and .remember/tmp — a version older than the exclusion had committed them. They stop being pushed from now on; commits that already carry them are left untouched, because removing those means rewriting history and force-pushing, which breaks every other clone of this store.
-08:23:01 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
-08:23:02 [consolidation] tokens: 9+25495cache→4668out ($0.035157)
