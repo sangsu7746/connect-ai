@@ -1,5 +1,8 @@
 # Recent
 
+## 2026-08-09
+Loan compliance gate opened (reg# 2026-대구중구-0002, commit 216c47929); fixed 동록→등록 typos ×5, Kakao ID (ds10000→du2552), phone mismatch (010-7697-5684 active vs -2577-2679 unregistered). Photo-mode reuse mapping (keyframe→AdConfig, tempo/duration), ffmpeg kenburns cost-benefit (A2→A8 swap). Comment-ad automation stalled 08-05; Firebase logs ~3wk stale.
+
 ## 2026-08-08
 Photo-only mode for YouTube homage: mapped keyframe/shotType, validated 7-photo→21sec conversion, added tempo selector UI, relaxed duration constraints, verified Firestore subcollection type compat.
 
