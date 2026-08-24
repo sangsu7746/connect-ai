@@ -1,3 +1,4 @@
 
-## 09:47 | feat/adstudio-youtube-homage
-Fixed Tistory image upload via attach-menu fallback (hidden file-input element removed from editor); verified 6 images published to headjim01.tistory.com/57; fixed Coupang blog; began keyword support—pending Naver pub, UI blog button, 3-item 2x-daily schedule.
+## 10:22 | AutoAd-multi-account-setup
+
+Fixed Band headless login, added 49 channels for second Band account (headjim100@gmail.com, 45 writable), changed post limits to account-level (Band 50·Facebook 80), integrated Purple Cow marketing checks into copy_engine.py, created 70MB migration package on USB — auto-loop paused, pending configuration on new computer.
