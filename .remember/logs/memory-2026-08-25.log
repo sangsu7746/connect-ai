@@ -263,3 +263,30 @@
 21:17:11 [ndc] running (PID 1253)
 21:17:13 [git-backup] untracked .remember/logs and .remember/tmp — a version older than the exclusion had committed them. They stop being pushed from now on; commits that already carry them are left untouched, because removing those means rewriting history and force-pushing, which breaks every other clone of this store.
 21:17:16 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:17:18 [git-backup] committed .remember
+21:17:23 [git-backup] pushed .remember
+21:17:31 [ndc] tokens: 9+25495cache→1383out ($0.016272)
+21:17:33 [ndc] 230→207b (-10%)
+21:18:23 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:18:28 [hook] save-session: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:18:29 [extract] session 1e120b68-f983-4553-a57e-70bddf8b2ae8
+21:18:30 [extract] 14 exchanges (1 human)
+21:18:30 [extract] 1 human msgs < 3, skip
+21:18:42 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:20:00 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:20:27 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:20:53 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:20:59 [hook] save-session: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:21:00 [extract] session 1e120b68-f983-4553-a57e-70bddf8b2ae8
+21:21:01 [extract] 19 exchanges (1 human)
+21:21:01 [extract] 1 human msgs < 3, skip
+21:21:09 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:21:26 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:22:06 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:22:25 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:24:34 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:24:39 [hook] save-session: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+21:24:40 [extract] session 1e120b68-f983-4553-a57e-70bddf8b2ae8
+21:24:41 [extract] 28 exchanges (2 human)
+21:24:41 [extract] 2 human msgs < 3, skip
+21:24:57 [hook] post-tool: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
