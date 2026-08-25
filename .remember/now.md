@@ -1,7 +1,3 @@
 
-## 12:06 | feat/adstudio-youtube-homage
-Created Playwright Naver publisher (`naver_playwright.py`) replacing Selenium+pyautogui, using `expect_file_chooser` per Tistory's working approach; published posts — pending verification images actually attached.
-## 12:14 | feat/adstudio-youtube-homage
-Fixed `naver_playwright.py` — Naver publisher selectors (`.publish_btn__m9KHH`, `.confirm_btn__WEaBq`) and verification (URL nav); executed — pending image/content verification.
-## 13:07 | feat/adstudio-youtube-homage
-Diagnosed Naver image loss as timing issue (4s insufficient for 6-image attach, DOM needs 3s+ per image); fixed `naver_playwright.py` to await per-image editor confirmation; executed — pending post verification.
+## 21:15 | feat/instagram-automation
+네이버 발행기(Playwright) UI 연결, 이미지 6장 확인 — Selenium 제약 해결, 정규식 버그 수정. 인스타 Meta API 설계만(구현 대기: 개발자 앱 설정 필요).
