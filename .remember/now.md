@@ -1,5 +1,5 @@
 
-## 21:34 | feat/adstudio-youtube-homage
-Completed thread-reply humanization workflow (guard.py/diversity.py/writer.py/settings.py/prompts refactored; +21 tests, 10 gold samples); discovered homage-studio.web.app deployment mismatch (serving MemoryFrame, not listed app), blocked on user clarification; scraped 5 web apps for metrics (mirizip provided usable data only).
-## 05:02 | feat/adstudio-youtube-homage
-Root-cause: friction-marketing signal not style (81% vs 6%); Q-type 50.8%✓, N/L 88.7%; 12 samples, 0 errors; signature-removal decided, impl interrupted.
+## 05:14 | feat/adstudio-youtube-homage
+Identified guard killing good content (58% of discarded drafts rated person-like); root causes: first-word reuse (50% of rejects) and style slot constraints (causing Korean corruption); kept "gap" requirement, removed style slots, launched workflow recalculating pass rates and arch percentages—pending completion (est. 3-4hrs).
+## 05:26 | feat/adstudio-youtube-homage
+Extended auto-publish to blogs (Naver+Tistory); Naver session live ✅, Tistory broken (cookies 14d valid); modified server.js unattended mode, began auto/run.js integration—blocked: Tistory manual re-auth required.

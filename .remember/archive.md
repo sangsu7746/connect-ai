@@ -1,5 +1,8 @@
 # Archive
 
+## Week of 2026-08-17
+YouTube homage integration: fixed session-expiration bug in publish flow plus 3 related issues (category/selector/escaping). Text published to Tistory but image upload failed; added diagnostics. Login timeout blocked progress, pivoted to publish-only testing.
+
 ## Week of 2026-08-03
 Estate-reels shipped (76 files); SNS section covers 5 platforms (YT/IG/TikTok/Threads/X) with auto-caption + tracking; Threads reply ads (5-module). Car-reels: 16-concept engine, 75 TS fixes, 21/31 defects; 8/10 FB ads. YouTube homage (21 commits, 115 tests) + SD auto-gen; evaluated 266 FB groups, optimized grid cost (32→16). Classified 406 channels, rebuilt approval/click-tracking pipelines; deployed 151 mutation tests; fixed prod bugs (daemon, emoji, encoding, timezone); 3 posts live.
 
