@@ -7,3 +7,5 @@ Deployed keepalive to daily 07:30 scheduled task (세션점검.bat), fixed Naver
 Refactored naver_login.py (fixed timeout/Chrome profile lock issues by removing wait/control), verified headjim blog login, ctm10000 login in progress (user logged in, awaiting window close for verification), Tistory pending.
 ## 09:06 | feat/adstudio-youtube-homage
 All 3 Naver blogs confirmed working w/ isolated profiles, tistory_login.py created & opened, pending manual Kakao login & close.
+## 11:23 | feat/adstudio-youtube-homage
+ThreadsReply: pass rate 91.7% (11/12, up 7.7pp), blind test flipped (less suspicious than humans), 0 sigs, 13 mutations tested, tests +22, uncommitted · AutoAd untouched.
