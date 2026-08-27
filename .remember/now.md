@@ -1,11 +1,4 @@
 
-## 08:27 | feat/adstudio-youtube-homage
-Implemented Naver/Instagram session keepalive with auto token renewal & expiry alerts (naver_keepalive.py, session-keeper.js, server/app.js, index.html, style.css).
-## 08:36 | feat/adstudio-youtube-homage
-Deployed keepalive to daily 07:30 scheduled task (세션점검.bat), fixed Naver blogId verification & profile cookie isolation bugs, added app login status alerts, created naver_login.py tool — awaiting user logins (headjim/ctm10000/Tistory) to complete setup.
-## 08:46 | feat/adstudio-youtube-homage
-Refactored naver_login.py (fixed timeout/Chrome profile lock issues by removing wait/control), verified headjim blog login, ctm10000 login in progress (user logged in, awaiting window close for verification), Tistory pending.
-## 09:06 | feat/adstudio-youtube-homage
-All 3 Naver blogs confirmed working w/ isolated profiles, tistory_login.py created & opened, pending manual Kakao login & close.
-## 11:23 | feat/adstudio-youtube-homage
-ThreadsReply: pass rate 91.7% (11/12, up 7.7pp), blind test flipped (less suspicious than humans), 0 sigs, 13 mutations tested, tests +22, uncommitted · AutoAd untouched.
+## 11:57 | feat/adstudio-youtube-homage
+
+Added blog routing/batching by category to `blog.js`/`server.js`/`auto/run.js` & Instagram acct mapping to `auto/config.json`, ran full pipeline — Instagram 3/3 published, blogs 0/3 (1 actually succeeded despite timeout); fixed timeout handling, debugging remaining failures.
