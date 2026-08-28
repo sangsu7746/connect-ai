@@ -3,6 +3,8 @@
 config.json
 config.json.bak          # 키 교체 시 만드는 백업. 옛 키와 비밀번호가 그대로 들어 있다
 *.bak
+config.json.bak-*        # 날짜가 붙은 백업(config.json.bak-0821-1642)은 *.bak 에 안 걸린다
+*.bak-*
 *.key
 .env
 .env.*
@@ -12,6 +14,12 @@ config.json.bak          # 키 교체 시 만드는 백업. 옛 키와 비밀번
 .coupang_profile/
 .partners_profile/
 *_profile/
+# 계정 이름이 뒤에 붙은 프로필은 위 *_profile/ 에 안 걸린다.
+# .naver_profile_headjim/ 은 '_profile' 로 끝나지 않기 때문이다 — 실제로 새어 있었다.
+*_profile_*/
+.naver_profile*/
+.instagram_profile*/
+*.pkl
 
 # 데이터베이스와 백업
 *.db
@@ -38,6 +46,8 @@ __pycache__/
 cm.txt
 commitmsg*.txt
 
-# 실행 상태 파일
+# 실행 상태 파일 — 이 PC 의 진행 상황이라 저장소에 넣을 것이 아니다
 .daily_state.json
+.tistory_state.json
+.last_video
 temp_review_imgs/
