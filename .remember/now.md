@@ -1,5 +1,3 @@
 
-## 22:26 | feat/adstudio-youtube-homage
-Identified 25% context-mismatch in ThreadsReply samples; analyzed conversion funnel (25→2, 8%); prioritized context-guard fix; 6 work-rounds untracked, pending commit.
-## 06:58 | feat/adstudio-youtube-homage
-Context-guard fixes (4 files) validated w/real feed: 49→1 (2% vs 5-10 projected). Fresh posts <1d have zero problems, root-cause blocker. Switched to problem-keywords (4 groups), reconfigured FEEDS (removed following/for_you, added search feeds), pending validation run.
+## 14:58 | feat/adstudio-youtube-homage
+Resumed after Tistory login blocker; verified 6 posts published yesterday and Naver sessions OK (Instagram 58d remaining); Tistory session dead despite valid cookie—opened login window, awaiting user to complete login flow and close to save.
