@@ -95,6 +95,17 @@ def _md_to_tistory_html(md: str) -> str:
             ln = raw.strip()
             if not ln:
                 continue
+            m_img = re.match(r"^\[\[IMG(\d+)\]\]$", ln)
+            if m_img:
+                # 업로드된 이미지 자리. tistory_poster._apply_uploaded 가
+                # {{IMGn|폴백}} 을 실제 주소로 바꿔준다(폴백은 비워 둔다).
+                flush_para()
+                flush_list()
+                out.append(
+                    f'<p data-ke-size="size16"><img src="{{{{IMG{m_img.group(1)}|}}}}" '
+                    f'style="max-width:100%;height:auto;"></p>'
+                )
+                continue
             if re.match(r"^#{1,3}\s+", ln):
                 flush_para()
                 flush_list()
@@ -118,8 +129,12 @@ def _md_to_tistory_html(md: str) -> str:
     return "\n".join(out)
 
 
-def publish_tistory(title: str, body_md: str, category: str) -> str:
-    """tistory_poster 의 기존 발행 흐름 재사용(비공개 발행). 반환: 글 URL.
+def publish_tistory(title: str, body_md: str, category: str, mode: str = "private",
+                    images: list = None, wait_minutes: float = 6, tags: str = "") -> str:
+    """tistory_poster 의 기존 발행 흐름 재사용. 반환: 글 URL.
+
+    mode 는 draft/private/public. 기본은 private 이라 이 인자를 안 주던 기존
+    호출부(블로그 리뉴얼 릴스 제작기)는 동작이 바뀌지 않는다.
 
     write_post() 하나가 ensure_login/_ctx/_page 를 전부 포함해서 처리하는
     최상위 함수라 그것만 부른다. prebuilt_html=True 로 넘겨 text_to_html/
@@ -129,9 +144,9 @@ def publish_tistory(title: str, body_md: str, category: str) -> str:
 
     html = _md_to_tistory_html(body_md)
     res = tp.write_post(
-        title, html, tags="", affiliate_url="", mode="private",
+        title, html, tags=tags or "", affiliate_url="", mode=mode,
         headless=False, prebuilt_html=True, category=category or "",
-        upload_paths=None,
+        upload_paths=images or None, wait_minutes=wait_minutes,
     )
     if not res.get("ok"):
         raise RuntimeError(res.get("why") or "티스토리 발행 실패(원인 미상)")
@@ -179,7 +194,20 @@ def _extract_naver_url(poster) -> str:
     return ""
 
 
-def publish_naver(title: str, body_md: str, category: str) -> str:
+def _naver_id() -> str:
+    """config.json 의 naver_id. 없으면 빈 문자열(호출부가 기존대로 동작)."""
+    try:
+        import json
+        import pathlib
+        cfg = pathlib.Path(__file__).with_name("config.json")
+        return str(json.loads(cfg.read_text(encoding="utf-8")).get("naver_id", "")).strip()
+    except Exception:
+        return ""
+
+
+def publish_naver(title: str, body_md: str, category: str, mode: str = "public",
+                  images: list = None, wait_minutes: float = 6,
+                  tags: str = "") -> str:  # mode·wait_minutes 는 무시 (네이버는 즉시 공개, 쿠키 재사용)
     """네이버 즉시 공개 발행 — 되돌리려면 블로그에서 직접 삭제해야 한다. 반환: 글 URL(확보 실패 시 빈 문자열).
 
     login(id, pw) 대신 _init_driver()+_load_cookies_and_check() 만 써서 저장된
@@ -198,7 +226,15 @@ def publish_naver(title: str, body_md: str, category: str) -> str:
                 "naver_poster.py 로 먼저 로그인해 쿠키를 만들어 두세요."
             )
         text = _md_to_naver_plain(body_md)
-        ok = poster.write_post(title, text, category or "")
+        # naver_id 를 빼면 글쓰기 URL 에 ?blogId= 가 붙지 않아 에디터 iframe 이
+        # 아예 뜨지 않는다("에디터를 찾지 못했습니다" 로 실패) — 실측 확인.
+        # 동작하는 coupang_blog_pipeline 과 같은 출처(config.json)에서 읽는다.
+        # 이미지·태그는 write_post 가 원래 받는 인자인데 그동안 넘기지 않고 있었다.
+        # 이미지는 pyautogui 로 윈도우 파일 선택 창을 조작해 붙는다 — 그동안 PC 를 건드리면 안 된다.
+        ok = poster.write_post(title, text, category or "",
+                               naver_id=_naver_id(),
+                               tags=tags or "",
+                               image_paths=images or None)
         if not ok:
             raise RuntimeError("네이버 발행 실패(자세한 원인은 콘솔 로그 참고)")
         return _extract_naver_url(poster)
@@ -217,7 +253,9 @@ def main() -> None:
         if not fn:
             _result(False, error=f"지원하지 않는 platform: {h['platform']}")
             return
-        url = fn(h["title"], h["body_md"], h.get("category", ""))
+        url = fn(h["title"], h["body_md"], h.get("category", ""), h.get("mode", "private"),
+                 h.get("images") or None, float(h.get("wait_minutes", 6)),
+                 ",".join(h.get("tags") or []) if isinstance(h.get("tags"), list) else (h.get("tags") or ""))
         _result(True, url=url or "")
     except Exception as e:
         _result(False, error=f"{type(e).__name__}: {e}")

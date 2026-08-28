@@ -180,7 +180,17 @@ def generate_post_draft(product_id: str, logger_func=print) -> dict:
         keywords=inputs["keywords"],
         context=inputs["context"],
         theme_prompt=inputs["theme_guide"],
+        log=logger_func,
     )
+    # 제목의 훅을 가격으로 못박는다. 지침에도 적어 두지만(purple_cow), 모델이
+    # 상품평 개수로 맺는 일이 반복돼서 여기서 한 번 더 확인한다.
+    # 발행 경로가 넷이라 각 경로에서 고치면 언젠가 한 곳이 빠진다 — 원고를 만드는
+    # 이 자리에서 고쳐 두면 아래로 내려가는 모든 경로가 같은 제목을 본다.
+    fixed = fix_title(post.get("title", ""), product)
+    if fixed != post.get("title", ""):
+        logger_func(f"  └ 제목 보정: {post['title'][:34]} → {fixed[:44]}")
+        post["title"] = fixed
+
     post["product"] = product
     post["diag"] = inputs["diag"]
 
@@ -232,6 +242,75 @@ def split_sentences(text: str) -> list:
         else:
             out.append(p)
     return out
+
+
+#: 제목 끝의 사회적 증거 꼬리 — 가격이 없을 때만 문제가 된다.
+#: 두 어순을 다 잡아야 한다. 실제로 모델이 양쪽 다 쓴다.
+#:   말 뒤에 숫자 — "상품평 9,753개", "구매 8,000명"
+#:   숫자 뒤에 말 — "11,370개 평가의 기록", "83,410개 상품평"
+_SOCIAL_WORD = r"(?:상품평|후기|리뷰|구매(?:자)?|평가|평점)"
+_TAIL_SOCIAL = re.compile(
+    r"[,\s]*(?:"
+    rf"{_SOCIAL_WORD}\s*[\d,]+\s*(?:개|명|건)?"
+    rf"|[\d,]+\s*(?:개|명|건)\s*{_SOCIAL_WORD}"
+    r")"
+    r"(?:\s*의?\s*(?:기록|분석|단가\s*분석))?\s*$")
+
+#: 제목에 가격이 들어 있는가. '1,098원' 처럼 숫자+원 이 있으면 통과.
+_HAS_PRICE = re.compile(r"[\d,]{2,}\s*원")
+
+
+def price_phrase(product: dict) -> str:
+    """
+    제목 끝에 붙일 가격 문구를 실제 데이터로 만든다.
+
+    purple_cow._title_price_forms 와 같은 규칙이다. 그쪽은 모델에게 보여 줄 안내문이고
+    여기는 모델이 말을 안 들었을 때 코드가 직접 고쳐 쓰는 값이다.
+    부탁과 강제를 둘 다 둔다 — 프롬프트만 믿으면 언젠가 또 어긋난다.
+    """
+    def _n(v):
+        try:
+            return int(float(v or 0))
+        except Exception:
+            return 0
+
+    curr, orig = _n(product.get("current_price")), _n(product.get("original_price"))
+    disc = _n(product.get("discount_rate"))
+    if orig and curr and orig > curr and not disc:
+        disc = round((orig - curr) * 100 / orig)
+    if orig > curr > 0:
+        return f"{orig:,}원에서 {curr:,}원"
+    if disc > 0 and curr > 0:
+        return f"할인가 {disc}% {curr:,}원"
+    return f"{curr:,}원" if curr > 0 else ""
+
+
+def fix_title(title: str, product: dict) -> str:
+    """
+    제목이 가격으로 맺어지게 고친다.
+
+    ■ 왜 필요한가
+    지침에 "제목의 훅은 가격"이라고 적어도 모델이 상품평 개수를 집는 일이 반복됐다.
+
+        ✘ 시골 볶음참깨 500g 상품평 9,753개
+        ✘ 신지모루 아이폰 8핀 고속충전 케이블 1m, 상품평 18,431개
+
+    검색해서 들어온 사람이 알고 싶은 건 얼마냐이지 몇 명이 샀냐가 아니다.
+    가격이 없으면 여기서 붙인다. 붙일 값은 DB 의 실제 가격이라 지어낸 숫자가 아니다.
+
+    이미 가격이 들어 있으면 손대지 않는다 — 모델이 잘 쓴 제목까지 획일화할 이유가 없다.
+    """
+    t = (title or "").strip()
+    if not t or _HAS_PRICE.search(t):
+        return t
+
+    phrase = price_phrase(product)
+    if not phrase:
+        return t  # 가격 데이터가 없으면 어쩔 수 없다. 지어내지 않는다.
+
+    # 가격 대신 붙어 있던 '상품평 N개' 꼬리는 떼고 그 자리에 가격을 넣는다
+    t = _TAIL_SOCIAL.sub("", t).rstrip(" ,·-–—")
+    return f"{t}, {phrase}"
 
 
 def ad_title(title: str) -> str:
@@ -844,7 +923,13 @@ def run_coupang_pipeline(product_id: str, logger_func=print) -> dict:
                 keywords=inputs["keywords"],
                 context=inputs["context"],
                 theme_prompt=inputs["theme_guide"],
+                log=logger_func,
             )
+            # generate_post_draft 와 같은 보정. 이 경로도 제목이 상품평으로 맺히면 안 된다.
+            _fx = fix_title(post_data.get("title", ""), product)
+            if _fx != post_data.get("title", ""):
+                logger_func(f"  └ 제목 보정: {post_data['title'][:34]} → {_fx[:44]}")
+                post_data["title"] = _fx
         except Exception as e:
             logger_func(f"⚠️ AI 원고 생성 오류 (기본 템플릿 대체): {e}")
 

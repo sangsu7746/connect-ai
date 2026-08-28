@@ -13,6 +13,7 @@
 가드레일(날조 차단) + 파트너스 표시 기준(제목 [광고]·고지 위치·확정 표현).
 """
 import io
+import json
 import os
 import re
 import sys
@@ -24,6 +25,13 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
 LOG_DIR = os.path.join(BASE_DIR, "logs")
+STATE = os.path.join(BASE_DIR, ".tistory_state.json")
+
+#: 하루에 올릴 총량. 실행 횟수와 무관하게 이 수를 넘기지 않는다.
+#: 스케줄러를 하루 두 번(09:00·19:00) 돌리므로 상한이 없으면 20건이 나간다.
+#: 두 번째 실행은 '더 올리기'가 아니라 '첫 실행에서 못 채운 만큼 채우기'다 —
+#: 쿠팡 차단이나 로그인 놓침으로 못 한 몫을 만회하는 용도다.
+MAX_PER_DAY = 10
 TARGET_PER_RUN = 10
 
 
@@ -106,6 +114,17 @@ def build_job(product: dict):
     }
 
 
+def _state() -> dict:
+    try:
+        return json.load(io.open(STATE, encoding="utf-8"))
+    except Exception:
+        return {"last_date": "", "count_today": 0}
+
+
+def _save_state(s: dict) -> None:
+    io.open(STATE, "w", encoding="utf-8").write(json.dumps(s, ensure_ascii=False, indent=2))
+
+
 def main() -> int:
     n = TARGET_PER_RUN
     for a in sys.argv[1:]:
@@ -115,8 +134,19 @@ def main() -> int:
     import coupang_blog_pipeline as P
     import tistory_poster as T
 
+    st = _state()
+    today = datetime.now().strftime("%Y-%m-%d")
+    if st.get("last_date") != today:
+        st["last_date"], st["count_today"] = today, 0
+
+    left = MAX_PER_DAY - st["count_today"]
+    if left <= 0:
+        log(f"오늘 이미 {st['count_today']}건 올렸습니다(상한 {MAX_PER_DAY}건). 종료합니다.")
+        return 0
+    n = min(n, left)
+
     log("=" * 58)
-    log(f"티스토리 발행 시작 — 목표 {n}건")
+    log(f"티스토리 발행 시작 — 목표 {n}건 (오늘 {st['count_today']}/{MAX_PER_DAY}건 완료)")
 
     targets = pick_targets(n)
     if not targets:
@@ -155,13 +185,20 @@ def main() -> int:
         if r.get("ok"):
             ok += 1
             P.record_published(j["key"], "tistory", r.get("url", ""))
-            log(f"  ✅ {j['title'][:44]}")
+            # 업로드 장수를 함께 남긴다. 0장이면 그 글은 대표이미지가 안 잡혀서
+            # 목록에서 엉뚱한 사진이 붙거나 빈칸으로 나온다 — 나중에 어느 글을
+            # 손봐야 하는지 이 줄만 보고 알 수 있어야 한다.
+            up = r.get("uploaded")
+            mark = "" if up is None else (f" · 사진 {up}장" if up else " · ⚠️ 사진 0장(대표이미지 없음)")
+            log(f"  ✅ {j['title'][:44]}{mark}")
         else:
             log(f"  ✘ {j['title'][:44]} — {r.get('why') or r.get('note')}")
 
+    st["count_today"] += ok
+    _save_state(st)
     log("")
     log("=" * 58)
-    log(f"티스토리 발행 {ok}/{len(jobs)}건")
+    log(f"티스토리 발행 {ok}/{len(jobs)}건 · 오늘 누적 {st['count_today']}/{MAX_PER_DAY}건")
     return 0 if ok else 1
 
 

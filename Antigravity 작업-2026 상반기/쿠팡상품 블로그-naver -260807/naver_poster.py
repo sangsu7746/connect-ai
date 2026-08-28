@@ -9,6 +9,7 @@ import random
 import re
 import json
 import pyperclip
+from contextlib import contextmanager
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -26,6 +27,28 @@ _T_PARA    = (0.70, 1.80)   # 단락 끝(\n) 뒤 멈춤
 _T_THINK   = (1.50, 4.00)   # 가끔 멍 때리는 시간 (약 0.4% 확률)
 _T_HOVER   = (0.15, 0.45)   # 마우스 hover → 클릭까지 시간
 _T_PAGE    = (2.00, 3.50)   # 페이지 로드 후 안정화 시간
+
+#: 전체 속도 배수. config.json 의 naver_speed 로 조절한다.
+#:   1   기존(사람처럼 느리게)
+#:   10  10배 빠름 — 글 1건 25분 → 5분 안팎
+#:   50  거의 즉시. 본문은 클립보드로 한 번에 붙여넣는다
+#: 올릴수록 네이버가 자동화로 볼 여지가 커진다. 계정을 잃으면 되돌릴 수 없으니
+#: 한 번에 최대로 올리지 말고 며칠 지켜보며 단계적으로 올리는 편이 안전하다.
+try:
+    import json as _json
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json"),
+              encoding="utf-8") as _f:
+        SPEED = float(_json.load(_f).get("naver_speed", 1.0) or 1.0)
+except Exception:
+    SPEED = 1.0
+SPEED = max(1.0, min(SPEED, 100.0))
+
+#: 아무리 빨라도 이만큼은 기다린다. 0 으로 두면 화면이 못 따라와 조용히 실패한다.
+_MIN_WAIT = 0.02
+
+#: 이 배수 이상이면 본문을 한 글자씩 치지 않고 클립보드로 붙여넣는다.
+#: 붙여넣기는 사람도 늘 하는 동작이라, 비현실적으로 빠른 타건보다 오히려 자연스럽다.
+_PASTE_THRESHOLD = 8.0
 
 # CDP로 주입할 자동화 지문 은폐 스크립트 ─────────────────────────────
 _STEALTH_JS = """
@@ -163,10 +186,46 @@ class NaverBlogPoster:
 
     # ── 사람다운 동작 헬퍼 ──────────────────────────────────────────
     def _wait(self, seconds: float = 1.5) -> None:
-        time.sleep(seconds)
+        time.sleep(max(seconds / SPEED, _MIN_WAIT))
 
     def _rnd_wait(self, lo: float, hi: float) -> None:
-        time.sleep(random.uniform(lo, hi))
+        """
+        모든 대기가 여기를 지난다. SPEED 로 한 번에 조절한다.
+
+        하한(_MIN_WAIT)을 두는 이유: 대기를 0 으로 만들면 에디터가 준비되기 전에
+        다음 동작이 들어가 조용히 실패한다(카테고리 선택·이미지 삽입이 특히 그렇다).
+        빠르게 하되 화면이 따라올 시간은 남긴다.
+        """
+        time.sleep(max(random.uniform(lo, hi) / SPEED, _MIN_WAIT))
+
+    @contextmanager
+    def _no_implicit_wait(self):
+        """
+        '있으면 잡고 없으면 넘어간다'로 셀렉터를 훑는 구간에서 암묵 대기를 끈다.
+
+        ■ 왜 필요한가 (2026-08-27 실측)
+
+        생성자에 implicitly_wait(10) 이 걸려 있다. 이러면 find_elements 가 아무것도
+        못 찾을 때 **10초를 꼬박 기다린 뒤** 빈 목록을 준다. 서식 툴바를 다루는
+        코드는 후보 셀렉터를 예닐곱 개씩 늘어놓고 훑는데, 네이버 에디터가 바뀌어
+        대부분이 빗나가므로 그 10초가 매번 쌓인다.
+
+        로그에 정확히 찍혔다 — 단락 하나에 2분 01초, 19단락짜리 글 하나에 38분.
+        10건이면 6시간이 넘는다. 실제로 그래서 하루치가 안 끝나고 있었다.
+
+        naver_speed 를 100 으로 올려도 이건 안 줄어든다. 그 값은 _rnd_wait 만
+        나누고, 암묵 대기는 셀레늄 내부에서 걸리기 때문이다. 그동안 속도를
+        올려도 체감이 없던 이유가 이것이다.
+        """
+        self.driver.implicitly_wait(0)
+        try:
+            yield
+        finally:
+            # 로그인·에디터 로딩 쪽은 이 대기에 기대고 있으므로 반드시 되돌린다
+            try:
+                self.driver.implicitly_wait(10)
+            except Exception:
+                pass
 
     def _human_click(self, element) -> None:
         """마우스를 요소로 자연스럽게 이동 후 랜덤 딜레이를 두고 클릭."""
@@ -206,6 +265,19 @@ class NaverBlogPoster:
         - 일반 문자: 한 글자씩 딜레이 타이핑
         - 구두점·문장 끝·단락에서 자연스러운 멈춤 삽입
         """
+        # ── 빠른 모드: 클립보드로 통째 붙여넣기 ──────────────────────
+        # 한 글자씩 치면 700자에 약 90초가 든다. 붙여넣기는 한순간이고,
+        # 사람도 늘 하는 동작이라 비현실적으로 빠른 타건보다 자연스럽다.
+        # 줄바꿈은 붙여넣기로 들어가지 않는 경우가 있어 줄 단위로 나눠 처리한다.
+        if SPEED >= _PASTE_THRESHOLD and len(text) > 12:
+            for k, line in enumerate(text.split("\n")):
+                if k:
+                    ActionChains(self.driver).send_keys(Keys.RETURN).perform()
+                    self._rnd_wait(*_T_PARA)
+                if line:
+                    self._clipboard_paste(line)
+            return
+
         i = 0
         char_count = 0
         while i < len(text):
@@ -738,6 +810,40 @@ class NaverBlogPoster:
             return False
 
     # ── 글쓰기 ──────────────────────────────────────────────────────
+    def _wait_file_dialog(self, timeout_s: float = 8) -> bool:
+        """윈도우 '열기' 파일 선택 창이 실제로 떴는지 확인한다.
+
+        왜 필요한가 — 이 확인 없이 Ctrl+A/Ctrl+V/Enter 를 보내면, 창이 안 떴을 때
+        그 키가 브라우저 에디터로 들어간다. Ctrl+A 가 본문을 전부 선택한 상태에서
+        경로가 붙여넣기돼 **본문이 통째로 사라지고 로컬 경로가 공개된다**.
+        키를 보내기 전에 창의 존재를 반드시 확인해야 한다.
+        """
+        try:
+            import pygetwindow as gw
+        except ImportError:
+            self.log("  ⚠️ pygetwindow 미설치 — 파일 창 확인 불가, 안전을 위해 건너뜁니다")
+            return False
+
+        import time as _t
+        # 윈도우 파일 대화상자 제목은 로캘에 따라 다르다
+        names = ("열기", "Open", "파일 선택", "업로드할 파일 선택", "Choose File", "File Upload")
+        deadline = _t.time() + timeout_s
+        while _t.time() < deadline:
+            try:
+                for w in gw.getAllWindows():
+                    t = (w.title or "").strip()
+                    if t and any(n.lower() in t.lower() for n in names):
+                        try:
+                            w.activate()   # 포커스를 확실히 그 창으로 옮긴다
+                        except Exception:
+                            pass
+                        self.log(f"  → 파일 선택 창 확인: '{t[:30]}'")
+                        return True
+            except Exception:
+                pass
+            _t.sleep(0.4)
+        return False
+
     def write_post(self, title: str, content: str, _category: str = "",
                    naver_id: str = "", tags: str = "",
                    image_paths: list = None,
@@ -881,9 +987,14 @@ class NaverBlogPoster:
                 s.get("type") == "image" for s in segments
             )
             if image_paths and not _has_inline_images:
+                # NAVER_IMG_MODE=input 이면 pyautogui 를 건너뛰고 숨은 파일 입력에 직접 넣는다.
+                # OS 파일 창을 거치지 않아 마우스·키보드를 뺏지 않고, 창이 안 떠서 실패하는 문제도 없다.
+                _force_input = os.environ.get("NAVER_IMG_MODE", "").lower() == "input"
                 try:
                     import pyautogui
-                    _pag_ok = True
+                    _pag_ok = not _force_input
+                    if _force_input:
+                        self.log("  → NAVER_IMG_MODE=input — 파일 입력 직접 주입 방식을 씁니다")
                 except ImportError:
                     _pag_ok = False
                     self.log("  ⚠️ pyautogui 미설치 — 'pip install pyautogui' 후 재시도 (fallback 사용)")
@@ -956,8 +1067,19 @@ class NaverBlogPoster:
                                     break
 
                             # OS 파일 다이얼로그: 경로 붙여넣기 후 열기
+                            #
+                            # ⚠️ 창이 떴는지 반드시 먼저 확인한다 (2026-08-25 사고).
+                            # 예전에는 확인 없이 Ctrl+A → Ctrl+V → Enter 를 보냈는데,
+                            # 파일 선택 창이 안 뜨면 그 키가 에디터 본문으로 들어간다.
+                            # Ctrl+A 가 본문 전체를 선택한 뒤 경로가 덮어써져 **글 본문이 통째로
+                            # 날아가고 로컬 경로가 공개**됐다. 실제로 그렇게 발행된 글이 있었다.
                             _bulk_dialog_open = True
                             try:
+                                if not self._wait_file_dialog(timeout_s=8):
+                                    _bulk_dialog_open = False
+                                    self.log(f"  ⚠️ 이미지 {img_idx+1}: 파일 선택 창이 뜨지 않아 건너뜁니다"
+                                             " (키 입력을 보내지 않았습니다)")
+                                    continue
                                 abs_img_path = os.path.abspath(img_path)
                                 pyperclip.copy(abs_img_path)
                                 self._rnd_wait(0.5, 0.8)
@@ -968,7 +1090,7 @@ class NaverBlogPoster:
                                 pyautogui.press('enter')
                                 self._rnd_wait(4.0, 7.0)   # 업로드 완료 대기
                                 _bulk_dialog_open = False
-                                self.log(f"  → 이미지 {img_idx+1}장 업로드 완료")
+                                self.log(f"  → 이미지 {img_idx+1}장 전송 (업로드 여부는 발행 후 확인 필요)")
                             except Exception as _de:
                                 self.log(f"  ⚠️ 이미지 {img_idx+1} 다이얼로그 입력 실패: {_de}")
                             finally:
@@ -1284,7 +1406,14 @@ class NaverBlogPoster:
         """
         글자 크기 설정.
         툴바는 iframe 바깥에 있으므로 default_content로 나가서 클릭 후 iframe으로 복귀.
+
+        후보 셀렉터를 여러 개 훑으므로 암묵 대기를 끄고 돈다 — 켜 두면
+        빗나간 셀렉터마다 10초씩 붙는다(_no_implicit_wait 주석 참고).
         """
+        with self._no_implicit_wait():
+            self._set_font_size_inner(size)
+
+    def _set_font_size_inner(self, size: str) -> None:
         try:
             # 1. iframe 밖으로 나가기
             self.driver.switch_to.default_content()
@@ -1367,7 +1496,15 @@ class NaverBlogPoster:
         Shift+Home 으로 줄 전체를 잡고, 그때 뜨는 property toolbar 에서 색을 고른다.
         선택이 없으면 색상 버튼이 화면에 아예 없다 — 그게 예전 구현이 실패한 이유다.
         마지막에 End 로 선택을 풀어 다음 입력에 영향을 주지 않게 한다.
+
+        색상 툴바도 후보 셀렉터를 훑으므로 암묵 대기를 끈다. 이 경로는 아직
+        한 번도 성공한 적이 없어서(색이 안 먹는다) **매번 전부 빗나간다** —
+        즉 대기 시간을 고스란히 다 물고 있었다.
         """
+        with self._no_implicit_wait():
+            self._color_current_line_inner(hex_color)
+
+    def _color_current_line_inner(self, hex_color: str) -> None:
         try:
             ActionChains(self.driver).key_down(Keys.SHIFT).send_keys(Keys.HOME)\
                 .key_up(Keys.SHIFT).perform()
@@ -1391,6 +1528,10 @@ class NaverBlogPoster:
         이제 세 갈래로 시도하고, 전부 실패하면 **그때 화면에 뭐가 있었는지 로그로 남긴다**.
         추측을 반복하지 않으려면 실패가 정보를 남겨야 한다.
         """
+        with self._no_implicit_wait():
+            self._set_font_color_inner(hex_color)
+
+    def _set_font_color_inner(self, hex_color: str) -> None:
         want = hex_color.lstrip("#").upper()
         try:
             # ── 팔레트 열기 ──

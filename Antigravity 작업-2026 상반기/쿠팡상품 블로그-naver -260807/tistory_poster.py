@@ -579,6 +579,89 @@ _EDITOR_IMGS_JS = r"""() => {
 }"""
 
 
+#: 에디터 본문을 비운다. 글과 글 사이에 앞 글 사진이 남아 대표이미지로 뽑히는 것을 막는다.
+_CLEAR_EDITOR_JS = r"""() => {
+  const ed = window.tinymce && (window.tinymce.get('editor-tistory') || window.tinymce.activeEditor);
+  if (!ed) return {ok:false};
+  ed.setContent('');
+  return {ok:true};
+}"""
+
+#: 커서를 본문 맨 끝으로 옮긴다. 업로드한 사진이 글 끝에 붙게 하려는 것.
+#: 맨 앞에 넣으면 대가성 고지보다 사진이 위로 올라간다 — 고지는 첫 부분에 있어야 한다.
+_CURSOR_END_JS = r"""() => {
+  const ed = window.tinymce && (window.tinymce.get('editor-tistory') || window.tinymce.activeEditor);
+  if (!ed) return {ok:false};
+  ed.focus();
+  ed.selection.select(ed.getBody(), true);
+  ed.selection.collapse(false);
+  return {ok:true};
+}"""
+
+
+_MENU_ITEMS_JS = r"""() => [...document.querySelectorAll('.mce-menu-item, [role=menuitem]')]
+  .filter(e => e.offsetParent !== null)
+  .map(e => (e.innerText || '').trim()).filter(Boolean).slice(0, 20)"""
+
+_CLICK_PHOTO_JS = r"""() => {
+  const it = [...document.querySelectorAll('.mce-menu-item, [role=menuitem]')]
+    .filter(e => e.offsetParent !== null)
+    .find(e => /사진|이미지/.test(e.innerText || ''));
+  if (!it) return {ok:false};
+  it.click();
+  return {ok:true, txt:(it.innerText||'').trim()};
+}"""
+
+
+def _upload_via_menu(page, paths, seen, log=print, timeout_s: int = 120) -> list:
+    """'첨부' 메뉴 → '사진' → 파일 선택 대화상자로 올린다.
+
+    왜 이 경로가 필요한가 (2026-08-24 실측): 현재 에디터에는 input[type=file] 이
+    **하나도 없다**. 클릭 전에도, 후에도, 본문 iframe 안에도 없다. 이미지 관련
+    요소는 TinyMCE 메뉴버튼 #mceu_0(aria-label='첨부') 하나뿐이고, 메뉴에서 '사진'을
+    눌러야 브라우저가 파일 선택 대화상자를 띄운다. 그래서 DOM 을 뒤지는 대신
+    Playwright 의 file_chooser 로 받는다.
+    """
+    try:
+        page.click("#mceu_0", timeout=10000)
+    except Exception as e:
+        # 아이디가 바뀔 수 있으니 aria-label 로도 시도한다
+        try:
+            page.click("[aria-label='첨부']", timeout=8000)
+        except Exception:
+            log(f"  첨부 메뉴를 열지 못했습니다: {str(e)[:60]}")
+            return []
+    page.wait_for_timeout(1200)
+    log(f"  첨부 메뉴: {', '.join(page.evaluate(_MENU_ITEMS_JS)) or '(비어 있음)'}")
+
+    try:
+        with page.expect_file_chooser(timeout=15000) as fc:
+            r = page.evaluate(_CLICK_PHOTO_JS)
+            if not r.get("ok"):
+                log("  메뉴에서 '사진' 항목을 찾지 못했습니다")
+                return []
+            log(f"  '{r.get('txt')}' 선택")
+        fc.value.set_files(paths)
+        log(f"  파일 {len(paths)}장 전달")
+    except Exception as e:
+        log(f"  파일 선택 대화상자 실패: {type(e).__name__}: {str(e)[:80]}")
+        return []
+
+    deadline = time.time() + timeout_s
+    got = []
+    while time.time() < deadline:
+        page.wait_for_timeout(1500)
+        cur = page.evaluate(_EDITOR_IMGS_JS)
+        got = [u for u in (cur.get("urls") or []) if u not in seen]
+        if len(got) >= len(paths):
+            break
+    if got:
+        log(f"  ✅ 이미지 {len(got)}/{len(paths)}장 업로드됨 (첨부 메뉴 경로)")
+    else:
+        log("  ⚠️ 첨부 메뉴 경로로도 업로드를 확인하지 못했습니다")
+    return got
+
+
 def upload_images(page, paths, log=print, timeout_s: int = 90) -> list:
     """
     로컬 이미지를 티스토리에 업로드하고, 본문에 꽂힌 주소를 순서대로 돌려준다.
@@ -610,8 +693,8 @@ def upload_images(page, paths, log=print, timeout_s: int = 90) -> list:
             cands.append(el)
     log(f"  파일 입력 {len(inputs)}개 중 이미지용 후보 {len(cands)}개")
     if not cands:
-        log("  ⚠️ 업로드 입력을 찾지 못했습니다 — 대표이미지 없이 진행합니다")
-        return []
+        log("  파일 입력이 없습니다 — 첨부 메뉴 경로로 시도합니다")
+        return _upload_via_menu(page, paths, seen, log, timeout_s)
 
     for idx, el in enumerate(cands):
         try:
@@ -633,8 +716,9 @@ def upload_images(page, paths, log=print, timeout_s: int = 90) -> list:
             return got
         log(f"  입력 {idx}: 업로드 반응 없음 — 다음 후보 시도")
 
-    log("  ⚠️ 업로드된 이미지를 확인하지 못했습니다 — 대표이미지 없이 진행합니다")
-    return []
+    # 파일 입력은 있었지만 아무 반응이 없었다. 첨부 메뉴 경로로 한 번 더 시도한다.
+    log("  파일 입력 경로 실패 — 첨부 메뉴 경로로 재시도합니다")
+    return _upload_via_menu(page, paths, seen, log, timeout_s)
 
 
 def _apply_uploaded(html: str, urls: list) -> str:
@@ -798,7 +882,7 @@ def edit_posts(jobs: dict, mode: str = "public", headless: bool = False, log=pri
 def write_post(title: str, content: str, tags: str = "", affiliate_url: str = "",
                mode: str = "draft", headless: bool = False,
                prebuilt_html: bool = False, category: str = "",
-               upload_paths: list = None) -> dict:
+               upload_paths: list = None, wait_minutes: float = 6) -> dict:
     """
     티스토리에 글을 올린다.
 
@@ -821,7 +905,7 @@ def write_post(title: str, content: str, tags: str = "", affiliate_url: str = ""
         ctx = _ctx(pw, headless)
         p = _page(ctx)
         try:
-            if not ensure_login(p, wait_minutes=6):
+            if not ensure_login(p, wait_minutes=wait_minutes):
                 result["why"] = "로그인/편집기 도달 실패"
                 return result
             return _write_one(p, title, html, tags, mode, category, upload_paths, result)
@@ -830,12 +914,17 @@ def write_post(title: str, content: str, tags: str = "", affiliate_url: str = ""
 
 
 def _write_one(p, title: str, html: str, tags: str, mode: str,
-               category: str, upload_paths: list, result: dict) -> dict:
+               category: str, upload_paths: list, result: dict, log=print) -> dict:
     """
     이미 로그인된 page 로 글 하나를 올린다. 브라우저 수명은 호출자가 관리한다.
 
     write_posts() 가 여러 건을 한 세션에서 돌리려고 갈라 놓은 것이다.
     글마다 브라우저를 새로 열면 티스토리 세션 쿠키가 사라져 두 번째부터 로그인 화면에 막힌다.
+
+    ⚠️ log 를 반드시 받아 넘긴다. 예전에는 upload_images 를 log 없이 불러서
+    업로드 관련 기록이 **콘솔로만** 나가고 로그 파일에는 한 줄도 남지 않았다.
+    밤에 혼자 도는 작업이라 콘솔은 아무도 안 본다. 그래서 대표이미지가 어긋났을 때
+    업로드가 됐는지 안 됐는지조차 나중에 확인할 수가 없었다.
     """
     p.wait_for_timeout(2000)
     # 이어쓰기 안내 팝업이 뜨면 닫는다(이전 임시저장이 있을 때 나온다)
@@ -849,18 +938,58 @@ def _write_one(p, title: str, html: str, tags: str, mode: str,
         except Exception:
             pass
 
-    # 이미지 업로드가 먼저다. setContent 를 하면 에디터 내용이 통째로 덮여서
-    # 그 전에 올려 둔 이미지가 사라진다. 주소만 받아 두고 본문에 끼워 넣는다.
-    if upload_paths:
-        urls = upload_images(p, upload_paths)
-        html = _apply_uploaded(html, urls)
-        result["uploaded"] = len(urls)
+    # 앞 글의 잔상을 지우고 시작한다.
+    #
+    # 왜 필요한가 (2026-08-26 증상): 목록에서 글 넷 중 둘이 **앞 글의 사진**을
+    # 대표이미지로 달고 있었다. 티스토리는 그 편집 세션에 올라온 이미지 중에서
+    # 대표이미지를 고르는데, 새 글 화면으로 옮겨도 앞 글 내용이 남아 있으면
+    # 그 사진이 후보로 남는다. 이번 글 업로드가 실패하면 앞 글 사진이 그대로 뽑힌다.
+    #
+    # 본문을 비우고 시작하면 이번 글에 올린 사진만 후보가 된다.
+    try:
+        stale = p.evaluate(_EDITOR_IMGS_JS)
+        if stale.get("ok") and stale.get("urls"):
+            log(f"  앞 글 사진 {len(stale['urls'])}장이 남아 있어 비웁니다")
+        p.evaluate(_CLEAR_EDITOR_JS)
+        p.wait_for_timeout(600)
+    except Exception as e:
+        log(f"  에디터 비우기 건너뜀: {str(e)[:60]}")
+
+    # ── 본문 먼저, 사진은 그 뒤 ────────────────────────────────────
+    #
+    # 순서가 거꾸로였다. 예전 주석은 "업로드가 먼저다, setContent 하면 사진이 사라지니까"
+    # 였는데, 그게 바로 대표이미지가 어긋나던 원인이다.
+    #
+    # 티스토리는 사진을 올리면 본문에 자기 표식([##_Image|...|_##])을 심는다.
+    # 대표이미지는 그 **표식**을 보고 고르지, <img> 태그의 주소를 보지 않는다.
+    # 그런데 setContent 는 본문을 통째로 갈아서 표식을 지운다. 주소만 <img> 로 남는다.
+    # 그러면 이 글에는 등록된 사진이 하나도 없는 셈이 되고,
+    # 티스토리는 그 세션에 남아 있던 **앞 글 사진**을 대표이미지로 집는다.
+    #
+    # 2026-08-26 19:33 로그가 이걸 증명한다 — 업로드는 "1/1장" 성공했고
+    # 에디터도 비웠는데, 발행된 글에는 앞 글 사진이 붙었다.
+    #
+    # 그래서 본문을 먼저 넣고, 그 뒤에 사진을 올린다. 표식이 덮이지 않는다.
+    html = _apply_uploaded(html, [])  # 자리표시자를 쿠팡 주소로 되돌린다
 
     r = p.evaluate(_FILL_JS, [title, html])
     if not r.get("ok"):
         result["why"] = f"본문 입력 실패: {r.get('why')}"
         return result
-    print(f"  제목 {r['titleLen']}자 / 본문 {r['bodyLen']}자 입력됨")
+    log(f"  제목 {r['titleLen']}자 / 본문 {r['bodyLen']}자 입력됨")
+
+    if upload_paths:
+        try:
+            p.evaluate(_CURSOR_END_JS)
+            p.wait_for_timeout(400)
+        except Exception:
+            pass
+        urls = upload_images(p, upload_paths, log=log)
+        result["uploaded"] = len(urls)
+        if not urls:
+            # 조용히 넘어가면 안 된다. 이 글은 대표이미지가 안 잡힌다는 뜻이고,
+            # 그 사실을 지금 남겨 둬야 나중에 어느 글을 손봐야 하는지 알 수 있다.
+            log("  ⚠️ 티스토리 업로드 0장 — 대표이미지가 잡히지 않습니다 (본문은 쿠팡 주소로 표시)")
 
     if category:
         result["category_ok"] = select_category(p, category)
@@ -952,7 +1081,8 @@ def write_posts(jobs: list, mode: str = "public", headless: bool = False, log=pr
                 try:
                     out[j["key"]] = _write_one(
                         p, j["title"], j["html"], j.get("tags", ""), mode,
-                        j.get("category", ""), j.get("upload_paths"), {"mode": mode, "ok": False})
+                        j.get("category", ""), j.get("upload_paths"),
+                        {"mode": mode, "ok": False}, log=log)
                 except Exception as e:
                     out[j["key"]] = {"ok": False, "why": str(e)[:140]}
                     log(f"  ✘ {str(e)[:90]}")

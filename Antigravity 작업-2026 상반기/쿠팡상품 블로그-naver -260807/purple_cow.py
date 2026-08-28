@@ -317,6 +317,49 @@ def _pick_principles(diag: dict) -> list:
 # 4. 프롬프트 생성기
 # ════════════════════════════════════════════════════════════════
 
+def _title_price_forms(product: dict) -> str:
+    """
+    제목에 쓸 가격 문구를 **데이터에서 직접 만들어** 준다.
+
+    ■ 왜 문구까지 만들어 주는가
+    예전 지침은 "훅 후보 중 가장 강한 것 하나"를 모델이 고르게 뒀다.
+    그런데 훅 후보에는 '상품평 18,431개' 같은 사회적 증거도 섞여 있어서,
+    모델이 자주 그걸 집었다. 그 결과가 이런 제목들이다.
+
+        ✘ 시골 볶음참깨 500g 상품평 9,753개
+        ✘ 신지모루 아이폰 8핀 고속충전 케이블 1m, 상품평 18,431개
+
+    상품평 개수는 "싸다"를 말하지 않는다. 검색해서 들어온 사람이 알고 싶은 건
+    얼마냐이지 몇 명이 샀냐가 아니다. 그래서 제목의 훅은 **가격으로 고정**한다.
+
+    문구를 코드가 계산해 넘기면 두 가지가 같이 해결된다 —
+    형식이 흔들리지 않고, 없는 숫자를 지어낼 수도 없다(가드레일 숫자 대조와 같은 원리).
+    """
+    def _n(v):
+        try:
+            return int(float(v or 0))
+        except Exception:
+            return 0
+
+    curr = _n(product.get("current_price"))
+    orig = _n(product.get("original_price"))
+    disc = _n(product.get("discount_rate"))
+    if orig and curr and orig > curr and not disc:
+        disc = round((orig - curr) * 100 / orig)
+
+    forms = []
+    if orig > curr > 0:
+        forms.append(f"{orig:,}원에서 {curr:,}원")
+    if disc > 0 and curr > 0:
+        forms.append(f"할인가 {disc}% {curr:,}원")
+    if not forms and curr > 0:
+        # 할인 정보가 없으면 현재가만이라도 넣는다. 가격이 아예 없는 제목보다 낫다.
+        forms.append(f"{curr:,}원")
+    if not forms:
+        return "(가격 데이터가 없다 — 이 경우에만 규격·용도로 제목을 맺어라)"
+    return "  또는  ".join(f"「{f}」" for f in forms)
+
+
 def build_blog_guide(product: dict, price_history: list = None, diag: dict = None) -> str:
     """
     블로그 원고용 지침을 만든다. coupang_blog_pipeline 의 theme_guide 자리에 넣는다.
@@ -339,6 +382,7 @@ def build_blog_guide(product: dict, price_history: list = None, diag: dict = Non
     )
     hook_line = " / ".join(d["hooks"][:3]) if d["hooks"] else "(데이터에서 뽑을 훅 없음)"
     weak_line = "\n".join(f"    - {w}" for w in d["weak"]) if d["weak"] else "    - 없음"
+    price_forms = _title_price_forms(product)
 
     return f"""
 [보랏빛 소 진단 결과] — 세스 고딘 《보랏빛 소가 온다》 기준
@@ -359,19 +403,38 @@ def build_blog_guide(product: dict, price_history: list = None, diag: dict = Non
 1. 제목
    "[쿠팡 핫딜] ○○ 최저가 분석" 같은 형식을 절대 쓰지 마라. 그건 갈색 소다.
 
+   **구성은 이것 하나뿐이다.**
+
+       [브랜드 + 상품명 + 핵심 규격] + , + [아래 가격 문구]
+
+   이 글에 쓸 가격 문구:  {price_forms}
+
+   위에 준 문구를 **글자 그대로** 쓴다. 둘 다 주어졌으면 하나만 고른다.
+   숫자를 다시 계산하거나 반올림하지 마라 — 그대로 옮기면 된다.
+
+   좋은 예)
+       크린랩 크린백 중 50개입 2개, 6,840원에서 3,710원
+       신지모루 아이폰 8핀 고속충전 케이블 1m, 할인가 43% 5,000원
+       탐사 주방세제 리필 1.2L 2개, 할인가 47% 4,530원
+
+   ⛔ 나쁜 예 — **가격 없이 상품평 개수로 맺은 제목**
+       시골 볶음참깨 500g 상품평 9,753개
+       신지모루 아이폰 8핀 고속충전 케이블 1m, 상품평 18,431개
+
+   왜 나쁜가: 상품평 개수는 "싸다"를 말하지 않는다. 검색해서 들어온 사람이
+   알고 싶은 건 **얼마냐**이지 몇 명이 샀냐가 아니다.
+   상품평 개수·구매자 수·평점은 제목의 훅으로 쓰지 마라. 본문에서 쓰면 된다.
+   (가격 문구를 먼저 넣은 뒤 덧붙이는 것은 괜찮다. 다만 없어도 되는 군더더기다)
+
    **제목에는 브랜드와 상품명이 반드시 들어가야 한다.** 검색으로 찾아오는 사람은
    상품명으로 검색한다. 훅만 남기고 상품명을 빼면 아무도 그 글에 도달하지 못한다.
-
-   구성: [브랜드 + 상품명 + 핵심 사양] + [훅 후보 중 가장 강한 것 하나]
-   예) 빙그레 아카페라 아메리카노 1L 12개, 167,700원이 18,080원
-
-   훅은 하나만 쓴다. 두 개 이상 넣으면 둘 다 약해진다.
 
    **40자 안쪽으로 맞춰라.** 그 이상은 검색결과에서 잘린다.
    대가성 표시는 본문 맨 위 고지로 하므로 제목에 "[광고]" 를 쓰지 마라.
    (파트너스 기준은 '제목 또는 첫 부분' 중 하나다. 제목 자리는 상품명과 가격에 쓴다)
 
    길이를 줄이려면 규격을 덜어내라. '45g, 5개입, 1개' 는 '5개입' 만 남기면 된다.
+   가격 문구는 절대 덜어내지 마라 — 그게 제목의 핵심이다.
 
 2. 첫 문단
    상품 이름으로 시작하지 마라. 인사말도 쓰지 마라.
