@@ -1,5 +1,8 @@
 # Archive
 
+## Week of 2026-08-25
+Built Playwright-based Naver publisher replacing Selenium+pyautogui; fixed image-attach timing by awaiting per-image editor confirmation (4s global → dynamic). Published posts with 6 images confirmed; fixed Gemini \n escaping in body. Designed Instagram Meta API integration.
+
 ## Week of 2026-08-17
 YouTube homage integration: fixed session-expiration bug in publish flow plus 3 related issues (category/selector/escaping). Text published to Tistory but image upload failed; added diagnostics. Login timeout blocked progress, pivoted to publish-only testing.
 
