@@ -1,5 +1,3 @@
 
-## 17:52 | feat/adstudio-youtube-homage
-First complete multi-acct blog posting (8 posts, 3 accts, 5 categories); Tistory session verify blocked despite login progress — diag script created.
-## 18:42 | feat/adstudio-youtube-homage
-Diagnosed Tistory 2-stage login issue (Kakao ✓, Tistory button ✗); login screen displayed — pending user button click to complete auth before auto-posting integration.
+## 09:13 | feat/adstudio-youtube-homage
+Identified Tistory auth blocker (wrong Kakao account "밤하늘" lacks headjim01 perms); planned Threads posting for @headjim_01/@headjim_02, blocked pending API investigation (token reqs, carousel support, limits).
