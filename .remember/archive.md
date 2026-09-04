@@ -1,7 +1,7 @@
 # Archive
 
 ## Week of 2026-08-25
-Built Playwright-based Naver publisher with dynamic image-attach timing and Gemini escaping fixes. Shipped Instagram Meta API integration (Firebase posts live); refactored Naver section images (75→34 chars), fixed 4 CardNews bugs (timeout/idle/favicon/cascade). Context-guard reduced validation errors 49→1 via FEEDS reconfiguration; improved ThreadsReply context-mismatch funnel to 8%. 189 tests pass, 21 humanization tests. Blockers: account consolidation, deploy mismatch.
+Deployed Naver publisher (Playwright, dynamic image timing) and IG Meta API integration (Firebase live). Added CarReels BGM (auto/4 moods), ported EstateReels, deployed carreels-ai. Fixed 4 CardNews bugs, optimized Naver images (75→34 chars). Context-guard improved validation 49→1, ThreadsReply funnel to 8%. 189 tests, 21 humanization; blockers: Tistory session, consolidation, deploy mismatch.
 
 ## Week of 2026-08-17
 YouTube homage integration: fixed session-expiration bug in publish flow plus 3 related issues (category/selector/escaping). Text published to Tistory but image upload failed; added diagnostics. Login timeout blocked progress, pivoted to publish-only testing.
