@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Set-Location *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(Write-Output *)",
+      "PowerShell(Start-Sleep *)",
+      "PowerShell(Select-Object *)",
+      "PowerShell(Sort-Object *)",
+      "PowerShell(Where-Object *)",
+      "PowerShell(ForEach-Object *)",
+      "PowerShell(Measure-Object *)",
+      "PowerShell(ConvertFrom-Json *)",
+      "PowerShell(ConvertTo-Json *)",
+      "Bash(mkdir -p *)"
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "flat_vector": {
+    "name": "플랫 벡터 인포그래픽",
+    "prefix": "flat vector illustration, minimal infographic style, clean geometric shapes, soft gradient background, pastel accent colors, 2D design",
+    "negative": "photo, photorealistic, 3d render, cluttered",
+    "color": "#7c3aed"
+  },
+  "pastel_anime": {
+    "name": "파스텔 애니 일러스트",
+    "prefix": "beautiful anime background art, pastel colors, soft lighting, ghibli inspired scenery, detailed illustration, warm atmosphere",
+    "negative": "photo, photorealistic, dark, gloomy",
+    "color": "#f59e0b"
+  },
+  "isometric": {
+    "name": "아이소메트릭 3D",
+    "prefix": "isometric 3d illustration, clean architectural miniature, soft studio lighting, pastel palette, high detail diorama",
+    "negative": "photo, flat 2d, sketch, messy",
+    "color": "#38bdf8"
+  },
+  "cinematic": {
+    "name": "시네마틱 실사",
+    "prefix": "cinematic photography, dramatic lighting, shallow depth of field, high contrast, professional photo, 8k detail",
+    "negative": "illustration, cartoon, anime, painting",
+    "color": "#f87171"
+  },
+  "papercut": {
+    "name": "페이퍼컷 콜라주",
+    "prefix": "layered paper cut art, papercraft collage, depth layers, soft shadows, handcrafted texture, vivid colors",
+    "negative": "photo, photorealistic, flat, digital gradient",
+    "color": "#a78bfa"
+  },
+  "neon_abstract": {
+    "name": "네온 그라디언트 추상",
+    "prefix": "abstract neon gradient background, glowing shapes, dark backdrop, vibrant purple and blue light, smooth flowing forms",
+    "negative": "photo, people, faces, cluttered detail",
+    "color": "#34d399"
+  }
+}
