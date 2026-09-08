@@ -445,6 +445,33 @@ def _publish_parallel(groups: dict) -> tuple:
     return done, login_failed
 
 
+def enabled_channel_count(profile: str) -> int:
+    """그 업종의 활성 채널 수(데모 제외). 테스트에서 갈아끼우는 이음매다."""
+    return sum(1 for c in db.list_channels(enabled_only=True)
+               if c["profile_key"] == profile and not db.is_demo_channel(c))
+
+
+def images_per_round(profile: str) -> int:
+    """한 바퀴에 쓸 그림 수. 채널이 많을수록 여러 장으로 나눈다."""
+    n = enabled_channel_count(profile)
+    if n <= 0:
+        return 0
+    cap = max(1, config.IMAGE_FANOUT_MAX)
+    return -(-n // cap)          # ceil
+
+
+def stock_target(profile: str) -> int:
+    """그 업종이 무한 순환하려면 필요한 재고.
+
+    한 그림은 한 방에 나가면 쿨다운 일수만큼 쉰다. 하루 한 바퀴를 돌리려면
+    '라운드당 그림 수 x 쿨다운 일수' 만큼 있어야 돌아간다.
+
+    ⚠ orchestrator.py 는 이 계산을 그대로 다시 한다(auto_loop 이 orchestrator 를
+      import 하므로 반대 방향 import 는 순환이 된다) — 고칠 때 둘 다 봐야 한다.
+    """
+    return images_per_round(profile) * max(1, config.CREATIVE_COOLDOWN_DAYS)
+
+
 def free_images(prof: str, platform: str):
     """이 업종이 지금 **더 쓸 수 있는 서로 다른 그림 수**. 제한이 없으면 None.
 

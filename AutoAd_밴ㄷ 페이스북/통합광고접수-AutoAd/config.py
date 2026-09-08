@@ -207,6 +207,16 @@ POST_INTERVAL_MAX = int(os.getenv("POST_INTERVAL_MAX", "300"))
 # 같은 소재(이미지)를 다시 쓰기까지의 최소 일수. 같은 그림 반복은 눈에 띈다.
 CREATIVE_COOLDOWN_DAYS = int(os.getenv("CREATIVE_COOLDOWN_DAYS", "14"))
 
+# 그림 1장이 덮는 채널 수 상한. 넘으면 그 바퀴에 그림을 더 쓴다.
+#  ⚠ 20 은 '지금 재고로 감당되는 가장 강한 상한' 이다. 10 으로 조이면
+#    adstudio 가 ceil(74/10)=8장 x 14일 = 112장 필요한데 83장뿐이라 부족해진다.
+#    재고가 늘면 낮출 수 있고, 낮출수록 안전하다.
+IMAGE_FANOUT_MAX = int(os.getenv("IMAGE_FANOUT_MAX", "20"))
+#  ⚠ 재고 목표용 별도 상수를 두지 않는다. '라운드당 그림 수 x 쿨다운 일수' 는
+#    취향이 아니라 산수다 — 한 그림이 나가면 CREATIVE_COOLDOWN_DAYS 만큼 쉬므로
+#    하루 한 바퀴를 돌리려면 그만큼 있어야 한다. 같은 수에 이름을 둘 붙이면
+#    언젠가 갈라진다(stock_target 참고).
+
 # AI 이미지 생성을 통째로 잠근다(1=잠금). 기본은 풀림.
 #   잠기는 것 : showcase.make(결과물 격자) · pamphlet.render_from_doc(설명서 카드)
 #               — 둘 다 제미나이를 부르고, 부르는 만큼 과금된다.
