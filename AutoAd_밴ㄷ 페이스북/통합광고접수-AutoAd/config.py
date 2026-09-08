@@ -217,6 +217,22 @@ IMAGE_FANOUT_MAX = int(os.getenv("IMAGE_FANOUT_MAX", "20"))
 #    하루 한 바퀴를 돌리려면 그만큼 있어야 한다. 같은 수에 이름을 둘 붙이면
 #    언젠가 갈라진다(stock_target 참고).
 
+# 하루에 만들 수 있는 이미지 수의 천장. 엔진별로 나눈다.
+#  ⚠ 하나로 두면 CARD_ENGINE=gemini 로 되돌리는 순간 같은 천장이 그대로
+#    과금이 된다 — 롤백 스위치가 과금 스위치가 되어 버린다.
+#  ⚠ 이건 '목표' 가 아니라 '천장' 이다. 실제 생성량을 정하는 건 재고
+#    목표치(auto_loop.stock_target)다 — 업종이 무한 순환할 만큼 재고가
+#    쌓이면 need 가 0 이 되어 저절로 멈춘다. 이 값은 설정 실수나 재고
+#    계산 버그로 무한정 만들어지는 것만 막는 안전판이다.
+IMAGE_DAILY_BUDGET_SD     = int(os.getenv("IMAGE_DAILY_BUDGET_SD", "12"))
+IMAGE_DAILY_BUDGET_GEMINI = int(os.getenv("IMAGE_DAILY_BUDGET_GEMINI", "2"))
+
+
+def image_daily_budget() -> int:
+    """오늘 만들 수 있는 이미지 수의 천장. CARD_ENGINE 을 따라간다."""
+    return (IMAGE_DAILY_BUDGET_SD if CARD_ENGINE == "sd"
+            else IMAGE_DAILY_BUDGET_GEMINI)
+
 # AI 이미지 생성을 통째로 잠근다(1=잠금). 기본은 풀림.
 #   잠기는 것 : showcase.make(결과물 격자) · pamphlet.render_from_doc(설명서 카드)
 #               — 둘 다 제미나이를 부르고, 부르는 만큼 과금된다.

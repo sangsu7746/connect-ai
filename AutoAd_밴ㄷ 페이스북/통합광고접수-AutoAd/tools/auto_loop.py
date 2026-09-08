@@ -445,37 +445,72 @@ def _publish_parallel(groups: dict) -> tuple:
     return done, login_failed
 
 
-def enabled_channel_count(profile: str) -> int:
-    """그 업종의 활성 채널 수(데모 제외). 테스트에서 갈아끼우는 이음매다."""
-    return sum(1 for c in db.list_channels(enabled_only=True)
+def enabled_channel_count(profile: str, platform: str) -> int:
+    """그 업종의 **그 플랫폼** 활성 채널 수(데모 제외). 테스트에서 갈아끼우는 이음매다.
+
+    ⚠ platform 을 받는다 — 그림 재고가 파일명에 플랫폼을 담아 나뉘어 있다
+      (showcase_{profile}_{platform}_v{n}.png, stock_count 참고). 업종
+      전체로 한 번만 세면 재고가 몰린 플랫폼이 재고 없는 플랫폼의 채널
+      수요를 가린다.
+    """
+    return sum(1 for c in db.list_channels(platform=platform, enabled_only=True)
                if c["profile_key"] == profile and not db.is_demo_channel(c))
 
 
-def images_per_round(profile: str) -> int:
-    """한 바퀴에 쓸 그림 수. 채널이 많을수록 여러 장으로 나눈다.
+def stock_count(profile: str, platform: str) -> int:
+    """그 업종의 **그 플랫폼**이 지금 갖고 있는 쓸 수 있는 그림 수(디스크 기준).
 
-    ⚠ orchestrator.run_campaign 의 n_imgs 계산이 이 ceil 식을 그대로 다시 한다
-      (여기서 import orchestrator as O 를 이미 쓰고 있어, orchestrator 가 이
-      함수를 가져다 쓰면 순환 import 가 된다). 상한(IMAGE_FANOUT_MAX) 계산식을
-      고치면 두 곳을 같이 봐야 한다.
+    ⚠ platform 을 받는다 — showcase_{profile}_{platform}_v{n}.png ·
+      doc_{profile}_{platform}_v{n}.png 처럼 파일명이 이미 플랫폼을 담고
+      있다. 업종 전체로 세면(2026-09-08 이전 버전) 재고가 몰린 플랫폼이
+      재고 없는 플랫폼을 가려 '충족'으로 오판한다 — 실측: printcraft 는
+      전체 53장/목표 42장으로 '충족' 판정났지만 그 53장은 전부 facebook
+      것이고 band(채널 10개)는 0장이라 아무것도 못 받고 있었다.
     """
-    n = enabled_channel_count(profile)
+    import re
+    d = config.CREATIVES_DIR
+    if not d.is_dir():
+        return 0
+    pat = re.compile(rf"^(showcase|doc)_{re.escape(profile)}_{re.escape(platform)}_")
+    return sum(1 for p in d.iterdir()
+               if p.suffix.lower() == ".png" and pat.match(p.name))
+
+
+def images_per_round(profile: str, platform: str) -> int:
+    """한 바퀴에 그 업종·그 플랫폼이 쓸 그림 수. 채널이 많을수록 여러 장으로 나눈다.
+
+    ⚠ platform 별로 나눈다 — enabled_channel_count·stock_count 주석 참고.
+
+    ⚠ orchestrator.run_campaign 의 n_imgs_by_platform 계산이 이 ceil 식을
+      플랫폼별로 그대로 다시 한다(여기서 import orchestrator as O 를 이미
+      쓰고 있어, orchestrator 가 이 함수를 가져다 쓰면 순환 import 가 된다).
+      상한(IMAGE_FANOUT_MAX) 계산식을 고치면 두 곳을 같이 봐야 한다.
+    """
+    n = enabled_channel_count(profile, platform)
     if n <= 0:
         return 0
     cap = max(1, config.IMAGE_FANOUT_MAX)
     return -(-n // cap)          # ceil
 
 
-def stock_target(profile: str) -> int:
-    """그 업종이 무한 순환하려면 필요한 재고.
+def stock_target(profile: str, platform: str) -> int:
+    """그 업종의 그 플랫폼이 무한 순환하려면 필요한 재고.
 
     한 그림은 한 방에 나가면 쿨다운 일수만큼 쉰다. 하루 한 바퀴를 돌리려면
     '라운드당 그림 수 x 쿨다운 일수' 만큼 있어야 돌아간다.
 
+    ⚠ platform 별로 나눈다 — enabled_channel_count·stock_count 주석 참고.
+
     ⚠ orchestrator.py 는 이 계산을 그대로 다시 한다(auto_loop 이 orchestrator 를
       import 하므로 반대 방향 import 는 순환이 된다) — 고칠 때 둘 다 봐야 한다.
     """
-    return images_per_round(profile) * max(1, config.CREATIVE_COOLDOWN_DAYS)
+    return images_per_round(profile, platform) * max(1, config.CREATIVE_COOLDOWN_DAYS)
+
+
+def remaining_image_budget() -> int:
+    """오늘 더 만들 수 있는 이미지 수. 예산은 천장일 뿐 — 실제로 멈추는 건
+    stock_target/stock_count 의 재고 충족 판정이다(do_generate 참고)."""
+    return max(0, config.image_daily_budget() - db.images_made_today())
 
 
 def free_images(prof: str, platform: str):
@@ -559,14 +594,27 @@ def do_generate(profiles, dry=False) -> int:
         #   같은 이름을 쓰는데, 지금은 이 값을 쓰고 나서 재할당하니 안전하지만
         #   헷갈려서 나중에 순서를 바꾸면 조용히 틀린 값을 읽을 수 있다.
         plat_cap = per_cycle_cap(len(profs))
-        need = min(room, free_ch, plat_cap) - have
+        # ⚠ 예산은 '목표' 가 아니라 '천장' 이다. 실제 생성량을 정하는 건
+        #   아래 재고 목표 체크다 — 재고가 차면 need 를 다 못 채워도 건너뛴다.
+        #   이 min() 은 설정 실수(잘못된 상한)로 무한정 만들어지는 것만 막는다.
+        budget = remaining_image_budget()
+        need = min(room, free_ch, plat_cap, budget) - have
         log(f"  [{platform}] 여유 {room} · 남은 채널 {free_ch} · 대기 {have}"
-            f" · 주기당 {plat_cap} → 만들 것 {max(0, need)}")
+            f" · 주기당 {plat_cap} · 오늘 예산 {budget} → 만들 것 {max(0, need)}")
         if need <= 0:
             continue
         for i, prof in enumerate(profs):
             share = need // len(profs) + (1 if i < need % len(profs) else 0)
             if share <= 0:
+                continue
+            # 재고가 목표에 닿았으면 더 만들지 않는다. 이게 생성이 0 으로
+            # 수렴하는 지점이다 — 예산은 천장이고, 멈추는 건 이 조건이다.
+            # ⚠ profile 만이 아니라 platform 도 함께 본다(stock_target·
+            #   stock_count 주석 참고) — 업종 전체로 보면 재고가 몰린
+            #   플랫폼이 재고 없는 플랫폼의 부족을 가린다.
+            tgt = stock_target(prof, platform)
+            if tgt and stock_count(prof, platform) >= tgt:
+                log(f"    {prof}: 재고 목표 {tgt}장 충족 → 건너뜀")
                 continue
             # ★ 쓸 수 있는 그림이 남은 만큼만 만든다(free_images 주석 참고).
             #   전단 재사용 업종은 그림 수가 천장이라, 이걸 안 보면 만든 소재가

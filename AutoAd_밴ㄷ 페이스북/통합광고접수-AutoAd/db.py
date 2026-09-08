@@ -446,6 +446,21 @@ def image_cooldown_left(image_path: str, days: int,
     return max(0, -(-int(left.total_seconds()) // 86400))
 
 
+def images_made_today() -> int:
+    """오늘 만들어진 소재 이미지 수. 하루 생성 예산의 분모다.
+
+    ⚠ image_path 가 빈 행은 세지 않는다. 이미지를 만들지 않은 소재라
+      예산을 쓴 적이 없다.
+    """
+    with get_conn() as c:
+        row = c.execute(
+            "SELECT COUNT(*) n FROM creatives "
+            "WHERE COALESCE(image_path,'') <> '' "
+            "  AND DATE(COALESCE(created_at, '')) = DATE('now','localtime')"
+        ).fetchone()
+    return int(row["n"] if row else 0)
+
+
 def add_click(track_key: str) -> bool:
     """클릭 1건 반영. track_key 는 '{campaign_id}-{channel_id}'.
     해당 크리에이티브를 찾아 clicks 를 올린다. 못 찾으면 False."""
