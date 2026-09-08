@@ -511,7 +511,7 @@ def pick_product(channel: dict, campaign: dict, used=None) -> str:
 _TRACK_IN_TEXT = re.compile(r"[\w.-]+/t/[\w-]+")
 
 
-def _claimed_images() -> set:
+def _claimed_images(round_id: str = None) -> set:
     """**앞으로 나갈 소재가 잡고 있는** 이미지 경로.
 
     같은 그림에 소재가 둘 붙으면 첫 건이 나가는 순간 나머지가 쿨다운에 막힌다.
@@ -523,13 +523,19 @@ def _claimed_images() -> set:
       실측(2026-08-14): 잡힌 소재 540건 중 **533건이 이 죽은 소재**였고,
       그 탓에 이미지 292장 중 쓸 수 있는 것이 2장까지 줄었다.
       pending 만 세도록 바꾸니 재고가 되살아난다.
+
+    ⚠ 같은 바퀴(round_id)가 잡은 것은 제외하지 않는다. 한 바퀴 안에서는
+      여러 채널이 **같은 그림을 공유하는 것이 정상**이기 때문이다.
     """
+    sql = ("SELECT DISTINCT cr.image_path FROM creatives cr "
+           "JOIN approvals a ON a.creative_id = cr.id "
+           "WHERE COALESCE(cr.image_path,'') <> '' AND a.state = 'pending'")
+    args = []
+    if round_id:
+        sql += " AND COALESCE(cr.round_id,'') <> ?"
+        args.append(round_id)
     with db.get_conn() as con:
-        return {r[0] for r in con.execute(
-            "SELECT DISTINCT cr.image_path FROM creatives cr "
-            "JOIN approvals a ON a.creative_id = cr.id "
-            "WHERE COALESCE(cr.image_path,'') <> '' AND a.state = 'pending'"
-        ) if r[0]}
+        return {r[0] for r in con.execute(sql, args) if r[0]}
 
 
 def _recycled_caption(campaign: dict, channel: dict, new_track: str) -> dict:
@@ -1374,7 +1380,8 @@ def publish_creative(creative_id: int, dry_run: bool = None):
             # 이스케이프해서 콘솔 로그가 읽기 나빠진다(위 _block 주석 참고).
             return _block(f"소재 이미지 파일이 없습니다 - 발행하지 않습니다: {img}")
 
-        left = db.image_cooldown_left(row["image_path"], config.CREATIVE_COOLDOWN_DAYS)
+        left = db.image_cooldown_left(row["image_path"], config.CREATIVE_COOLDOWN_DAYS,
+                                      channel_id=row["channel_id"])
         if left:
             return _block(f"같은 소재를 {config.CREATIVE_COOLDOWN_DAYS}일 안에 다시 쓰지 "
                           f"않습니다(앞으로 {left}일) — 동일 이미지 반복은 가장 빨리 걸립니다")

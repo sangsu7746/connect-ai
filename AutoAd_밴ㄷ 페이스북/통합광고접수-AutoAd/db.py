@@ -167,6 +167,10 @@ _MIGRATIONS = [
     ("channels", "ad_policy", "ALTER TABLE channels ADD COLUMN ad_policy TEXT"),
     ("channels", "rules_text", "ALTER TABLE channels ADD COLUMN rules_text TEXT"),
     ("channels", "rules_checked_at", "ALTER TABLE channels ADD COLUMN rules_checked_at TEXT"),
+    # 한 바퀴(= 한 상품에 대한 run_campaign 1회 실행) 식별자.
+    # ⚠ '같은 캠페인' 으로만 묶으면 캠페인을 두 번 돌렸을 때 두 바퀴가 한 덩어리로
+    #   보여 그림이 재사용되지 않는다. 실행마다 새 값을 찍는다.
+    ("creatives", "round_id", "ALTER TABLE creatives ADD COLUMN round_id TEXT"),
 ]
 
 
@@ -408,21 +412,29 @@ def mark_creative_posted(creative_id: int):
                   (_now(), creative_id))
 
 
-def image_cooldown_left(image_path: str, days: int) -> int:
+def image_cooldown_left(image_path: str, days: int,
+                        channel_id: int = None) -> int:
     """같은 **이미지**를 다시 쓰기까지 남은 일수(0이면 지금 써도 됨).
 
     ⚠ creative 행 단위로 보면 안 된다. 캠페인을 돌릴 때마다 새 creative 행이
       생기므로 last_posted_at 이 늘 비어 있어 쿨다운이 한 번도 발동하지 않는다.
-      플랫폼이 보는 건 '같은 그림'이지 DB 행이 아니다."""
+      플랫폼이 보는 건 '같은 그림'이지 DB 행이 아니다.
+
+    ⚠ channel_id 를 주면 **그 방에서의** 마지막 발행만 본다. 쿨다운의 목적이
+      '같은 방에 같은 그림' 방지이기 때문이다(.env 주석 참고). 안 주면 예전처럼
+      전역으로 본다 — 기존 호출부의 하위호환."""
     if days <= 0 or not image_path:
         return 0
     marks = ",".join("?" * len(COUNTS_AS_POSTED))
+    sql = (f"SELECT MAX(COALESCE(p.posted_at, p.created_at)) t "
+           f"FROM posts p JOIN creatives c ON p.creative_id = c.id "
+           f"WHERE p.status IN ({marks}) AND c.image_path = ?")
+    args = list(COUNTS_AS_POSTED) + [image_path]
+    if channel_id is not None:
+        sql += " AND p.channel_id = ?"
+        args.append(channel_id)
     with get_conn() as c:
-        row = c.execute(
-            f"SELECT MAX(COALESCE(p.posted_at, p.created_at)) t "
-            f"FROM posts p JOIN creatives c ON p.creative_id = c.id "
-            f"WHERE p.status IN ({marks}) AND c.image_path = ?",
-            list(COUNTS_AS_POSTED) + [image_path]).fetchone()
+        row = c.execute(sql, args).fetchone()
     if not row or not row["t"]:
         return 0
     from datetime import datetime as _dt, timedelta
