@@ -481,10 +481,13 @@ def images_per_round(profile: str, platform: str) -> int:
 
     ⚠ platform 별로 나눈다 — enabled_channel_count·stock_count 주석 참고.
 
-    ⚠ orchestrator.run_campaign 의 n_imgs_by_platform 계산이 이 ceil 식을
-      플랫폼별로 그대로 다시 한다(여기서 import orchestrator as O 를 이미
-      쓰고 있어, orchestrator 가 이 함수를 가져다 쓰면 순환 import 가 된다).
-      상한(IMAGE_FANOUT_MAX) 계산식을 고치면 두 곳을 같이 봐야 한다.
+    ⚠ orchestrator.run_campaign 의 n_imgs_by_platform 이 **같은 ceil 식**을
+      다시 쓴다. 다만 **입력이 다르다** — 이 함수는 그 플랫폼의 활성 채널
+      전부를 세고, 저쪽은 그 호출이 넘겨받은 channels 목록만 센다
+      (run_by_profile 이 --limit 으로 잘라 보낸다). 두 값은 일상적으로
+      다르며 서로 대체할 수 없다. 같이 봐야 하는 것은 상한
+      (IMAGE_FANOUT_MAX) 계산식뿐이다(orchestrator 가 이 함수를 가져다
+      쓰면 순환 import 가 되므로 각자 계산한다).
     """
     n = enabled_channel_count(profile, platform)
     if n <= 0:
@@ -508,9 +511,28 @@ def stock_target(profile: str, platform: str) -> int:
 
 
 def remaining_image_budget() -> int:
-    """오늘 더 만들 수 있는 이미지 수. 예산은 천장일 뿐 — 실제로 멈추는 건
-    stock_target/stock_count 의 재고 충족 판정이다(do_generate 참고)."""
-    return max(0, config.image_daily_budget() - db.images_made_today())
+    """오늘 더 만들 수 있는 **이미지** 수. 예산은 천장일 뿐 — 실제로 멈추는 건
+    stock_target/stock_count 의 재고 충족 판정이다(do_generate 참고).
+
+    ⚠ 분모는 소재(creatives) 수가 아니라 실제 생성 횟수다. 재고를 재사용한
+      소재와 loan 의 로컬 합성 전단은 돈도 GPU 도 쓰지 않으므로 예산을 쓰지
+      않는다(db.images_generated_today 주석 참고)."""
+    return max(0, config.image_daily_budget() - db.images_generated_today())
+
+
+def image_budget_binds() -> bool:
+    """이번 주기의 소재 수를 이미지 예산으로 조여야 하는가.
+
+    예산의 단위는 '이미지 생성 횟수' 이고 need 의 단위는 '소재 건수' 다. 둘을
+    비교해도 되는 건 소재 한 건이 그림 한 장을 부를 때뿐이다.
+    IMAGE_GEN_LOCKED 가 켜져 있으면 showcase._gen_one·pamphlet.brief_from_doc
+    이 호출 즉시 막히므로 이번 주기는 **한 장도** 만들 수 없다 — 전량 재고
+    재사용이고 비용이 0 이다. 그런 주기까지 이 천장으로 묶으면, 고쳐 놓은
+    분모가 0 에 머무는 바람에 제미나이 기본 천장 2 가 그대로 '플랫폼당 주기당
+    소재 2건' 이 되어 C1 이 자리만 옮겨 되살아난다(2026-08-14 운영자 지시로
+    IMAGE_GEN_LOCKED=1 이 켜져 있는 것이 현재의 정상 운영 상태다).
+    """
+    return not getattr(config, "IMAGE_GEN_LOCKED", False)
 
 
 def free_images(prof: str, platform: str):
@@ -594,28 +616,42 @@ def do_generate(profiles, dry=False) -> int:
         #   같은 이름을 쓰는데, 지금은 이 값을 쓰고 나서 재할당하니 안전하지만
         #   헷갈려서 나중에 순서를 바꾸면 조용히 틀린 값을 읽을 수 있다.
         plat_cap = per_cycle_cap(len(profs))
-        # ⚠ 예산은 '목표' 가 아니라 '천장' 이다. 실제 생성량을 정하는 건
-        #   아래 재고 목표 체크다 — 재고가 차면 need 를 다 못 채워도 건너뛴다.
+        # ⚠ 예산은 '목표' 가 아니라 '천장' 이다. 실제 **생성량**을 정하는 건
+        #   아래 재고 목표 체크다 — 재고가 차면 그 업종은 새 그림 없이 재고만
+        #   돌린다(소재는 계속 나온다).
         #   이 min() 은 설정 실수(잘못된 상한)로 무한정 만들어지는 것만 막는다.
+        #   ⚠ 단위가 다르다 — 예산은 '이미지 생성 횟수', need 는 '소재 건수'.
+        #     그림을 한 장도 만들 수 없는 주기(생성 잠금)에는 천장을 적용하지
+        #     않는다(image_budget_binds 주석 참고).
         budget = remaining_image_budget()
-        need = min(room, free_ch, plat_cap, budget) - have
+        binds = image_budget_binds()
+        need = min([room, free_ch, plat_cap] + ([budget] if binds else [])) - have
         log(f"  [{platform}] 여유 {room} · 남은 채널 {free_ch} · 대기 {have}"
-            f" · 주기당 {plat_cap} · 오늘 예산 {budget} → 만들 것 {max(0, need)}")
+            f" · 주기당 {plat_cap} · 오늘 예산 {budget}"
+            f"{'' if binds else '(재사용만 — 미적용)'} → 만들 것 {max(0, need)}")
         if need <= 0:
             continue
         for i, prof in enumerate(profs):
             share = need // len(profs) + (1 if i < need % len(profs) else 0)
             if share <= 0:
                 continue
-            # 재고가 목표에 닿았으면 더 만들지 않는다. 이게 생성이 0 으로
-            # 수렴하는 지점이다 — 예산은 천장이고, 멈추는 건 이 조건이다.
+            # 재고가 목표에 닿았으면 **새 그림을** 더 만들지 않는다. 이게
+            # 생성이 0 으로 수렴하는 지점이다 — 예산은 천장이고, 멈추는 건
+            # 이 조건이다.
+            # ⚠ 여기서 continue 로 run_by_profile 을 통째로 건너뛰면 안 된다.
+            #   재고를 순환시키는 코드(_round_pool·pick_for_channel)가
+            #   run_campaign **안에** 있어서, 부르지 않으면 소재가 한 건도
+            #   안 생기고 발행할 것도 사라진다. 기본값 그대로 머지했다면
+            #   활성 채널 134곳이 그날로 조용해졌을 자리다(2026-09-08 전수
+            #   리뷰 C2). 멈춰야 하는 건 '생성' 이지 '주기' 가 아니다.
             # ⚠ profile 만이 아니라 platform 도 함께 본다(stock_target·
             #   stock_count 주석 참고) — 업종 전체로 보면 재고가 몰린
             #   플랫폼이 재고 없는 플랫폼의 부족을 가린다.
             tgt = stock_target(prof, platform)
-            if tgt and stock_count(prof, platform) >= tgt:
-                log(f"    {prof}: 재고 목표 {tgt}장 충족 → 건너뜀")
-                continue
+            reuse_only = bool(tgt and stock_count(prof, platform) >= tgt)
+            if reuse_only:
+                # 운영자는 '이 업종은 이제 재고로만 돈다' 를 계속 볼 수 있어야 한다.
+                log(f"    {prof}: 재고 목표 {tgt}장 충족 → 재사용만(새 그림 없음)")
             # ★ 쓸 수 있는 그림이 남은 만큼만 만든다(free_images 주석 참고).
             #   전단 재사용 업종은 그림 수가 천장이라, 이걸 안 보면 만든 소재가
             #   전부 쿨다운에 막힌 채 대기열에만 쌓인다.
@@ -626,12 +662,15 @@ def do_generate(profiles, dry=False) -> int:
             if share <= 0:
                 log(f"    {prof}: 쓸 수 있는 전단 없음(전부 쿨다운/사용 중) → 건너뜀")
                 continue
-            log(f"    {prof}: {share}건 생성")
+            log(f"    {prof}: {share}건 생성"
+                + ("(재고 재사용)" if reuse_only else ""))
             if dry:
                 continue
-            ok, out = run(["tools/run_by_profile.py", "--profile", prof,
-                           "--limit", str(share)],
-                          env={"AUTOAD_PROFILE": prof})
+            cmd = ["tools/run_by_profile.py", "--profile", prof,
+                   "--limit", str(share)]
+            if reuse_only:
+                cmd.append("--reuse-only")
+            ok, out = run(cmd, env={"AUTOAD_PROFILE": prof})
             if not ok:
                 log(f"      ✗ 실패 — {out.strip().splitlines()[-1][:120] if out.strip() else ''}")
                 continue
@@ -641,7 +680,10 @@ def do_generate(profiles, dry=False) -> int:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--profiles", help="쉼표로 구분한 업종(생략하면 loan 을 뺀 전부)")
+    # ⚠ 생략하면 OPT_IN_ONLY 를 뺀 전부다. 지금 OPT_IN_ONLY 는 비어 있으므로
+    #   loan 도 포함된다(2026-08-10 운영자 지시, 위 OPT_IN_ONLY 주석 참고).
+    ap.add_argument("--profiles",
+                    help="쉼표로 구분한 업종(생략하면 활성 채널이 있는 전부)")
     ap.add_argument("--interval", type=int, default=1200,
                     help="주기(초). 기본 1200=20분")
     ap.add_argument("--dry-run", action="store_true",

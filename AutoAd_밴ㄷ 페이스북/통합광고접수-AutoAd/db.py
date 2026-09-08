@@ -119,6 +119,16 @@ CREATE INDEX IF NOT EXISTS idx_threads_targets_author  ON threads_targets(author
 CREATE INDEX IF NOT EXISTS idx_threads_targets_verdict ON threads_targets(verdict);
 """
 
+# 앱 전역 키/값 한 장. 지금 쓰는 곳은 '하루 이미지 생성 횟수' 하나다.
+# ⚠ SCHEMA 문자열이 아니라 상수로 두는 이유 — 이미지 생성은 자식 프로세스에서
+#   일어나는데(auto_loop → run_by_profile → CHILD), 그 프로세스가 init_db() 를
+#   지나왔다는 보장이 없다. 카운터 함수가 쓰기 직전에 같은 DDL 을 한 번 더
+#   지나가면 '테이블 없음' 으로 예산 기록이 조용히 빠지는 일이 없다. 사본이
+#   갈라지지 않게 SCHEMA 에도 이 상수를 이어 붙인다.
+APP_META_DDL = ("CREATE TABLE IF NOT EXISTS app_meta ("
+                "key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)")
+SCHEMA += "\n" + APP_META_DDL + ";\n"
+
 # 향후 컬럼 추가 시 여기에 (테이블, 컬럼, DDL) 등록 → 멱등 마이그레이션
 _MIGRATIONS = [
     # ("posts", "click_count", "ALTER TABLE posts ADD COLUMN click_count INTEGER DEFAULT 0"),
@@ -446,19 +456,49 @@ def image_cooldown_left(image_path: str, days: int,
     return max(0, -(-int(left.total_seconds()) // 86400))
 
 
-def images_made_today() -> int:
-    """오늘 만들어진 소재 이미지 수. 하루 생성 예산의 분모다.
+# ── 하루 이미지 생성 예산의 분모 ────────────────────────────
+# ⚠ 예전에는 creatives 표를 세었다(images_made_today). 그건 '소재' 수지
+#   '이미지 생성' 수가 아니다. 재고를 그대로 재사용한 소재도, loan 처럼 기성
+#   전단을 Pillow 로 로컬 합성한 소재도 image_path 를 갖는다 — 돈도 GPU 도
+#   쓰지 않았는데 예산을 쓴 것으로 세었다. 실측 DB 는 가동일 하루 130~290건의
+#   소재를 만드는데 기본 천장은 2다. 즉 소재 두 건이 생기는 순간 그날의 생성이
+#   전부 멈췄다(2026-09-08 전수 리뷰 C1).
+#   그래서 **돈/GPU 가 실제로 나가는 지점**에서만 올린다:
+#     · content/showcase.py::_gen_one  (SD·제미나이 두 갈래 모두)
+#     · content/pamphlet.py::render_from_doc (제미나이 카드)
 
-    ⚠ image_path 가 빈 행은 세지 않는다. 이미지를 만들지 않은 소재라
-      예산을 쓴 적이 없다.
+def _image_budget_key(day: str = None) -> str:
+    return "images_generated:" + (day or datetime.now().strftime("%Y-%m-%d"))
+
+
+def note_image_generated(n: int = 1, day: str = None) -> None:
+    """그림 n장이 실제로 만들어졌다. day 는 테스트·보정용(기본 오늘).
+
+    ⚠ 여기서 예외가 나도 그림 생성을 멈추면 안 된다. 여러 자식 프로세스가
+      동시에 쓸 수 있어 SQLite 잠금이 스칠 수 있는데, 예산 기록 하나 때문에
+      이미 만든 그림을 버리는 것은 손해가 더 크다. 호출부가 감싼다.
     """
+    now = _now()
     with get_conn() as c:
-        row = c.execute(
-            "SELECT COUNT(*) n FROM creatives "
-            "WHERE COALESCE(image_path,'') <> '' "
-            "  AND DATE(COALESCE(created_at, '')) = DATE('now','localtime')"
-        ).fetchone()
-    return int(row["n"] if row else 0)
+        c.execute(APP_META_DDL)
+        c.execute(
+            "INSERT INTO app_meta (key, value, updated_at) VALUES (?,?,?) "
+            "ON CONFLICT(key) DO UPDATE SET "
+            "  value = CAST(COALESCE(app_meta.value,'0') AS INTEGER) + ?, "
+            "  updated_at = ?",
+            (_image_budget_key(day), str(int(n)), now, int(n), now))
+
+
+def images_generated_today() -> int:
+    """오늘 실제로 만들어진 이미지 수. 하루 생성 예산의 분모다."""
+    with get_conn() as c:
+        c.execute(APP_META_DDL)
+        row = c.execute("SELECT value FROM app_meta WHERE key = ?",
+                        (_image_budget_key(),)).fetchone()
+    try:
+        return max(0, int(row["value"])) if row else 0
+    except (TypeError, ValueError):
+        return 0
 
 
 def add_click(track_key: str) -> bool:

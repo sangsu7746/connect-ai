@@ -324,6 +324,22 @@ def tiles_in_image(path) -> int:
     return 4 if h > w else 2
 
 
+def _note_spend(where: str):
+    """그림 한 장이 **실제로** 나왔다 — 하루 예산의 분모를 여기서 올린다.
+
+    ⚠ 소재(creatives) 수로 세면 안 된다. 재고 재사용과 loan 의 로컬 합성까지
+      예산을 쓴 것으로 잡혀 하루 천장이 곧 하루 소재 총량이 된다(db.py 의
+      images_generated_today 주석 참고).
+    ⚠ 기록에 실패해도 생성은 계속한다. 이미 만든(=이미 지불한) 그림을 예산
+      장부 한 줄 때문에 버리는 것이 더 손해다.
+    """
+    try:
+        import db
+        db.note_image_generated()
+    except Exception as e:
+        print(f"[{where}] 예산 카운터 기록 실패({type(e).__name__}: {e}) — 생성은 계속합니다")
+
+
 def _gen_one(prompt: str, model: str = None) -> bytes:
     # ⚠ 잠금은 호출 **직전**에 본다. 여기가 실제로 돈이 나가는 지점이라,
     #   위쪽 어디를 고쳐도 이 한 줄을 지나지 않고는 과금되지 않는다.
@@ -339,6 +355,7 @@ def _gen_one(prompt: str, model: str = None) -> bytes:
         img = sd_backend.gen_tile(prompt)
         buf = io.BytesIO()
         img.save(buf, format="PNG")
+        _note_spend("showcase")          # GPU 시간이 실제로 나간 지점
         return buf.getvalue()
     from google import genai
     client = genai.Client(api_key=config.GEMINI_API_KEY)
@@ -358,6 +375,7 @@ def _gen_one(prompt: str, model: str = None) -> bytes:
         for part in (cand.content.parts or []):
             inline = getattr(part, "inline_data", None)
             if inline and inline.data:
+                _note_spend("showcase")  # 과금이 실제로 발생한 지점
                 return inline.data
     raise RuntimeError("이미지가 반환되지 않음")
 

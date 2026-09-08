@@ -980,10 +980,17 @@ def _mandatory_baked_in(cap: dict, prof: str = None) -> bool:
 
 
 # ── 캠페인 실행 ─────────────────────────────────────────────
-def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
+def run_campaign(campaign: dict, copy_fn=None, channels=None,
+                 reuse_only: bool = False) -> dict:
     """
     campaign: {title, product, goal, product_key?, promo?}
     channels: None 이면 DB의 enabled 채널 사용
+    reuse_only: 새 그림을 만들지 않고 기존 재고만 돌린다.
+      auto_loop 이 '재고 목표 충족' 으로 판단한 업종에 붙여 보낸다. 멈춰야 하는
+      것은 **생성**이지 이 함수의 호출이 아니다 — 재고를 순환시키는 코드
+      (_round_pool·pick_for_channel)가 이 함수 안에 있어서, 부르지 않으면
+      소재가 한 건도 안 생기고 발행할 것도 사라진다(2026-09-08 전수 리뷰 C2).
+      IMAGE_GEN_LOCKED 와 효과는 같고, 이쪽은 업종·주기 단위로 켜진다.
     반환: {campaign_id, creatives:[...]}
     """
     cid = db.add_campaign(campaign["title"], goal=campaign.get("goal", ""),
@@ -1013,6 +1020,10 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
               f"채널 {_dropped}개 제외 (allow_platforms: {allow or '제한없음'})")
     channels = _allowed
     docs_mode = (config.CONTENT_SOURCE == "docs")
+    # 새 그림을 만들지 않는가. 운영자 전역 스위치(IMAGE_GEN_LOCKED)와 이번
+    # 호출의 업종별 신호(reuse_only)는 아래 두 분기에서 똑같이 '재고 재사용'을
+    # 뜻한다. 한 이름으로 묶어 두 분기가 갈라지지 않게 한다.
+    no_new_images = bool(reuse_only) or bool(getattr(config, "IMAGE_GEN_LOCKED", False))
     # ⚠ 채널마다 다른 이미지를 만든다. 예전엔 업종당 1장을 만들어 돌려 썼는데,
     #   발행 직전 게이트(image_cooldown_left)가 '같은 이미지 14일 금지'를 채널 무관
     #   전역으로 걸기 때문에 첫 건만 나가고 나머지가 전부 차단됐다.
@@ -1062,11 +1073,18 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
     _platform_totals = Counter(ch.get("platform") for ch in channels)
     # 한 그림이 덮는 채널 수 상한(config.IMAGE_FANOUT_MAX)에서, 플랫폼마다
     # 이 바퀴가 쓸 장수를 따로 정한다.
-    # ⚠ tools/auto_loop.py 의 images_per_round() 와 같은 식이다(플랫폼별로
-    #   나눠 적용한다는 점만 다르다). orchestrator 는 tools/ 를 import 하지
-    #   않고(auto_loop 가 orchestrator 를 import 하므로 반대 방향은 순환
-    #   import) _round_pool 이 장수를 인자로만 받으므로 여기서 다시 계산한다
-    #   — 상한(IMAGE_FANOUT_MAX) 계산식을 고치면 두 곳을 같이 봐야 한다.
+    # ⚠ tools/auto_loop.py 의 images_per_round() 와 **식은 같지만 입력이 다르다.
+    #   서로 대체할 수 없다.**
+    #     · images_per_round : 그 업종·그 플랫폼의 **활성 채널 전부**를 센다
+    #       (db 질의). 하루 재고 목표를 계산하는 쪽이라 전체를 봐야 한다.
+    #     · 여기            : 이번 호출이 **넘겨받은 channels 목록**만 센다.
+    #       tools/run_by_profile.py 가 --limit 으로 chans[:limit] 잘라 보내므로
+    #       보통 전체보다 작다.
+    #   그래서 두 값은 일상적으로 다르고, 그게 맞다 — 한쪽 결과를 다른 쪽에
+    #   가져다 쓰면 이번 바퀴가 실제 필요량보다 많은 그림을 나눠 쓰게 된다.
+    #   같이 봐야 하는 것은 상한(IMAGE_FANOUT_MAX) 계산식뿐이다. orchestrator 가
+    #   그 함수를 import 하지 못하는 이유는 그대로다(auto_loop 가 orchestrator 를
+    #   import 하므로 반대 방향은 순환 import).
     n_imgs_by_platform = {
         platform: max(1, -(-count // max(1, config.IMAGE_FANOUT_MAX)))
         for platform, count in _platform_totals.items()
@@ -1104,8 +1122,8 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
                 from content import showcase
                 fmt = f"showcase_{config.PROFILE_KEY}_{ch['platform']}_v{{n}}.png"
                 try:
-                    if getattr(config, "IMAGE_GEN_LOCKED", False):
-                        # 생성이 잠겨 있으면 **만들어둔 재고**로 돈다.
+                    if no_new_images:
+                        # 생성이 잠겼거나 재고 목표를 채웠으면 **만들어둔 재고**로 돈다.
                         # 그림에 무엇이 있는지는 variant 로 되살린다(styles_for).
                         # ⚠ 이 바퀴의, **이 채널의 플랫폼** 풀에서 플랫폼별 로컬
                         #   순번대로 나눠 배정한다 — 옛날 _used_paths 는 이번
@@ -1156,7 +1174,7 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
 
             if image is None:
                 dfmt = f"doc_{config.PROFILE_KEY}_{ch['platform']}_v{{n}}.png"
-                if getattr(config, "IMAGE_GEN_LOCKED", False):
+                if no_new_images:
                     # ⚠ 콘텐츠형과 같은 이유로, 이 채널의 플랫폼 풀에서
                     #   플랫폼별 로컬 순번(p_idx)으로 나눠 배정한다(위 주석 참고).
                     pool = _round_pool(dfmt, n_imgs, round_id)

@@ -38,8 +38,12 @@ def test_tiles_for_unknown_channel_defaults_to_four():
     assert S.tiles_for("nosuchplatform") == 4
 
 
-def test_gen_one_uses_sd_when_engine_is_sd(monkeypatch):
+# ⚠ temp_db 가 필요하다 — _gen_one 은 그림이 나온 자리에서 하루 예산 카운터를
+#   올린다(db.note_image_generated). 격리하지 않으면 이 테스트가 운영 DB 의
+#   오늘치 예산을 실제로 갉아먹는다(실측: data/autoad.db 에 1이 찍혔다).
+def test_gen_one_uses_sd_when_engine_is_sd(monkeypatch, temp_db):
     import config
+    import db
     monkeypatch.setattr(config, "CARD_ENGINE", "sd")
     monkeypatch.setattr(config, "IMAGE_GEN_LOCKED", False, raising=False)
     from content import sd_backend
@@ -49,6 +53,18 @@ def test_gen_one_uses_sd_when_engine_is_sd(monkeypatch):
     out = S._gen_one("a sticker of a cat")
     assert isinstance(out, (bytes, bytearray))
     assert out[:8] == b"\x89PNG\r\n\x1a\n"      # PNG 시그니처
+    # SD 갈래도 GPU 시간을 쓴다 — 예산을 쓴 것으로 세야 한다.
+    assert db.images_generated_today() == 1
+
+
+def test_gen_one_locked_spends_nothing(monkeypatch, temp_db):
+    """잠겨서 못 만든 그림은 예산을 쓰지 않는다."""
+    import config, db, pytest
+    monkeypatch.setattr(config, "CARD_ENGINE", "sd")
+    monkeypatch.setattr(config, "IMAGE_GEN_LOCKED", True, raising=False)
+    with pytest.raises(RuntimeError):
+        S._gen_one("x")
+    assert db.images_generated_today() == 0
 
 
 def test_gen_one_still_locked_when_image_gen_locked(monkeypatch):
