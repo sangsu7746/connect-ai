@@ -113,6 +113,17 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma4:31b-cloud").strip()
 #                gemini-3.1-flash-image = 저렴하나 오타 발생('가치'→'가처')
 #                gemini-2.5-flash-image = 텍스트 대량 붕괴, 사용 금지
 CARD_MODEL = os.getenv("CARD_MODEL", "gemini-3-pro-image").strip()
+
+# ── 카드 이미지 엔진 ────────────────────────────────────────
+#  "gemini" = 기존 유료 경로(gemini-3-pro-image)
+#  "sd"     = 로컬 Stable Diffusion (AUTOMATIC1111 WebUI API)
+#  ⚠ 기존 경로를 지우지 않는다. SD 품질이 안 맞으면 이 한 줄로 되돌아간다.
+CARD_ENGINE  = os.getenv("CARD_ENGINE", "gemini").strip().lower()
+SD_WEBUI_URL = os.getenv("SD_WEBUI_URL", "http://127.0.0.1:7860").rstrip("/")
+SD_STEPS     = int(os.getenv("SD_STEPS", "28"))
+SD_CFG       = float(os.getenv("SD_CFG", "7.5"))
+SD_SAMPLER   = os.getenv("SD_SAMPLER", "DPM++ 2M").strip()
+
 # 콘텐츠형 격자에 넣을 결과물 칸 수. 이미지 생성 비용이 이 수에 정비례한다
 # (칸 1개 = 이미지 1회 생성). 4장 격자를 2장으로 줄이면 비용이 절반이다.
 # ⚠ 1로 두면 '결과물을 여럿 보여준다'는 콘텐츠형의 성격이 사라진다.
