@@ -13,6 +13,7 @@ sys.path.insert(0, str(BASE))
 
 import profiles
 from content import showcase as S
+from content import sd_backend
 
 NEW = ["printcraft", "mirizip", "proheadshot", "colorcraft",
        "petportrait", "wallpreview", "nailpreview"]
@@ -77,15 +78,11 @@ def test_banned_phrases_not_in_specs():
             assert phrase not in blob, f"{k}: SPECS 에 금칙어 '{phrase}' 포함"
 
 
-# sd_backend.NEG_FORCE 와 같은 목록을 여기 복제한다. content/sd_backend.py 는
-# 이번 라운드에서 건드리지 않는 파일이라 import 로 묶지 않는다 — 대신 토큰이
-# 갈라지면(sd_backend.py 수정 시) 이 테스트가 따로 갱신돼야 함을 주석으로 남긴다.
-_NEG_FORCE_TOKENS = [
-    "person", "people", "woman", "man", "face", "portrait", "human",
-    "hands", "body", "skin", "text", "letters", "words", "korean text",
-    "watermark", "signature", "typography", "logo", "caption", "ui",
-    "numbers",
-]
+# sd_backend.NEG_FORCE 상수에서 토큰을 동적으로 파싱한다. 복제본이 아닌
+# 실제 상수를 사용함으로써, NEG_FORCE 가 수정되면 이 테스트도 자동으로
+# 그 변경을 반영하게 된다. 복제본이면 NEG_FORCE 를 추가/삭제해도 이 테스트는
+# 계속 통과하면서 실제로는 검증 불가능한 거짓 안정성을 준다.
+_NEG_FORCE_TOKENS = [t.strip() for t in sd_backend.NEG_FORCE.split(",") if t.strip()]
 
 # ⚠ 기존 항목 2개는 예외다. 상품 자체가 인물 사진이라 NEG_FORCE 와 구조적으로
 #   충돌한다 — Gemini 엔진에서만 성립하고 SD 로는 돌릴 수 없다.
