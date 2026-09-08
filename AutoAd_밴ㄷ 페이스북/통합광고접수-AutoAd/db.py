@@ -568,14 +568,22 @@ def add_campaign(title, goal="", product="", disclosures_id="") -> int:
         return cur.lastrowid
 
 
-def add_creative(campaign_id, channel_id, copy: dict, image_path="", kind="image") -> int:
+def add_creative(campaign_id, channel_id, copy: dict, image_path="", kind="image",
+                 round_id="") -> int:
+    """round_id: 이 소재를 만든 run_campaign 한 바퀴의 식별자(orchestrator.new_round_id).
+
+    ⚠ 기본값은 "" (빈 문자열)이지 None 이 아니다 — _claimed_images() 가
+      COALESCE(cr.round_id,'') 로 비교하므로 값이 없어도 조회가 그대로 맞는다.
+      호출부를 안 고친 기존 테스트·경로는 이 인자를 안 넘겨도 그대로 동작한다.
+    """
     with get_conn() as conn:
         cur = conn.execute(
             """INSERT INTO creatives
-               (campaign_id, channel_id, kind, copy_json, image_path, approved, created_at)
-               VALUES (?,?,?,?,?,0,?)""",
+               (campaign_id, channel_id, kind, copy_json, image_path, approved,
+                round_id, created_at)
+               VALUES (?,?,?,?,?,0,?,?)""",
             (campaign_id, channel_id, kind,
-             json.dumps(copy, ensure_ascii=False), image_path, _now()))
+             json.dumps(copy, ensure_ascii=False), image_path, round_id, _now()))
         return cur.lastrowid
 
 

@@ -452,7 +452,13 @@ def enabled_channel_count(profile: str) -> int:
 
 
 def images_per_round(profile: str) -> int:
-    """한 바퀴에 쓸 그림 수. 채널이 많을수록 여러 장으로 나눈다."""
+    """한 바퀴에 쓸 그림 수. 채널이 많을수록 여러 장으로 나눈다.
+
+    ⚠ orchestrator.run_campaign 의 n_imgs 계산이 이 ceil 식을 그대로 다시 한다
+      (여기서 import orchestrator as O 를 이미 쓰고 있어, orchestrator 가 이
+      함수를 가져다 쓰면 순환 import 가 된다). 상한(IMAGE_FANOUT_MAX) 계산식을
+      고치면 두 곳을 같이 봐야 한다.
+    """
     n = enabled_channel_count(profile)
     if n <= 0:
         return 0

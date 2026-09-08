@@ -538,6 +538,43 @@ def _claimed_images(round_id: str = None) -> set:
         return {r[0] for r in con.execute(sql, args) if r[0]}
 
 
+def new_round_id() -> str:
+    """한 바퀴의 식별자. run_campaign 실행마다 새로 찍는다.
+
+    ⚠ '같은 캠페인' 으로 묶으면 안 된다. 캠페인을 두 번 돌리면 두 바퀴가 한
+      덩어리로 보여 그림이 재사용되지 않는다.
+    """
+    import uuid
+    return uuid.uuid4().hex
+
+
+def _round_pool(fmt: str, n_images: int, round_id: str) -> list:
+    """이 바퀴가 쓸 (번호, 경로) 목록. 재고가 모자라면 있는 만큼만 돌려준다.
+
+    조건은 기존 _existing_free 와 같다 — 파일이 있고, 쿨다운이 아니고,
+    **다른 바퀴의** 미발행 소재가 잡고 있지 않을 것.
+    """
+    taken = _claimed_images(round_id)
+    out = []
+    for n in range(0, 200):
+        if len(out) >= max(0, n_images):
+            break
+        path = str(config.CREATIVES_DIR / fmt.format(n=n))
+        if path in taken or not os.path.isfile(path):
+            continue
+        if db.image_cooldown_left(path, config.CREATIVE_COOLDOWN_DAYS):
+            continue
+        out.append((n, path))
+    return out
+
+
+def pick_for_channel(pool: list, idx: int):
+    """채널 순번 idx 에 그림을 배정한다. 풀을 순환하며 고르게 나눈다."""
+    if not pool:
+        raise ValueError("이 바퀴에 쓸 그림이 없습니다")
+    return pool[idx % len(pool)]
+
+
 def _recycled_caption(campaign: dict, channel: dict, new_track: str) -> dict:
     """예전에 LLM 이 만들어 검증까지 통과한 문구를 **돌려 쓴다**.
 
@@ -1003,39 +1040,24 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
                 return n
         return start
 
-    def _existing_free(fmt, limit=200):
-        """**이미 만들어 디스크에 있는** 이미지 중 지금 쓸 수 있는 것의 (번호, 경로).
-
-        _free_from 과 다르다 — 저쪽은 '새로 만들 빈 번호'를 찾고, 이쪽은
-        '파일이 실제로 존재하는 번호'를 찾는다. 이미지 생성을 잠갔을 때
-        (IMAGE_GEN_LOCKED) 과거에 만들어둔 재고로 광고를 계속 돌리기 위한 것이다.
-
-        ⚠ 조건은 _free_from 과 똑같이 셋이다 — 파일 존재 · 쿨다운 아님 ·
-          미발행 소재가 잡고 있지 않음. 하나라도 빼면 만들자마자 막히는
-          소재가 생기거나 같은 그림이 여러 방에 나간다.
-
-        ⚠ 이번 실행에서 이미 고른 것도 제외한다(_used_paths). 안 그러면 한
-          캠페인 안에서 두 채널이 같은 그림을 받아 뒤엣것이 발행에서 막힌다.
-        """
-        taken = _claimed_images()
-        for n in range(0, limit):
-            path = str(config.CREATIVES_DIR / fmt.format(n=n))
-            if path in taken or path in _used_paths:
-                continue
-            if not os.path.isfile(path):
-                continue            # 만들어둔 적이 없는 번호
-            if db.image_cooldown_left(path, config.CREATIVE_COOLDOWN_DAYS):
-                continue
-            return n, path
-        return None, None
+    # _existing_free 는 '한 바퀴는 이미지를 나눠 쓴다'로 바뀌며 _round_pool 로
+    # 대체됐다(재고 재사용 후보를 찾는 역할은 같지만, 이번 실행에서 쓴 경로를
+    # 전부 배제하는 대신 이 바퀴의 풀에서 순환 배정한다).
 
     show_n = 0                  # 콘텐츠형 격자 일련번호(모티프 조합이 달라진다)
     doc_n = 0                   # 광고형 카드 일련번호
     used_products = set()       # 이번 캠페인에서 이미 쓴 전단
-    _used_paths = set()         # 이번 실행에서 이미 배정한 이미지 경로
+
+    round_id = new_round_id()   # 이번 run_campaign 실행 전체가 공유하는 바퀴 식별자
+    # 한 그림이 덮는 채널 수 상한(config.IMAGE_FANOUT_MAX)에서 이 바퀴가 쓸 장수를 정한다.
+    # ⚠ tools/auto_loop.py 의 images_per_round() 와 같은 식이다. orchestrator 는
+    #   tools/ 를 import 하지 않고(auto_loop 가 orchestrator 를 import 하므로
+    #   반대 방향은 순환 import) _round_pool 이 장수를 인자로만 받으므로 여기서
+    #   다시 계산한다 — 상한(IMAGE_FANOUT_MAX) 계산식을 고치면 두 곳을 같이 봐야 한다.
+    n_imgs = max(1, -(-len(channels) // max(1, config.IMAGE_FANOUT_MAX)))
 
     out = []
-    for ch in channels:
+    for ch_index, ch in enumerate(channels):
         # 업종에 따라 소재 만드는 방식이 다르다.
         #  · flyers : 기성 전단 JPG 를 채널 규격으로 리사이즈(대출 등)
         #  · docs   : 제품 설명서 PDF → AI 카드 생성(InkCraft·미리집 등)
@@ -1058,13 +1080,17 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
                     if getattr(config, "IMAGE_GEN_LOCKED", False):
                         # 생성이 잠겨 있으면 **만들어둔 재고**로 돈다.
                         # 그림에 무엇이 있는지는 variant 로 되살린다(styles_for).
-                        v, path = _existing_free(fmt)
-                        if path is None:
+                        # ⚠ 이 바퀴의 풀에서 채널 순번대로 나눠 배정한다 — 옛날
+                        #   _used_paths 는 이번 실행 안의 재사용을 전부 막았지만,
+                        #   지금은 한 바퀴 안에서 여러 채널이 같은 그림을 공유하는
+                        #   것이 정상이다(스펙 §5.6).
+                        pool = _round_pool(fmt, n_imgs, round_id)
+                        if not pool:
                             raise RuntimeError(
                                 "이미지 생성이 잠겨 있고, 쓸 수 있는 기존 이미지도 "
-                                "없습니다(전부 쿨다운이거나 미발행 소재가 잡고 있음)")
+                                "없습니다(전부 쿨다운이거나 다른 바퀴가 잡고 있음)")
+                        v, path = pick_for_channel(pool, ch_index)
                         image = path
-                        _used_paths.add(path)
                         # ⚠ tiles_n 은 채널 규격(showcase.tiles_for)이 아니라
                         #   재사용하는 그 이미지 자신의 치수(tiles_in_image)로
                         #   준다 — 재고와 채널 규격이 어긋나는 파일이 있어서다
@@ -1086,7 +1112,6 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
                                           channel=ch["platform"], variant=show_n,
                                           out_path=str(out_img))
                         image = s["path"]
-                        _used_paths.add(image)
                         campaign["styles"] = ", ".join(s["styles"])
                         campaign["form"] = "content"
                         show_n += 1
@@ -1102,13 +1127,14 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
             if image is None:
                 dfmt = f"doc_{config.PROFILE_KEY}_{ch['platform']}_v{{n}}.png"
                 if getattr(config, "IMAGE_GEN_LOCKED", False):
-                    v, path = _existing_free(dfmt)
-                    if path is None:
+                    # ⚠ 콘텐츠형과 같은 이유로 풀에서 나눠 배정한다(위 주석 참고).
+                    pool = _round_pool(dfmt, n_imgs, round_id)
+                    if not pool:
                         print(f"[orchestrator] {ch['name'][:26]}: 이미지 생성 잠금 + "
                               f"쓸 수 있는 기존 카드 없음 → 건너뜀")
                         continue
+                    v, path = pick_for_channel(pool, ch_index)
                     image = path
-                    _used_paths.add(path)
                     print(f"[orchestrator] 설명서 카드 **재사용** v{v} → {image}")
                 else:
                     doc_n = _free_from(dfmt, doc_n)
@@ -1117,7 +1143,6 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
                                                  promo=campaign.get("promo"),
                                                  out_path=str(out_img))
                     image = r["path"] if isinstance(r, dict) else r
-                    _used_paths.add(image)
                     doc_n += 1
                     print(f"[orchestrator] 설명서 카드 #{doc_n} → {image}")
         else:
@@ -1149,7 +1174,9 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
         # ★ 이 이미지에 실제로 구워진 의무표기의 지문. 발행 직전에 현재 값과
         #   대조해, 값이 바뀐 뒤에 옛 이미지가 나가는 것을 막는다(_profile_gate C).
         caption["mandatory_img"] = config.mandatory_fingerprint(config.PROFILE_KEY)
-        creative_id = db.add_creative(cid, ch["id"], caption, image)
+        # 이 실행(바퀴)에서 만든 소재라는 표식 — _claimed_images(round_id) 가
+        # 같은 바퀴의 다른 채널이 잡은 그림은 막지 않도록 이걸로 구분한다.
+        creative_id = db.add_creative(cid, ch["id"], caption, image, round_id=round_id)
         approval_id = db.enqueue_approval(creative_id)
         out.append({
             "channel": ch["name"], "platform": ch["platform"],
