@@ -167,13 +167,49 @@ def _fit_tile(img: Image.Image, size: int, margin: float = 0.07) -> Image.Image:
     return canvas
 
 
+def tiles_for(platform: str) -> int:
+    """칸 수는 채널 규격이 정한다.
+
+    ⚠ 고정값(SHOWCASE_TILES) 하나로 둘 수 없다. 격자가 cols = min(n, 2) 라서
+      칸 수가 곧 비율이다 — 2장이면 가로로 길고 4장이면 정사각이다.
+      facebook(1200x630)에 4장을 쓰면 세로로 길어져 잘리고,
+      band(1080x1080)에 2장을 쓰면 가로로 퍼져 여백이 남는다.
+    """
+    w, h = config.CHANNEL_SPECS.get(platform, (1080, 1080))
+    return 2 if (h and w / h >= 1.5) else 4
+
+
+def tiles_in_image(path) -> int:
+    """이미 만들어진 격자 이미지가 **실제로** 몇 칸인지 치수로 되짚는다.
+
+    ⚠ 채널 규격(tiles_for)으로 역산하면 안 된다 — 채널 선호와 기존 재고의
+      실제 모양이 어긋날 수 있다. 실측(2026-09-08): 재고 75장 중 26장이
+      "band=2칸, facebook=4칸"으로 이미 만들어져 있어 tiles_for(channel) 로
+      계산하면 그림에 없는 스타일을 캡션이 말하거나 있는 스타일을 빠뜨린다.
+      격자가 cols=min(n,2) 라서 4칸은 세로가 더 길고 2칸은 가로가 더 길다 —
+      이 비율은 그림 자체에 이미 박혀 있으므로 그걸 그대로 읽는다.
+    """
+    with Image.open(path) as im:
+        w, h = im.size
+    return 4 if h > w else 2
+
+
 def _gen_one(prompt: str, model: str = None) -> bytes:
     # ⚠ 잠금은 호출 **직전**에 본다. 여기가 실제로 돈이 나가는 지점이라,
     #   위쪽 어디를 고쳐도 이 한 줄을 지나지 않고는 과금되지 않는다.
+    #   엔진을 나누는 아래 분기보다도 먼저다 — 어느 엔진으로 가든 잠금은
+    #   똑같이 막아야 한다(2026-08-14 운영자 지시).
     if getattr(config, "IMAGE_GEN_LOCKED", False):
         raise RuntimeError(
             "이미지 생성이 잠겨 있습니다(IMAGE_GEN_LOCKED=1). "
             "풀려면 .env 에서 IMAGE_GEN_LOCKED=0 으로 바꾸세요.")
+    if getattr(config, "CARD_ENGINE", "gemini") == "sd":
+        # SD 는 글자를 못 그린다. 배경·도안만 맡기고 한글은 호출부가 찍는다.
+        from content import sd_backend
+        img = sd_backend.gen_tile(prompt)
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
     from google import genai
     client = genai.Client(api_key=config.GEMINI_API_KEY)
     # ⚠ 배경·구도를 여기서 못 박는다. 실측(2026-08-12): "clean white background"
@@ -209,6 +245,13 @@ def styles_for(profile_key: str, variant: int, tiles_n: int = None) -> list:
 
     ⚠ make() 의 인덱스 계산식과 **반드시 같아야 한다**. 한쪽만 고치면
       그림에 없는 스타일을 문구가 말하게 된다.
+
+    ⚠ tiles_n 을 넘기지 않을 때의 기본값은 tiles_for(channel) 로 바꾸면 안
+      된다 — 여기는 channel 을 모른다(인자로 안 받는다). 호출부가 채널로
+      계산해서 넘기거나, 재사용 시엔 tiles_in_image(path) 로 넘겨야 한다
+      (재고와 채널 규격이 어긋날 수 있어서다 — tiles_in_image 주석 참고).
+      호출부가 tiles_n 을 안 주는 상황(기존 테스트)에서는 SHOWCASE_TILES 가
+      유일하게 옳은 기본값이다.
     """
     spec = SPECS.get(profile_key)
     if not spec:
@@ -237,7 +280,11 @@ def make(profile_key: str = None, channel: str = "facebook",
     motifs = spec.get("motifs") or [""]
     styles = spec["styles"]
     # 칸 수 = 이미지 생성 횟수. 비용이 여기에 정비례한다.
-    n = max(1, min(int(tiles_n or config.SHOWCASE_TILES), len(styles)))
+    # ⚠ 기본값은 tiles_for(channel) 이다 — make() 는 channel 을 항상 알고
+    #   있으니(인자로 받는다) 채널 규격에서 바로 칸 수를 유도할 수 있다.
+    #   고정값(SHOWCASE_TILES)을 쓰면 facebook 에 정사각 4칸을 억지로 넣거나
+    #   band 에 가로 2칸을 억지로 넣어 tiles_for 상단 주석의 문제가 재현된다.
+    n = max(1, min(int(tiles_n or tiles_for(channel)), len(styles)))
     for i in range(n):
         # 변형마다 (기법, 소재) 조합이 겹치지 않게 건너뛴다.
         # ⚠ 스타일 수의 배수로 건너뛰면 variant 가 한 바퀴 돌 때 조합이

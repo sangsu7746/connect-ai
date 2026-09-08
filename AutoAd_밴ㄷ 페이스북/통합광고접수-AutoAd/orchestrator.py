@@ -1059,8 +1059,17 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
                                 "없습니다(전부 쿨다운이거나 미발행 소재가 잡고 있음)")
                         image = path
                         _used_paths.add(path)
+                        # ⚠ tiles_n 은 채널 규격(showcase.tiles_for)이 아니라
+                        #   재사용하는 그 이미지 자신의 치수(tiles_in_image)로
+                        #   준다 — 재고와 채널 규격이 어긋나는 파일이 있어서다
+                        #   (실측: 75장 중 26장). 이 한 줄을 나중에 리팩터링
+                        #   하더라도 tiles_n=showcase.tiles_in_image(path) 는
+                        #   반드시 남아야 한다. 지우면 캡션이 그림에 없는
+                        #   스타일을 말하거나 있는 스타일을 빠뜨리게 된다.
                         campaign["styles"] = ", ".join(
-                            showcase.styles_for(config.PROFILE_KEY, v))
+                            showcase.styles_for(
+                                config.PROFILE_KEY, v,
+                                tiles_n=showcase.tiles_in_image(path)))
                         campaign["form"] = "content"
                         print(f"[orchestrator] 콘텐츠형 소재 **재사용** v{v} → {image}")
                     else:
