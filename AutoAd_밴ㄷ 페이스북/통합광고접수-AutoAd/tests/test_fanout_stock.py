@@ -20,33 +20,44 @@ def _chan(monkeypatch, n):
 
 
 def test_small_profile_needs_one_image_per_round(monkeypatch):
+    import config
     _chan(monkeypatch, 8)
+    monkeypatch.setattr(config, "IMAGE_FANOUT_MAX", 20)  # ceil(8/20)=1 산술 고정
     assert A.images_per_round("inkcraft") == 1
 
 
 def test_exactly_at_cap_is_still_one(monkeypatch):
+    import config
     _chan(monkeypatch, 20)
+    monkeypatch.setattr(config, "IMAGE_FANOUT_MAX", 20)  # ceil(20/20)=1 산술 고정
     assert A.images_per_round("x") == 1
 
 
 def test_one_over_cap_needs_two(monkeypatch):
+    import config
     _chan(monkeypatch, 21)
+    monkeypatch.setattr(config, "IMAGE_FANOUT_MAX", 20)  # ceil(21/20)=2 산술 고정
     assert A.images_per_round("x") == 2
 
 
 def test_large_profile_splits(monkeypatch):
     """adstudio 74채널 → ceil(74/20) = 4장"""
+    import config
     _chan(monkeypatch, 74)
+    monkeypatch.setattr(config, "IMAGE_FANOUT_MAX", 20)  # ceil(74/20)=4 산술 고정
     assert A.images_per_round("adstudio") == 4
 
 
 def test_zero_channels_is_zero(monkeypatch):
+    import config
     _chan(monkeypatch, 0)
+    monkeypatch.setattr(config, "IMAGE_FANOUT_MAX", 20)  # ceil(0/20)=0 산술 고정
     assert A.images_per_round("dead") == 0
 
 
 def test_stock_target_is_round_images_times_cooldown(monkeypatch):
     import config
     _chan(monkeypatch, 50)
-    monkeypatch.setattr(config, "CREATIVE_COOLDOWN_DAYS", 14)
+    monkeypatch.setattr(config, "IMAGE_FANOUT_MAX", 20)  # ceil(50/20)=3 * 14일
+    monkeypatch.setattr(config, "CREATIVE_COOLDOWN_DAYS", 14)  # 산술 고정: 둘 다 필요
     assert A.stock_target("printcraft") == 3 * 14
