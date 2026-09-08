@@ -1049,15 +1049,42 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
     used_products = set()       # 이번 캠페인에서 이미 쓴 전단
 
     round_id = new_round_id()   # 이번 run_campaign 실행 전체가 공유하는 바퀴 식별자
-    # 한 그림이 덮는 채널 수 상한(config.IMAGE_FANOUT_MAX)에서 이 바퀴가 쓸 장수를 정한다.
-    # ⚠ tools/auto_loop.py 의 images_per_round() 와 같은 식이다. orchestrator 는
-    #   tools/ 를 import 하지 않고(auto_loop 가 orchestrator 를 import 하므로
-    #   반대 방향은 순환 import) _round_pool 이 장수를 인자로만 받으므로 여기서
-    #   다시 계산한다 — 상한(IMAGE_FANOUT_MAX) 계산식을 고치면 두 곳을 같이 봐야 한다.
-    n_imgs = max(1, -(-len(channels) // max(1, config.IMAGE_FANOUT_MAX)))
+    # ⚠ 리뷰 발견(Important): 풀은 플랫폼마다 다른 namespace 다 - fmt/dfmt 에
+    #   ch['platform'] 이 박혀 있어(showcase_{PROFILE_KEY}_{platform}_v{n}.png,
+    #   doc_{PROFILE_KEY}_{platform}_v{n}.png) 밴드 재고와 페이스북 재고는
+    #   물리적으로 다른 파일이다. 그런데 장수를 "전체 채널 수"로 한 번만 정해
+    #   모든 플랫폼에 그대로 넘기면, 소수 플랫폼(예: 밴드 8곳)이 다수
+    #   플랫폼(예: 페이스북 66곳) 몫으로 계산된 큰 풀을 그대로 받아 실제
+    #   필요량의 2~4배를 만든다(실측: adstudio facebook 66 + band 8 →
+    #   밴드가 정말 필요한 1장 대신 4장을 나눠 쓰게 됨). 채널 수도, 그래서
+    #   장수도 플랫폼별로 따로 센다.
+    from collections import Counter
+    _platform_totals = Counter(ch.get("platform") for ch in channels)
+    # 한 그림이 덮는 채널 수 상한(config.IMAGE_FANOUT_MAX)에서, 플랫폼마다
+    # 이 바퀴가 쓸 장수를 따로 정한다.
+    # ⚠ tools/auto_loop.py 의 images_per_round() 와 같은 식이다(플랫폼별로
+    #   나눠 적용한다는 점만 다르다). orchestrator 는 tools/ 를 import 하지
+    #   않고(auto_loop 가 orchestrator 를 import 하므로 반대 방향은 순환
+    #   import) _round_pool 이 장수를 인자로만 받으므로 여기서 다시 계산한다
+    #   — 상한(IMAGE_FANOUT_MAX) 계산식을 고치면 두 곳을 같이 봐야 한다.
+    n_imgs_by_platform = {
+        platform: max(1, -(-count // max(1, config.IMAGE_FANOUT_MAX)))
+        for platform, count in _platform_totals.items()
+    }
+    _platform_seen = Counter()   # 채널을 플랫폼별로 몇 번째 보는지(풀 배정용 로컬 순번)
 
     out = []
     for ch_index, ch in enumerate(channels):
+        # ⚠ 풀에서 뽑을 때는 반드시 **플랫폼별 로컬 순번**을 쓴다(아래
+        #   pick_for_channel 호출부). 전역 ch_index 로 플랫폼별 풀을 고르면
+        #   db.channels_for_profile 이 ORDER BY RANDOM() 이라 순번이 우연히
+        #   고르게 섞일 때만 분배가 균등해진다(Minor). 로컬 순번은 채널
+        #   순서와 무관하게 항상 그 플랫폼 풀 안에서 고르게 순환한다.
+        platform = ch.get("platform")
+        p_idx = _platform_seen[platform]
+        _platform_seen[platform] += 1
+        n_imgs = n_imgs_by_platform.get(platform, 1)
+
         # 업종에 따라 소재 만드는 방식이 다르다.
         #  · flyers : 기성 전단 JPG 를 채널 규격으로 리사이즈(대출 등)
         #  · docs   : 제품 설명서 PDF → AI 카드 생성(InkCraft·미리집 등)
@@ -1080,16 +1107,19 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
                     if getattr(config, "IMAGE_GEN_LOCKED", False):
                         # 생성이 잠겨 있으면 **만들어둔 재고**로 돈다.
                         # 그림에 무엇이 있는지는 variant 로 되살린다(styles_for).
-                        # ⚠ 이 바퀴의 풀에서 채널 순번대로 나눠 배정한다 — 옛날
-                        #   _used_paths 는 이번 실행 안의 재사용을 전부 막았지만,
-                        #   지금은 한 바퀴 안에서 여러 채널이 같은 그림을 공유하는
-                        #   것이 정상이다(스펙 §5.6).
+                        # ⚠ 이 바퀴의, **이 채널의 플랫폼** 풀에서 플랫폼별 로컬
+                        #   순번대로 나눠 배정한다 — 옛날 _used_paths 는 이번
+                        #   실행 안의 재사용을 전부 막았지만, 지금은 한 바퀴 안에서
+                        #   같은 플랫폼의 여러 채널이 같은 그림을 공유하는 것이
+                        #   정상이다(스펙 §5.6). fmt 에 platform 이 박혀 있으므로
+                        #   n_imgs 도 p_idx 도 반드시 이 채널의 플랫폼 기준이어야
+                        #   한다(위 루프 머리의 Important 리뷰 발견 참고).
                         pool = _round_pool(fmt, n_imgs, round_id)
                         if not pool:
                             raise RuntimeError(
                                 "이미지 생성이 잠겨 있고, 쓸 수 있는 기존 이미지도 "
                                 "없습니다(전부 쿨다운이거나 다른 바퀴가 잡고 있음)")
-                        v, path = pick_for_channel(pool, ch_index)
+                        v, path = pick_for_channel(pool, p_idx)
                         image = path
                         # ⚠ tiles_n 은 채널 규격(showcase.tiles_for)이 아니라
                         #   재사용하는 그 이미지 자신의 치수(tiles_in_image)로
@@ -1127,13 +1157,14 @@ def run_campaign(campaign: dict, copy_fn=None, channels=None) -> dict:
             if image is None:
                 dfmt = f"doc_{config.PROFILE_KEY}_{ch['platform']}_v{{n}}.png"
                 if getattr(config, "IMAGE_GEN_LOCKED", False):
-                    # ⚠ 콘텐츠형과 같은 이유로 풀에서 나눠 배정한다(위 주석 참고).
+                    # ⚠ 콘텐츠형과 같은 이유로, 이 채널의 플랫폼 풀에서
+                    #   플랫폼별 로컬 순번(p_idx)으로 나눠 배정한다(위 주석 참고).
                     pool = _round_pool(dfmt, n_imgs, round_id)
                     if not pool:
                         print(f"[orchestrator] {ch['name'][:26]}: 이미지 생성 잠금 + "
                               f"쓸 수 있는 기존 카드 없음 → 건너뜀")
                         continue
-                    v, path = pick_for_channel(pool, ch_index)
+                    v, path = pick_for_channel(pool, p_idx)
                     image = path
                     print(f"[orchestrator] 설명서 카드 **재사용** v{v} → {image}")
                 else:
