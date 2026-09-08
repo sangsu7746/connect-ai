@@ -123,6 +123,130 @@ SPECS = {
             "a picnic scene from above, faces not visible",
         ],
     },
+    "printcraft": {
+        "label": "POD 디자인",
+        "styles": [
+            ("타이포", "minimal typographic poster design featuring {subject}, "
+                      "bold geometric shapes, limited flat color palette"),
+            ("라인아트", "single-line continuous line art of {subject}, "
+                       "thin elegant strokes, lots of empty space"),
+            ("빈티지", "vintage screen-print style illustration of {subject}, "
+                     "muted retro palette, subtle paper texture in the artwork"),
+            ("플랫", "flat vector illustration of {subject}, bold outlines, "
+                    "cheerful saturated colors"),
+        ],
+        "motifs": [
+            "a mountain range at sunrise", "a coffee cup with steam swirls",
+            "a sailboat on calm waves", "a houseplant in a clay pot",
+            "a bicycle with a basket of flowers", "a crescent moon over pine trees",
+        ],
+    },
+    "mirizip": {
+        "label": "인테리어 미리보기",
+        "styles": [
+            ("북유럽", "scandinavian interior of {subject}, light oak floor, "
+                     "white walls, soft daylight, minimal furniture"),
+            ("모던", "modern interior of {subject}, clean lines, neutral palette, "
+                    "indirect lighting, uncluttered"),
+            ("우드", "warm wood-toned interior of {subject}, natural textures, "
+                    "cozy afternoon light"),
+            ("미니멀", "minimalist interior of {subject}, muted tones, "
+                     "very few objects, calm atmosphere"),
+        ],
+        "motifs": [
+            "a small living room", "a bedroom with a low bed",
+            "a kitchen with an island", "a home office nook",
+            "a studio apartment", "a dining area by a window",
+        ],
+    },
+    "proheadshot": {
+        "label": "프로필 헤드샷 배경",
+        # ⚠ 인물 자체는 만들지 않는다. sd_backend.NEG_FORCE 가 사람을 막고,
+        #   이 업종은 '배경·조명 스타일' 을 보여준다.
+        "styles": [
+            ("스튜디오", "empty professional studio backdrop, {subject}, "
+                       "soft key light, seamless paper background"),
+            ("그라디언트", "smooth studio gradient backdrop, {subject}, "
+                        "even soft lighting"),
+            ("오피스", "softly blurred modern office background, {subject}, "
+                     "shallow depth of field"),
+            ("아웃도어", "softly blurred outdoor background, {subject}, "
+                      "warm natural light, bokeh"),
+        ],
+        "motifs": [
+            "cool grey tones", "warm beige tones", "deep navy tones",
+            "soft charcoal tones", "muted sage tones", "clean white tones",
+        ],
+    },
+    "colorcraft": {
+        "label": "컬러링 도안",
+        "styles": [
+            ("굵은선", "coloring book page of {subject}, thick clean black outlines, "
+                     "no shading, large simple areas to color"),
+            ("가는선", "detailed coloring book page of {subject}, fine black line art, "
+                     "intricate patterns, no shading"),
+            ("만다라", "mandala-style coloring page incorporating {subject}, "
+                     "symmetric radial pattern, black line art only"),
+            ("장면", "coloring book scene featuring {subject}, simple background, "
+                    "clear black outlines, no shading"),
+        ],
+        "motifs": [
+            "a friendly dinosaur", "a hot air balloon over hills",
+            "a cat napping on books", "a rocket and planets",
+            "a garden with butterflies", "a castle on a hill",
+        ],
+    },
+    "petportrait": {
+        "label": "반려동물 초상화",
+        "styles": [
+            ("유화", "oil painting portrait of {subject}, visible brush strokes, "
+                    "rich warm palette, classical portrait framing"),
+            ("수채", "watercolor portrait of {subject}, soft washes, delicate edges"),
+            ("펜화", "ink pen portrait of {subject}, fine cross-hatching, monochrome"),
+            ("파스텔", "soft pastel portrait of {subject}, gentle colors, "
+                     "smooth blended shading"),
+        ],
+        "motifs": [
+            "a golden retriever", "a grey tabby cat", "a corgi in profile",
+            "a beagle looking up", "a white rabbit", "a shiba inu smiling",
+        ],
+    },
+    "wallpreview": {
+        "label": "월아트 미리보기",
+        "styles": [
+            ("추상", "abstract wall art print of {subject}, organic shapes, "
+                    "muted contemporary palette"),
+            ("보태니컬", "botanical wall art print of {subject}, delicate linework, "
+                       "soft natural tones"),
+            ("기하", "geometric wall art print of {subject}, clean shapes, "
+                    "balanced composition"),
+            ("풍경", "minimal landscape wall art print of {subject}, "
+                    "simplified forms, calm palette"),
+        ],
+        "motifs": [
+            "rolling hills at dusk", "a single leaf study", "layered arches",
+            "a calm sea horizon", "desert dunes", "a pale winter forest",
+        ],
+    },
+    "nailpreview": {
+        "label": "네일 디자인",
+        # ⚠ 손·피부가 나오면 안 된다(NEG_FORCE). 네일 팁만 보여준다.
+        "styles": [
+            ("글리터", "set of press-on nail tips with {subject}, glitter finish, "
+                     "arranged in a row, product photography on white"),
+            ("젤", "set of press-on nail tips with {subject}, glossy gel finish, "
+                  "arranged in a row, product photography on white"),
+            ("무광", "set of press-on nail tips with {subject}, soft matte finish, "
+                   "arranged in a row, product photography on white"),
+            ("프렌치", "set of press-on nail tips with a french tip variation of "
+                     "{subject}, arranged in a row, product photography on white"),
+        ],
+        "motifs": [
+            "soft pink ombre", "milky white with tiny pearls",
+            "sage green marble", "lavender with silver flecks",
+            "warm nude with gold line", "sheer peach with fine glitter",
+        ],
+    },
 }
 
 
