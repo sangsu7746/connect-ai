@@ -198,13 +198,19 @@ SPECS = {
     },
     "petportrait": {
         "label": "반려동물 초상화",
+        # ⚠ 'portrait' 를 쓰면 안 된다 — sd_backend.NEG_FORCE 에 있는 그대로의
+        #   토큰이라 긍정/부정 프롬프트가 스스로 싸운다(리뷰 Finding 1,
+        #   proheadshot 과 같은 함정인데 여기만 놓쳤었다). 구도 의도는
+        #   'close framed composition' 로 옮겨 대체한다.
         "styles": [
-            ("유화", "oil painting portrait of {subject}, visible brush strokes, "
-                    "rich warm palette, classical portrait framing"),
-            ("수채", "watercolor portrait of {subject}, soft washes, delicate edges"),
-            ("펜화", "ink pen portrait of {subject}, fine cross-hatching, monochrome"),
-            ("파스텔", "soft pastel portrait of {subject}, gentle colors, "
-                     "smooth blended shading"),
+            ("유화", "oil painting of {subject}, close framed composition, "
+                    "visible brush strokes, rich warm palette"),
+            ("수채", "watercolor illustration of {subject}, close framed composition, "
+                    "soft washes, delicate edges"),
+            ("펜화", "ink pen illustration of {subject}, close framed composition, "
+                    "fine cross-hatching, monochrome"),
+            ("파스텔", "soft pastel illustration of {subject}, close framed composition, "
+                     "gentle colors, smooth blended shading"),
         ],
         "motifs": [
             "a golden retriever", "a grey tabby cat", "a corgi in profile",
