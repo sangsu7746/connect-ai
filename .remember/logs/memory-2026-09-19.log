@@ -1,0 +1,22 @@
+18:36:38 [hook] session-start: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 REMEMBER_DIR=D:\/.remember
+18:36:40 [hook] session-start: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 REMEMBER_DIR=D:\/.remember
+18:37:09 [hook] save-session: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+18:37:11 [hook] save-session: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+18:37:12 [force] bypassing cooldown + min msgs
+18:37:12 [extract] session 078f6305-d0a8-4043-9208-89726250d923
+18:37:13 [lock] another save holds the lock, skipping
+18:37:14 [extract] 0 exchanges (0 human)
+18:37:14 [extract] 0 exchanges, skip — position → 3738
+19:38:36 [hook] session-start: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 REMEMBER_DIR=D:\/.remember
+19:38:51 [hook] save-session: PROJECT_DIR=D:\ PIPELINE_DIR=C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0 PYTHON=python3 REMEMBER_DIR=D:\/.remember
+19:38:53 [force] bypassing cooldown + min msgs
+19:38:53 [extract] session f2ce4a26-0ca4-4988-8ac0-6ffc7836bbbe
+19:38:54 [extract] 4 exchanges (0 human)
+19:38:56 [haiku] calling (branch: feat/adstudio-youtube-homage)
+19:39:22 [tokens] tokens: 9+0cache→1568out ($0.070533)
+19:39:24 [write] appended: ## 19:38 | feat/adstudio-youtube-homage
+19:39:24 [write] position → 5100
+19:39:29 [git-backup] removed per-slug .gitignore (legacy bootstrap artifact)
+19:39:30 [ndc] now.md → today-2026-09-19.md
+19:39:31 [ndc] running (PID 38655)
+19:39:35 [git-backup] untracked .remember/logs and .remember/tmp — a version older than the exclusion had committed them. They stop being pushed from now on; commits that already carry them are left untouched, because removing those means rewriting history and force-pushing, which breaks every other clone of this store.

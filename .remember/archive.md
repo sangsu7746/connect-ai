@@ -1,5 +1,8 @@
 # Archive
 
+## Week of 2026-09-01
+Deployed Naver API HUB for CardNews (news search, trends live); secured API keys in .env, capped costs, resolved expiry. Fixed blog SEO (retitled 57 posts, updated keywords per search analysis); catalog validation at p=0.789. Identified platform bottleneck (7.6% LLM throughput, 1/day vs 10-18 target); DataLab blocked pending manual config and auth/cost validation.
+
 ## Week of 2026-08-25
 Deployed Naver publisher and IG Meta API integration (Firebase live); shipped multi-account blog posting (8 posts, 3 accts, 5 cats); added CarReels BGM, finalized Threads API spec (6 field changes, 60-day refresh critical). Fixed 4 CardNews, optimized Naver images (75→34 chars); Context-guard validation 49→1, Threads-reply funnel 8%. Enhanced session monitoring; surfaced auth blockers (IG token err 190, Tistory 2-stage Kakao). Threads-reply scale regressed (matching-layer temp); pending token refresh, matching fix, consolidation.
 

@@ -1,0 +1,13 @@
+      0 [main] bash 247398 dofork: child -1 - forked process 30196 died unexpectedly, retry 0, exit code 0xC000026B, errno 11
+C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0/scripts/save-session.sh: fork: retry: Resource temporarily unavailable
+1527500 [main] bash 247398 dofork: child -1 - forked process 5352 died unexpectedly, retry 0, exit code 0xC000026B, errno 11
+C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0/scripts/save-session.sh: fork: retry: Resource temporarily unavailable
+3731804 [main] bash 247398 dofork: child -1 - forked process 34548 died unexpectedly, retry 0, exit code 0xC000026B, errno 11
+C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.10.0/scripts/save-session.sh: fork: retry: Resource temporarily unavailable
+remember: could not read /c/Users/Public/Documents/ESTsoft/CreatorTemp/remember-config-105026.json — is it valid JSON? falling back to per-key reads
+C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.14.0/scripts/save-session.sh: line 158: D:\/.remember/tmp/last-save-ts: Permission denied
+C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.14.0/scripts/save-session.sh: line 158: D:\/.remember/tmp/last-save-ts: Permission denied
+C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0/scripts/save-session.sh: line 214: D:\/.remember/tmp/last-save-ts: Permission denied
+C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0/scripts/save-session.sh: line 214: D:\/.remember/tmp/last-save-ts: Permission denied
+C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0/scripts/save-session.sh: line 214: D:\/.remember/tmp/last-save-ts: Permission denied
+C:/Users/0/.claude/plugins/cache/claude-plugins-official/remember/0.20.0/scripts/save-session.sh: line 214: D:\/.remember/tmp/last-save-ts: Permission denied

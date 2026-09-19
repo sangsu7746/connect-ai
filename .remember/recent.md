@@ -1,7 +1,7 @@
 # Recent
 
-## 2026-09-04
-Fixed Naver blog SEO by diagnosing narrative-first title rule in blog.js; retitled 57 posts to keyword-first and updated pension keywords per search-volume analysis. Validated catalog rewrites (p=0.789); naver_retitle.py preview ready. Reverse validation (157 concerns, 4-round avg) identified platform bottleneck (7.6% LLM throughput, 1/day vs 10-18 target); phase C pivot eval underway.
+## 2026-09-08
+Disabled CardNews scheduler & 3 categories (₩54k/mo cost cut); investigated Gemini 3.1 deprecation impacting 9 image apps (endpoint/format changes needed); started PhotoMagic migration (interrupted).
 
 ## Identity Candidates
 - IDENTITY CANDIDATE: Full-stack AI ad platform engineer—ships multi-channel integrations (LLM copy + img gen + Firebase) with production rigor (test coverage, mutation validation, race-condition fixes, encoding safety).
