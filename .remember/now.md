@@ -1,3 +1,3 @@
 
-## 19:38 | feat/adstudio-youtube-homage
-Wrote photo-only mode design doc (commit 47ac3223e, docs/superpowers/specs/2026-08-09-photo-only-mode-design.md); awaiting review before impl — identified text-cycle issue from prior YT homage work, proposes restricting concurrent photo + homage selection.
+## 20:31 | feat/adstudio-youtube-homage
+Investigated why comment ad automation stopped 4 days ago; searched D:/Antigravity folder but script not found — blocked pending user providing correct path to automation code.
