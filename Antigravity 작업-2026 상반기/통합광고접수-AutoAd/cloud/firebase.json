@@ -1,0 +1,23 @@
+{
+  "hosting": [
+    {
+      "target": "loanintake",
+      "public": "public",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [
+        {
+          "source": "/api/intake",
+          "function": { "functionId": "loanIntakeSubmit", "region": "us-central1" }
+        },
+        { "source": "**", "destination": "/index.html" }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "loanintake",
+      "ignore": ["node_modules", ".git", "*.log"]
+    }
+  ]
+}

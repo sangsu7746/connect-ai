@@ -1,0 +1,117 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+@import "tailwindcss";
+
+@theme {
+  /* ── ReRoom AI 디자인 토큰 · 에디토리얼 인테리어 팔레트 ── */
+  --color-paper: #f6f3ee; /* 웜 아이보리 배경 */
+  --color-paper-raised: #fdfcfa; /* 카드 표면 */
+  --color-sand: #ece6db; /* 채움용 웜 그레이 */
+  --color-line: #e2dbcf; /* 웜 보더 */
+  --color-line-strong: #cfc5b4;
+  --color-ink: #211b13; /* 웜 잉크 */
+  --color-ink-soft: #6f6555; /* 보조 텍스트 */
+  --color-ink-faint: #a49a88; /* 캡션/힌트 */
+  --color-clay: #b0562f; /* 테라코타 액센트 */
+  --color-clay-deep: #8f4123;
+  --color-clay-soft: #f3e4da;
+
+  --font-sans: "Pretendard Variable", "Pretendard", -apple-system,
+    BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  --font-display: var(--font-noto-serif), "Noto Serif KR", ui-serif, serif;
+
+  --shadow-lift: 0 1px 2px rgb(33 27 19 / 0.04), 0 8px 24px rgb(33 27 19 / 0.06);
+  --shadow-deep: 0 2px 6px rgb(33 27 19 / 0.08), 0 24px 64px rgb(33 27 19 / 0.16);
+
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-fade-in: fade-in 0.5s var(--ease-premium) both;
+  --animate-shimmer: shimmer 2.2s linear infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss05";
+  word-break: keep-all; /* 한국어 어절 단위 줄바꿈 */
+}
+
+/* 종이 질감 그레인 오버레이 */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.13 0 0 0 0 0.11 0 0 0 0 0.08 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* 스크롤 리빌 */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.9s var(--ease-premium), transform 0.9s var(--ease-premium);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* 스크롤바 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-paper);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink-faint);
+}
+
+::selection {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}

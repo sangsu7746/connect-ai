@@ -1,0 +1,39 @@
+# ============================================================
+#  업종 프로필 — WallPreview (월아트 미리보기)
+#  홍보서에서 자동 생성 (URL 은 홍보서에 적힌 주소, 접속 확인 완료)
+#  전환:  .env 의 AUTOAD_PROFILE=wallpreview
+# ============================================================
+key: wallpreview
+name: "WallPreview (월아트 미리보기)"
+
+brand:
+  company: headjim.com
+  roman: ""
+  phone: ""                      # 웹 서비스 → 전화 대신 site 로 유도
+  region: "전국 온라인"
+  channels: "웹에서 바로 이용"
+  registered: ""
+  site: "wallpreview-web.web.app"
+  reg_no: ""
+
+compliance:
+  disclaimer: "※ 미리보기는 AI가 생성한 예상 이미지로, 실제 결과와 다를 수 있습니다."
+  banned_phrases:
+    - "무조건"
+    - "100%"
+    - "완벽하게"
+    - "절대"
+  note: "인테리어 미리보기. 실제 시공 결과 단정 금지."
+
+content:
+  source: docs                   # 기성 전단이 없으므로 홍보서에서 소재 생성
+  flyers_dir: ""
+  docs_dir: "D:/headjim AI-LAB-Template/docs/광고홍보서"
+  doc: "WallPreview — 월아트 미리보기 광고홍보서.pdf"                   # 이 업종의 기본 설명서
+
+fallback_copy:
+  body: "WallPreview — 자세한 내용은 wallpreview-web.web.app 에서 확인하세요."
+
+intake:
+  title: "서비스 문의"
+  target: none                   # 대출앱으로 보내지 않음 (클라우드 수신함에만)

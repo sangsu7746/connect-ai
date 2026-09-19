@@ -1,0 +1,18 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import ArticlePage from './pages/Article'
+import Dashboard from './pages/Dashboard'
+import PostList from './pages/PostList'
+import Storyboard from './pages/Storyboard'
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/category/:id" element={<PostList />} />
+        <Route path="/script/:id" element={<Storyboard />} />
+        <Route path="/article/:id" element={<ArticlePage />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}

@@ -1,0 +1,13 @@
+{
+  "name": "loanintake-functions",
+  "description": "AutoAd 소비자 대출 상담 접수 수신함 (headjim-loan)",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.0"
+  },
+  "private": true
+}

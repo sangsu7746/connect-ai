@@ -1,0 +1,103 @@
+rules_version = '2';
+
+// ============================================================
+// HEADJIM 플랫폼 통합 Firestore Security Rules (canonical)
+// ============================================================
+// ⚠️ 이 파일은 headjim-ai 프로젝트의 유일한 규칙 배포본이며,
+// 메인 홈(D:\headjim AI-LAB-Template)과 오마주 앱(D:\오마주 동영상-260706)
+// 두 저장소에 "동일한 내용"으로 존재해야 한다. 한쪽만 고쳐 배포하면
+// 다른 앱이 깨진다 (2026-07-14 실제 사고: 메인 홈 규칙이 오마주 규칙을
+// 덮어써 projects/usage 접근이 차단됐었음). 수정 시 두 파일 모두 갱신할 것.
+//
+// 핵심 원칙: 지갑(wallets)·원장(walletTransactions, wallets/*/ledger)은
+// 클라이언트 쓰기 전면 차단 — Cloud Functions(Admin SDK) 전용.
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── 사용자 프로필 ──
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ── (오마주) 프로젝트 메타 및 씬 정보 ──
+    match /projects/{projectId} {
+      allow read, write: if request.auth != null &&
+        (resource == null || resource.data.userId == request.auth.uid) &&
+        (request.resource == null || request.resource.data.userId == request.auth.uid);
+
+      // 사진 원본(base64) — 문서당 1MB 한도를 사진 1장 기준으로 만들기 위한 서브컬렉션
+      match /photos/{photoId} {
+        allow read, write: if request.auth != null &&
+          (resource == null || resource.data.userId == request.auth.uid) &&
+          (request.resource == null || request.resource.data.userId == request.auth.uid);
+      }
+    }
+
+    // ── (오마주) Pro 플랜 권한 — 조회만, 쓰기는 Admin SDK 전용 ──
+    match /entitlements/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    // ── (메인 홈) 주문 기록 ──
+    match /orders/{orderId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+    match /subscriptions/{subId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── 공용 포인트 지갑 — 본인 조회만, 쓰기는 서버(Cloud Functions) 전용 ──
+    match /wallets/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+
+      // (오마주/웰컴코인) 지갑 하위 원장
+      match /ledger/{entryId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+    }
+
+    // ── (메인 홈) 지갑 원장(탑레벨) — creditPayPalOrder·creditTossPayment·spendCoins 기록 ──
+    match /walletTransactions/{txId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // ── 플랫폼 공용 설정(단가표 config/pricing 등) — 공개 읽기, 쓰기는 Admin 전용 ──
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── (AdStudio) 광고 생성 작업 큐 — 본인 작업만 읽기, 쓰기는 서버(Functions) 전용 ──
+    match /adJobs/{jobId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // ── (오마주) API 사용량 통계 ──
+    match /usage/{userId} {
+      // TTS 월간 사용량은 Cloud Functions에서만 기록
+      match /tts/{monthId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false;
+      }
+      // 그 외 사용량 문서는 본인 것만 읽기/쓰기
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}

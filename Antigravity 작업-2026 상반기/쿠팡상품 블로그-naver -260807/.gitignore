@@ -1,0 +1,53 @@
+# 비밀정보 — config.json 에 네이버 계정과 API 키가 평문으로 들어 있다.
+# 이 디렉터리에는 .gitignore 가 아예 없어서 `git add .` 한 번이면 커밋될 수 있었다.
+config.json
+config.json.bak          # 키 교체 시 만드는 백업. 옛 키와 비밀번호가 그대로 들어 있다
+*.bak
+config.json.bak-*        # 날짜가 붙은 백업(config.json.bak-0821-1642)은 *.bak 에 안 걸린다
+*.bak-*
+*.key
+.env
+.env.*
+
+# 브라우저 로그인 세션 (쿠키·토큰이 그대로 들어 있다)
+.tistory_profile/
+.coupang_profile/
+.partners_profile/
+*_profile/
+# 계정 이름이 뒤에 붙은 프로필은 위 *_profile/ 에 안 걸린다.
+# .naver_profile_headjim/ 은 '_profile' 로 끝나지 않기 때문이다 — 실제로 새어 있었다.
+*_profile_*/
+.naver_profile*/
+.instagram_profile*/
+*.pkl
+
+# 데이터베이스와 백업
+*.db
+*.db.bak-*
+*.sqlite3
+
+# 생성물 — 코드가 언제든 다시 만든다. 저장소에 넣을 이유가 없다.
+output/
+outputs/
+reels_output/
+temp_images/
+temp_product_imgs/
+temp_blog_imgs/
+logs/
+*.mp4
+*.png
+*.jpg
+*.jpeg
+__pycache__/
+*.pyc
+.venv/
+
+# 커밋 메시지 임시파일
+cm.txt
+commitmsg*.txt
+
+# 실행 상태 파일 — 이 PC 의 진행 상황이라 저장소에 넣을 것이 아니다
+.daily_state.json
+.tistory_state.json
+.last_video
+temp_review_imgs/
