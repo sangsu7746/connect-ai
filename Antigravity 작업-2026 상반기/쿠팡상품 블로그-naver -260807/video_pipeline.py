@@ -9,7 +9,9 @@
   3. TTS         edge-tts, 1.5배속
   4. 영상 합성   상품 이미지 Ken Burns + 자막 (reels_generator 재사용)
   5. 소개글      인스타 캡션 + 대가성 고지 + 딥링크
-  6. 업로드      instagram_poster (별도)
+  6. 업로드      instagram_poster (별도). 환경변수 INSTAGRAM_ACCOUNTS 를 쉼표로
+                설정해 두면(예: headjim_01,headjim_02,headjim_03) --upload 한 번으로
+                계정마다 순서대로 올라간다.
 
 ## 영상 소재에 대하여
 처음 요청은 '상품명을 중국어로 바꿔 틱톡에서 검색해 영상을 내려받아 쓴다' 였다.
@@ -371,23 +373,61 @@ def main() -> int:
     if not jobs:
         return 1
 
+    import instagram_poster as IG
+    accounts = IG.accounts_from_env()
+
+    # INSTAGRAM_ACCOUNTS 가 비어 있거나(기존 경로) 1개뿐이면 기존 upload_reels() 를
+    # 그대로 쓴다 — upload_one_reels.py 와 같은 기준이다. 여기서 안 가르면 계정이
+    # 하나도 없는 가장 흔한 실행에서도 upload_reels_multi() 의 "(기본)" 합성 키가
+    # 로그 문구와 published_videos.url 에 그대로 섞여 들어간다(기존에는 url="").
+    if len(accounts) <= 1:
+        account = accounts[0] if accounts else ""
+        log("")
+        log("─" * 58)
+        if account:
+            log(f"  브라우저가 열립니다. @{account} 로 **인스타그램에 직접 로그인해 주세요.**")
+        else:
+            log("  브라우저가 열립니다. **인스타그램에 직접 로그인해 주세요.**")
+        log("  비밀번호는 이 스크립트가 다루지 않습니다.")
+        log("─" * 58)
+        res = IG.upload_reels(jobs, log=log, account=account)
+
+        ok = 0
+        for j in jobs:
+            r = res.get(j["key"], {})
+            if r.get("ok"):
+                ok += 1
+                mark_posted(j["key"], "instagram", r.get("url", ""))
+            else:
+                log(f"  ✘ {os.path.basename(j['video'])} — {r.get('why')}")
+        log(f"인스타그램 업로드 {ok}/{len(jobs)}건")
+        return 0 if ok else 1
+
+    # 계정이 둘 이상이면 같은 영상을 계정마다 순서대로 올린다.
     log("")
     log("─" * 58)
-    log("  브라우저가 열립니다. **인스타그램에 직접 로그인해 주세요.**")
+    log(f"  브라우저가 열립니다. 계정 {len(accounts)}곳에 순서대로 올립니다: "
+        + ", ".join(f"@{a}" for a in accounts))
+    log("  각 계정마다 **인스타그램에 직접 로그인해 주세요.**"
+        " (세션이 남아 있으면 자동으로 통과합니다)")
     log("  비밀번호는 이 스크립트가 다루지 않습니다.")
     log("─" * 58)
-    import instagram_poster as IG
-    res = IG.upload_reels(jobs, log=log)
+
+    all_res = IG.upload_reels_multi(jobs, accounts=accounts, log=log)
 
     ok = 0
     for j in jobs:
-        r = res.get(j["key"], {})
-        if r.get("ok"):
+        succeeded = [acc for acc, res in all_res.items()
+                    if res.get(j["key"], {}).get("ok")]
+        if succeeded:
             ok += 1
-            mark_posted(j["key"], "instagram", r.get("url", ""))
+            # DB 는 계정별 칸이 없다 — 성공한 계정 목록을 url 칸에 남겨 감사 기록으로 쓴다.
+            mark_posted(j["key"], "instagram", ";".join(succeeded))
         else:
-            log(f"  ✘ {os.path.basename(j['video'])} — {r.get('why')}")
-    log(f"인스타그램 업로드 {ok}/{len(jobs)}건")
+            reasons = "; ".join(f"@{acc}: {res.get(j['key'], {}).get('why')}"
+                                for acc, res in all_res.items())
+            log(f"  ✘ {os.path.basename(j['video'])} — {reasons}")
+    log(f"인스타그램 업로드 {ok}/{len(jobs)}건 (계정 중 최소 1곳 성공 기준)")
     return 0 if ok else 1
 
 

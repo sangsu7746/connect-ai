@@ -16,6 +16,20 @@
 ## 자동화 감지
 인스타는 자동화에 민감하다. 한 번에 몰아 올리지 말고 간격을 둔다(UPLOAD_GAP).
 계정이 잠기면 이 스크립트로는 풀 수 없다 — 사람이 앱에서 직접 확인해야 한다.
+
+## 여러 계정에 한 번에 올리기
+`upload_reels_multi(jobs, accounts)` 에 계정 목록을 주면 같은 영상·캡션을 계정마다
+순서대로 올린다(이 함수 자체는 환경변수를 읽지 않는다 — 목록은 호출부가 넘긴다).
+`accounts_from_env()` 가 환경변수 `INSTAGRAM_ACCOUNTS` 를 쉼표로 나눠 그 목록을
+만들어 준다(예: `INSTAGRAM_ACCOUNTS=headjim_01,headjim_02,headjim_03`). 실제로
+video_pipeline.py --upload 와 upload_one_reels.py 는 이미 "accounts_from_env() 로
+읽어서 upload_reels_multi() 에 넘기는" 흐름으로 연결돼 있어, 그 두 스크립트를 쓸 때는
+환경변수만 설정해 두면 된다.
+
+계정마다 세션(프로필 폴더)이 다르므로 동시에는 못 올리고, 계정을 바꿀 때마다
+ACCOUNT_SWITCH_GAP 만큼 쉰다 — 짧은 시간에 여러 계정을 오가면 같은 기기에서 묶어
+자동화로 더 쉽게 읽힌다. 한 계정이 로그인 시간초과·계정 불일치 등으로 전부 실패해도
+멈추지 않고 다음 계정으로 넘어간다.
 """
 import io
 import json
@@ -460,8 +474,90 @@ def upload_reels(jobs: list, headless: bool = False, log=_log,
                 except Exception:
                     pass
 
-        ctx.close()
+        try:
+            ctx.close()
+        except Exception:
+            # 이 시점의 results 는 이미 각 건의 실제 성공/실패를 담고 있다. 종료 중
+            # 예외가 나도 그걸 버리고 전부 실패로 바꿔 보고하면 안 된다 — 실제로는
+            # 올라간 건을 "실패"로 알고 나중에 또 올리면 중복 게시가 된다.
+            pass
     return results
+
+
+#: 계정 전환 사이 간격(초). 업로드 사이 간격(UPLOAD_GAP)보다 더 띄운다 — 계정을 바꾸는
+#: 것은 '다른 사람'인 척하는 것이라, 짧은 시간에 여러 계정을 오가면 같은 기기·같은 IP에서
+#: 묶어 자동화로 더 쉽게 읽힌다.
+ACCOUNT_SWITCH_GAP = 180
+
+
+def accounts_from_env() -> list:
+    """
+    INSTAGRAM_ACCOUNTS 환경변수에서 계정 목록을 읽는다. 쉼표로 구분, '@'는 떼고 받는다.
+
+    예: INSTAGRAM_ACCOUNTS=headjim_01,headjim_02,headjim_03
+    비어 있으면 빈 리스트 — 호출부는 이 경우 기존처럼 단일(기본) 세션으로 올린다.
+    """
+    raw = os.environ.get("INSTAGRAM_ACCOUNTS", "")
+    return [a.strip().lstrip("@") for a in raw.split(",") if a.strip()]
+
+
+def upload_reels_multi(jobs: list, accounts: list, headless: bool = False,
+                       log=_log, gap: int = ACCOUNT_SWITCH_GAP) -> dict:
+    """
+    같은 jobs(영상+캡션)를 계정마다 하나씩, 한 번의 실행으로 전부 올린다.
+
+    계정마다 브라우저 세션(프로필 폴더)이 따로 있어 한 프로세스에서 동시에 여러 창을
+    열 수는 없다. 그래서 순서대로 돈다 — upload_reels() 를 계정별로 그대로 재사용하므로
+    로그인 대기·계정 불일치 확인·실패 시 화면 기록 같은 기존 안전장치가 계정마다 똑같이
+    적용된다.
+
+    한 계정이 전부 실패해도(로그인 시간초과·계정 불일치·예외 등) 멈추지 않고 다음
+    계정으로 넘어간다 — 3계정 중 1곳만 세션이 끊겨도 나머지 2곳은 올라가야 한다.
+    실제로 어디서 막혔는지는 계정별 결과의 "why" 에 남는다.
+
+    accounts 가 비어 있으면 기존과 똑같이 기본 세션 하나로 올린다(호출부를 바꾸지
+    않아도 이전과 동일하게 동작한다).
+
+    반환: {계정이름: {job_key: {"ok":, "why" 또는 "url":}}, ...}
+    accounts 가 비었을 때는 {"(기본)": {...}} 하나만 돌려준다.
+    """
+    if not accounts:
+        return {"(기본)": upload_reels(jobs, headless=headless, log=log)}
+
+    all_results = {}
+    for i, account in enumerate(accounts):
+        log("")
+        log("═" * 58)
+        log(f"  계정 {i + 1}/{len(accounts)} · @{account}")
+        log("═" * 58)
+        try:
+            all_results[account] = upload_reels(jobs, headless=headless, log=log,
+                                                account=account)
+        except Exception as e:
+            # upload_reels 자체가 예외로 죽어도(브라우저 기동 실패 등) 이 계정만
+            # 실패로 기록하고 다음 계정은 계속 시도한다.
+            log(f"  ✘ @{account} 처리 중 예외로 중단: {str(e)[:150]}")
+            all_results[account] = {j["key"]: {"ok": False, "why": str(e)[:150]}
+                                     for j in jobs}
+
+        if i < len(accounts) - 1:
+            log(f"  {gap}초 쉬고 다음 계정(@{accounts[i + 1]})으로 넘어갑니다"
+                "(계정을 빠르게 오가면 자동화로 더 쉽게 읽힙니다).")
+            time.sleep(gap)
+
+    log("")
+    log("─" * 58)
+    log("  계정별 결과")
+    for account, res in all_results.items():
+        ok = sum(1 for r in res.values() if r.get("ok"))
+        line = f"    @{account}: {ok}/{len(res)}건 성공"
+        if ok < len(res):
+            fails = "; ".join(f"{k}: {r.get('why')}" for k, r in res.items()
+                              if not r.get("ok"))
+            line += "  ⚠ " + fails[:200]
+        log(line)
+    log("─" * 58)
+    return all_results
 
 
 if __name__ == "__main__":
