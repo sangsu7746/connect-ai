@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>대출 상담 접수</title>
+<style>
+  :root{--accent:#0C7C74;--ink:#16202A;--line:#dfe5e6;--muted:#5a6672}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+    background:#f4f7f7;color:var(--ink);line-height:1.6}
+  .card{max-width:440px;margin:32px auto;background:#fff;border:1px solid var(--line);
+    border-radius:16px;padding:26px 22px}
+  h1{font-size:1.3rem;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:.9rem;margin:0 0 20px}
+  label{display:block;font-size:.85rem;font-weight:700;margin:14px 0 5px}
+  input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:9px;font-size:1rem}
+  .consent{display:flex;gap:9px;align-items:flex-start;margin:18px 0 6px;
+    background:#f4f7f7;border-radius:10px;padding:12px}
+  .consent input{width:auto;margin-top:3px}
+  .consent small{font-size:.78rem;color:var(--muted)}
+  button{width:100%;margin-top:18px;padding:14px;border:0;border-radius:10px;
+    background:var(--accent);color:#fff;font-size:1.02rem;font-weight:700;cursor:pointer}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .note{font-size:.72rem;color:var(--muted);margin-top:14px;text-align:center}
+</style>
+</head>
+<body>
+  <form class="card" id="f" autocomplete="off">
+    <h1>대출 상담 접수</h1>
+    <p class="sub">아래 정보를 남겨주시면 상담원이 연락드립니다.</p>
+
+    <label for="name">이름</label>
+    <input id="name" name="name" required maxlength="20">
+
+    <label for="phone">연락처</label>
+    <input id="phone" name="phone" required inputmode="tel" placeholder="010-0000-0000">
+
+    <label for="amount">희망 금액</label>
+    <input id="amount" name="amount" inputmode="numeric" placeholder="예: 3,000만원">
+
+    <label for="collateral">담보 유무</label>
+    <select id="collateral" name="collateral">
+      <option value="">선택</option>
+      <option value="부동산담보">부동산 담보 있음</option>
+      <option value="신용">담보 없음(신용)</option>
+      <option value="사업자">사업자</option>
+    </select>
+
+    <div class="consent">
+      <input type="checkbox" id="consent" name="consent" required>
+      <small><b>[필수] 개인정보 수집·이용 동의.</b> 상담 목적에 한해 이름·연락처를 수집하며,
+      목적 달성 후 지체 없이 파기합니다. 주민등록번호는 수집하지 않습니다.</small>
+    </div>
+
+    <button type="submit" id="btn">상담 접수하기</button>
+    <p class="note">※ 대부/대출 광고 의무표기 및 등록번호는 상담 안내 시 고지됩니다.</p>
+  </form>
+
+<script>
+  // 유입 채널/utm 을 쿼리스트링에서 수집 (전환추적) — bridge.submit_lead 로 전달
+  const q = new URLSearchParams(location.search);
+  const f = document.getElementById('f');
+  f.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn');
+    btn.disabled = true; btn.textContent = '접수 중…';
+    const body = {
+      name: f.name.value.trim(),
+      phone: f.phone.value.trim(),
+      amount: f.amount.value.trim(),
+      collateral: f.collateral.value,
+      consent: f.consent.checked,
+      source_channel: q.get('channel') || '',
+      utm: q.get('utm') || ''
+    };
+    try {
+      // TODO(P1-9): 실제 엔드포인트로 교체 (bridge.submit_lead 를 감싼 API)
+      const res = await fetch('/api/intake/lead', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error('접수 실패');
+      f.innerHTML = '<h1>접수 완료</h1><p class="sub">빠른 시일 내 연락드리겠습니다. 감사합니다.</p>';
+    } catch (err) {
+      btn.disabled = false; btn.textContent = '상담 접수하기';
+      alert('접수 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    }
+  });
+</script>
+</body>
+</html>

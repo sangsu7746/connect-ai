@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Rounded black background -->
+  <rect width="32" height="32" rx="8" fill="black"/>
+  <!-- Minimal room wireframe / corner symbol -->
+  <path d="M9 11L16 7L23 11V21L16 25L9 21V11Z" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M9 11L16 15L23 11" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+  <path d="M16 15V25" stroke="white" stroke-width="1.5"/>
+</svg>

@@ -1,0 +1,30 @@
+# AutoAd — Phase 0/1 의존성
+# 몸통 (기존 대출앱과 동일 스택)
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+PyYAML
+
+# 카피/서류 생성 (provider 전환: gemini 기본 / claude 선택)
+anthropic
+google-genai
+requests
+
+# 팜플렛 텍스트 합성 (배경은 PrintCraft 서버가 담당)
+Pillow
+
+# 채널 어댑터 (기존 페이스북-광고글에서 이식)
+selenium
+webdriver-manager
+cryptography
+
+# 스케줄러 (P1-7: JobStore 영속화)
+APScheduler
+SQLAlchemy
+
+# 승인 콘솔 (P1-6)
+python-telegram-bot
+
+# 테스트 (신규 — threads/ 파이프라인 검증용)
+pytest

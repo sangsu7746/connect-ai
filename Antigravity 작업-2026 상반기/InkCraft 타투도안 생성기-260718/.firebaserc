@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "headjim-ai"
+  },
+  "targets": {
+    "headjim-ai": {
+      "hosting": {
+        "inkcraft": ["headjim-ink"]
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "adstudio-local-helper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ad Studio 로컬 크롤러 도우미 — 실제 브라우저(Playwright)로 페이지를 렌더링해 텍스트를 추출합니다.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "setup": "npm install && npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}

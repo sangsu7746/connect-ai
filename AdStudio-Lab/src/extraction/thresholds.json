@@ -1,0 +1,25 @@
+{
+  "version": "v0.3 (2026-07-08 동결, 28장 캘리브레이션) + P-12 EAR 잠정치",
+  "maxSide": 2048,
+  "detect": { "minConf": 0.5, "gammaRetry": 1.8, "tileFallback": true, "nmsIou": 0.4 },
+  "p01": { "pass": 256, "warn": 160, "warnStrong": 100 },
+  "p02": { "warn": 80, "fail": 40 },
+  "p03": { "yawWarn": 35, "pitchWarn": 25 },
+  "p05": { "clipWarn": 0.2 },
+  "p07": { "minAreaRatio": 0.05, "maxAreaRatio": 0.85, "maxFragments": 3, "fragmentMinAreaRatio": 0.003 },
+  "p09": { "minFaceCoverage": 0.6 },
+  "p12": { "earWarnBelow": 0.15 },
+  "pose": { "minVisibility": 0.5 },
+  "backlit": { "faceToImgRatio": 0.62, "minImgMean": 90 },
+  "eligibility": { "minAreaRatioOfMax": 0.09 },
+  "score": { "wArea": 0.4, "wCenter": 0.25, "wSharp": 0.2, "wFront": 0.15, "areaNormDiv": 0.08, "sharpNormDiv": 300 },
+  "crops": { "faceRefSize": 1024, "halfBodyW": 1024, "halfBodyH": 1536, "faceUp": 0.9, "faceDown": 1.3, "faceSide": 1.1, "halfBodyHMul": 3.5, "halfBodyWMul": 2.5, "headroomMul": 0.35 },
+  "matting": { "maskThreshold": 0.5, "featherPx": 2, "bgColor": "#F2F2F2" },
+  "model": {
+    "wasmBase": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm",
+    "faceDetector": "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+    "faceLandmarker": "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+    "imageSegmenter": "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite",
+    "poseLandmarker": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
+  }
+}

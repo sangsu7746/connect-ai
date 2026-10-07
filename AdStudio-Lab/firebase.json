@@ -1,0 +1,38 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json",
+    "predeploy": ["node scripts/deploy-guard.cjs firestore"]
+  },
+  "hosting": {
+    "site": "adstudio-lab",
+    "public": "dist",
+    "predeploy": ["node scripts/deploy-guard.cjs hosting"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/t/**",
+        "function": { "functionId": "adClick", "region": "us-central1" }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "functions": {
+    "source": "functions",
+    "predeploy": ["node scripts/deploy-guard.cjs functions"]
+  },
+  "emulators": {
+    "auth": { "port": 9099 },
+    "firestore": { "port": 8080 },
+    "functions": { "port": 5001 },
+    "ui": { "enabled": true, "port": 4000 },
+    "singleProjectMode": true
+  }
+}

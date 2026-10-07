@@ -1,0 +1,33 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# 접속 대상 설정 — 예시 파일만 추적한다
+.env
+.env.*
+!.env.example
+
+# BGM 원본 — 209개 877MB. git 히스토리는 되돌릴 수 없어 추적하지 않는다.
+# 운영본(D:\광고영상-AdStudio)에서 복사해 채운다.
+public/bgm/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
